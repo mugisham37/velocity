@@ -1,33 +1,35 @@
 // Export all schema tables and relations
-export * from './companies';
-export * from './users';
 export * from './accounts';
+export * from './audit';
+export * from './companies';
 export * from './customers';
-export * from './vendors';
 export * from './items';
+export * from './notifications';
+export * from './users';
+export * from './vendors';
 export * from './warehouses';
 
 // Export types for better TypeScript support
-import type { InferSelectModel, InferInsertModel } from 'drizzle-orm';
-import { 
-  companies, 
-  users, 
-  roles, 
-  userRoles, 
-  userSessions, 
-  oauthAccounts,
+import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import {
   accounts,
-  journalEntries,
-  glEntries,
-  customers,
+  companies,
   customerContacts,
-  vendors,
-  vendorContacts,
-  items,
+  customers,
+  glEntries,
   itemPrices,
+  items,
+  journalEntries,
+  oauthAccounts,
+  roles,
   stockLevels,
+  userRoles,
+  userSessions,
+  users,
+  vendorContacts,
+  vendors,
+  warehouseLocations,
   warehouses,
-  warehouseLocations
 } from './index';
 
 // Company types
