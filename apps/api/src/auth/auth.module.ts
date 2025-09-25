@@ -1,14 +1,19 @@
+import { jwtConfig } from '@kiro/config';
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { AuthService } from './auth.service';
+import { UsersModule } from '../users/users.module';
 import { AuthResolver } from './auth.resolver';
+import { AuthService } from './auth.service';
+import { PermissionsGuard } from './guards/permissions.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { MfaService } from './services/mfa.service';
+import { RbacService } from './services/rbac.service';
+import { GitHubStrategy } from './strategies/github.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
-import { GoogleStrategy } from './strategies/google.strategy';
-import { GitHubStrategy } from './strategies/github.strategy';
-import { UsersModule } from '../users/users.module';
-import { jwtConfig } from '@kiro/config';
+import { SamlStrategy } from './strategies/saml.strategy';
 
 @Module({
   imports: [
@@ -22,11 +27,23 @@ import { jwtConfig } from '@kiro/config';
   providers: [
     AuthService,
     AuthResolver,
+    MfaService,
+    RbacService,
     JwtStrategy,
     LocalStrategy,
     GoogleStrategy,
     GitHubStrategy,
+    SamlStrategy,
+    RolesGuard,
+    PermissionsGuard,
   ],
-  exports: [AuthService, JwtModule],
+  exports: [
+    AuthService,
+    MfaService,
+    RbacService,
+    JwtModule,
+    RolesGuard,
+    PermissionsGuard,
+  ],
 })
 export class AuthModule {}

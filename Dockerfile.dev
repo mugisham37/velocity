@@ -1,24 +1,67 @@
-# Development Dockerfile with hot reloading
+# Development Dockerfile with hot reloading and comprehensive tooling
 FROM node:18-alpine
 
-# Install dependencies for native modules
-RUN apk add --no-cache libc6-compat python3 make g++
+# Set environment variables
+ENV NODE_ENV=development
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 
-# Set working directory
+# Install system dependencies for native modules and development tools
+RUN apk add --no-cache \
+    libc6-compat \
+    python3 \
+    make \
+    g++ \
+    git \
+    curl \
+    bash \
+    postgresql-client \
+    redis \
+    && corepack enable
+
+# Create app directory
 WORKDIR /app
 
-# Copy package files
+# Create non-root user for security
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy package files for dependency installation
 COPY package*.json ./
 COPY turbo.json ./
+COPY .npmrc* ./
 
-# Install dependencies
-RUN npm ci
+# Copy workspace package files
+COPY apps/api/package*.json ./apps/api/
+COPY apps/web/package*.json ./apps/web/
+COPY packages/config/package*.json ./packages/config/
+COPY packages/database/package*.json ./packages/database/
+COPY packages/shared/package*.json ./packages/shared/
+COPY packages/ui/package*.json ./packages/ui/
+
+# Install dependencies with npm ci for faster, reliable builds
+RUN npm ci --only=development
 
 # Copy source code
 COPY . .
 
-# Expose ports for different services
-EXPOSE 3000 3001 3002 4000
+# Change ownership to nodejs user
+RUN chown -R nextjs:nodejs /app
+USER nextjs
 
-# Start development server with hot reloading
+# Create volume mount points for hot reloading
+VOLUME ["/app/apps", "/app/packages"]
+
+# Expose ports for different services
+EXPOSE 3000    # Next.js frontend
+EXPOSE 3001    # Next.js admin dashboard
+EXPOSE 4000    # NestJS API
+EXPOSE 5555    # Drizzle Studio
+EXPOSE 9229    # Node.js debug port
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:4000/health || exit 1
+
+# Start development servers with hot reloading
 CMD ["npm", "run", "dev"]

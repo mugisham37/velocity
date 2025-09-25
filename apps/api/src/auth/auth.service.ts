@@ -1,9 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../users/users.service';
-import * as bcrypt from 'bcryptjs';
 import { jwtConfig } from '@kiro/config';
 import type { User } from '@kiro/database';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcryptjs';
+import { UsersService } from '../users/users.service';
+import { MfaService } from './services/mfa.service';
 
 export interface JwtPayload {
   sub: string;
@@ -16,24 +17,30 @@ export interface AuthResult {
   user: User;
   accessToken: string;
   refreshToken: string;
+  requiresMfa?: boolean;
 }
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
+    private readonly mfaService: MfaService
   ) {}
 
-  async validateUser(email: string, password: string): Promise<User | null> {
+  async validateUser(
+    email: string,
+    password: string,
+    mfaToken?: string
+  ): Promise<User | null> {
     const user = await this.usersService.findByEmail(email);
-    
+
     if (!user || !user.passwordHash) {
       return null;
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    
+
     if (!isPasswordValid) {
       return null;
     }
@@ -42,13 +49,28 @@ export class AuthService {
       throw new UnauthorizedException('Account is deactivated');
     }
 
+    // Check MFA if enabled
+    if (user.mfaEnabled) {
+      if (!mfaToken) {
+        throw new UnauthorizedException('MFA token required');
+      }
+
+      const isMfaValid = await this.mfaService.verifyMfaToken(
+        user.id,
+        mfaToken
+      );
+      if (!isMfaValid) {
+        throw new UnauthorizedException('Invalid MFA token');
+      }
+    }
+
     return user;
   }
 
   async login(user: User): Promise<AuthResult> {
     // Get user roles
     const roles = await this.usersService.getUserRoles(user.id);
-    
+
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
@@ -84,7 +106,8 @@ export class AuthService {
       }
 
       // Validate session exists
-      const session = await this.usersService.findSessionByRefreshToken(refreshToken);
+      const session =
+        await this.usersService.findSessionByRefreshToken(refreshToken);
       if (!session || !session.isActive) {
         throw new UnauthorizedException('Session expired');
       }
@@ -101,7 +124,7 @@ export class AuthService {
 
   async validateJwtPayload(payload: JwtPayload): Promise<User> {
     const user = await this.usersService.findById(payload.sub);
-    
+
     if (!user || !user.isActive) {
       throw new UnauthorizedException('User not found or inactive');
     }

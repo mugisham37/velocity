@@ -1,15 +1,19 @@
-import { Resolver, Mutation, Args, Context } from '@nestjs/graphql';
-import { UseGuards } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { LocalAuthGuard } from './guards/local-auth.guard';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { LoginInput, AuthPayload, RefreshTokenInput } from './dto/auth.dto';
-import { CurrentUser } from './decorators/current-user.decorator';
 import type { User } from '@kiro/database';
+import { UseGuards } from '@nestjs/common';
+import { Args, Context, Mutation, Resolver } from '@nestjs/graphql';
+import { AuthService } from './auth.service';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { AuthPayload, LoginInput, RefreshTokenInput } from './dto/auth.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { LocalAuthGuard } from './guards/local-auth.guard';
+import { MfaService } from './services/mfa.service';
 
 @Resolver()
 export class AuthResolver {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly mfaService: MfaService
+  ) {}
 
   @Mutation(() => AuthPayload)
   @UseGuards(LocalAuthGuard)
@@ -19,7 +23,7 @@ export class AuthResolver {
   ): Promise<AuthPayload> {
     const user = context.user;
     const result = await this.authService.login(user);
-    
+
     return {
       user: result.user,
       accessToken: result.accessToken,
@@ -32,7 +36,7 @@ export class AuthResolver {
     @Args('input') input: RefreshTokenInput
   ): Promise<AuthPayload> {
     const result = await this.authService.refreshToken(input.refreshToken);
-    
+
     return {
       user: result.user,
       accessToken: result.accessToken,
@@ -49,5 +53,42 @@ export class AuthResolver {
     const token = context.req.headers.authorization?.replace('Bearer ', '');
     await this.authService.logout(user.id, token);
     return true;
+  }
+
+  @Mutation(() => MfaSetupPayload)
+  @UseGuards(JwtAuthGuard)
+  async setupMfa(@CurrentUser() user: User): Promise<MfaSetupPayload> {
+    return this.mfaService.generateMfaSecret(user.id);
+  }
+
+  @Mutation(() => Boolean)
+  @UseGuards(JwtAuthGuard)
+  async enableMfa(
+    @CurrentUser() user: User,
+    @Args('input') input: EnableMfaInput
+  ): Promise<boolean> {
+    return this.mfaService.enableMfa(user.id, input.token);
+  }
+
+  @Mutation(() => Boolean)
+  @UseGuards(JwtAuthGuard)
+  async disableMfa(
+    @CurrentUser() user: User,
+    @Args('input') input: DisableMfaInput
+  ): Promise<boolean> {
+    return this.mfaService.disableMfa(user.id, input.token);
+  }
+
+  @Mutation(() => BackupCodesPayload)
+  @UseGuards(JwtAuthGuard)
+  async regenerateBackupCodes(
+    @CurrentUser() user: User,
+    @Args('input') input: RegenerateBackupCodesInput
+  ): Promise<BackupCodesPayload> {
+    const backupCodes = await this.mfaService.regenerateBackupCodes(
+      user.id,
+      input.token
+    );
+    return { backupCodes };
   }
 }

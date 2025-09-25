@@ -1,0 +1,55 @@
+{
+  "recommendations": [
+    // Essential Extensions
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "ms-vscode.vscode-typescript-next",
+    "bradlc.vscode-tailwindcss",
+
+    // GraphQL
+    "graphql.vscode-graphql",
+    "graphql.vscode-graphql-syntax",
+
+    // Database
+    "ms-ossdata.vscode-postgresql",
+    "cweijan.vscode-redis-client",
+
+    // Docker
+    "ms-azuretools.vscode-docker",
+
+    // Git
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+
+    // Testing
+    "vitest.explorer",
+    "ms-playwright.playwright",
+
+    // Productivity
+    "ms-vscode.vscode-json",
+    "redhat.vscode-yaml",
+    "ms-vscode.vscode-markdown",
+    "yzhang.markdown-all-in-one",
+
+    // Code Quality
+    "streetsidesoftware.code-spell-checker",
+    "usernamehw.errorlens",
+    "christian-kohler.path-intellisense",
+    "christian-kohler.npm-intellisense",
+
+    // Themes (Optional)
+    "github.github-vscode-theme",
+    "pkief.material-icon-theme",
+
+    // Utilities
+    "ms-vscode.powershell",
+    "formulahendry.auto-rename-tag",
+    "ms-vscode.vscode-json",
+    "ms-vscode-remote.remote-containers"
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode.vscode-typescript",
+    "hookyqr.beautify",
+    "ms-vscode.vscode-json"
+  ]
+}

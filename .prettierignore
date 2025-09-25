@@ -2,8 +2,13 @@ node_modules
 dist
 .next
 coverage
-*.md
-*.json
-*.yml
-*.yaml
+build
+.turbo
+test-results
+playwright-report
+e2e-results
+*.log
 .env*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

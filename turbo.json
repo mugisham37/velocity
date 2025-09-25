@@ -1,34 +1,66 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["**/.env.*local"],
+  "globalDependencies": ["**/.env.*local", "**/.env"],
   "pipeline": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "dependsOn": ["^build", "typecheck"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "build/**"]
+    },
+    "start": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["^lint"],
+      "outputs": []
+    },
+    "lint:fix": {
+      "dependsOn": ["^lint:fix"],
+      "cache": false
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "outputs": []
     },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "typecheck"],
+      "outputs": ["coverage/**", "test-results/**"]
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    },
+    "test:coverage": {
+      "dependsOn": ["^build", "typecheck"],
       "outputs": ["coverage/**"]
     },
     "test:e2e": {
       "dependsOn": ["^build"],
-      "outputs": ["test-results/**", "playwright-report/**"]
+      "outputs": ["test-results/**", "playwright-report/**", "e2e-results/**"]
     },
     "db:generate": {
-      "cache": false
+      "cache": false,
+      "inputs": ["src/schema/**", "drizzle.config.ts"]
     },
     "db:migrate": {
+      "dependsOn": ["db:generate"],
       "cache": false
     },
     "db:seed": {
+      "dependsOn": ["db:migrate"],
       "cache": false
+    },
+    "db:reset": {
+      "cache": false
+    },
+    "db:studio": {
+      "cache": false,
+      "persistent": true
     },
     "clean": {
       "cache": false

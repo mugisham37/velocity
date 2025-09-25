@@ -17,7 +17,7 @@
   "dependencies": {
     "drizzle-orm": "^0.28.6",
     "postgres": "^3.4.0",
-    "@kiro/config": "workspace:*",
+    "@kiro/config": "*",
     "uuid": "^9.0.1",
     "bcryptjs": "^2.4.3"
   },

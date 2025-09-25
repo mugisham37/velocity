@@ -1,5 +1,11 @@
-import { ObjectType, Field, InputType } from '@nestjs/graphql';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { Field, InputType, ObjectType } from '@nestjs/graphql';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  Length,
+  MinLength,
+} from 'class-validator';
 
 @InputType()
 export class LoginInput {
@@ -11,6 +17,12 @@ export class LoginInput {
   @IsString()
   @MinLength(6)
   password: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @Length(6, 6)
+  mfaToken?: string;
 }
 
 @InputType()
@@ -18,6 +30,30 @@ export class RefreshTokenInput {
   @Field()
   @IsString()
   refreshToken: string;
+}
+
+@InputType()
+export class EnableMfaInput {
+  @Field()
+  @IsString()
+  @Length(6, 6)
+  token: string;
+}
+
+@InputType()
+export class DisableMfaInput {
+  @Field()
+  @IsString()
+  @Length(6, 8)
+  token: string;
+}
+
+@InputType()
+export class RegenerateBackupCodesInput {
+  @Field()
+  @IsString()
+  @Length(6, 8)
+  token: string;
 }
 
 @ObjectType()
@@ -57,4 +93,25 @@ export class AuthPayload {
 
   @Field()
   refreshToken: string;
+
+  @Field({ nullable: true })
+  requiresMfa?: boolean;
+}
+
+@ObjectType()
+export class MfaSetupPayload {
+  @Field()
+  secret: string;
+
+  @Field()
+  qrCodeUrl: string;
+
+  @Field(() => [String])
+  backupCodes: string[];
+}
+
+@ObjectType()
+export class BackupCodesPayload {
+  @Field(() => [String])
+  backupCodes: string[];
 }
