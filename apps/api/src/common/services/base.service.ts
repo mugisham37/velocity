@@ -60,7 +60,7 @@ export abstract class BaseService<
     try {
       this.logger.info(`Creating ${this.tableName}`, { data, companyId });
 
-      const insertData = compan ? ({ ...data, companyId } as TInsert) : data;
+      const insertData = companyId ? ({ ...data, companyId } as TInsert) : data;
 
       const [result] = await this.database
         .insert(this.table)
