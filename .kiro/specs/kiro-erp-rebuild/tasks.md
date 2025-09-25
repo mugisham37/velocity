@@ -137,7 +137,7 @@ The implementation follows a layered approach, starting with foundational infras
   - Add lead conversion tracking with source attribution and ROI analysis
   - _Requirements: REQ-CRM-001, REQ-CRM-002, REQ-CRM-003, REQ-CRM-004, REQ-CRM-005, REQ-CRM-006_
 
-- [ ] 4.2 Opportunity Management
+- [x] 4.2 Opportunity Management
   - Create opportunity pipeline with customizable sales stages and probabilities
   - Implement sales forecasting with probability-weighted and historical analysis
   - Build competitor tracking with win/loss analysis and competitive intelligence

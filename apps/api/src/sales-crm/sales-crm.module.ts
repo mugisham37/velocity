@@ -11,6 +11,7 @@ import { LeadNurturingService } from './services/lead-nurturing.service';
 import { LeadScoringService } from './services/lead-scoring.service';
 import { LeadsService } from './services/leads.service';
 import { OpportunitiesService } from './services/opportunities.service';
+import { OpportunityTemplatesService } from './services/opportunity-templates.service';
 import { POSService } from './services/pos.service';
 import { QuotationsService } from './services/quotations.service';
 import { SalesAnalyticsService } from './services/sales-analytics.service';
@@ -28,6 +29,7 @@ import { SalesOrdersService } from './services/sales-orders.service';
     LeadAssignmentService,
     LeadNurturingService,
     SalesAnalyticsService,
+    OpportunityTemplatesService,
 
     // Resolvers
     LeadsResolver,
@@ -50,6 +52,7 @@ import { SalesOrdersService } from './services/sales-orders.service';
     LeadAssignmentService,
     LeadNurturingService,
     SalesAnalyticsService,
+    OpportunityTemplatesService,
   ],
 })
 export class SalesCRMModule {}

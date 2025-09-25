@@ -217,6 +217,7 @@ export const opportunities = pgTable('opportunities', {
   competitorInfo: jsonb('competitor_info'),
   lostReason: varchar('lost_reason', { length: 255 }),
   customFields: jsonb('custom_fields'),
+  templateId: uuid('template_id').references(() => opportunityTemplates.id),
   companyId: uuid('company_id')
     .references(() => companies.id)
     .notNull(),
@@ -564,6 +565,72 @@ export const salesTargets = pgTable('sales_targets', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Opportunity Templates Tables
+export const opportunityTemplates = pgTable('opportunity_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  productLine: varchar('product_line', { length: 100 }),
+  industry: varchar('industry', { length: 100 }),
+  dealType: varchar('deal_type', { length: 50 }).notNull(), // New Business, Upsell, Renewal, Cross-sell
+  averageDealSize: decimal('average_deal_size', { precision: 15, scale: 2 }),
+  averageSalesCycle: integer('average_sales_cycle'), // in days
+  customFields: jsonb('custom_fields'),
+  isActive: boolean('is_active').default(true),
+  createdBy: uuid('created_by')
+    .references(() => users.id)
+    .notNull(),
+  companyId: uuid('company_id')
+    .references(() => companies.id)
+    .notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const opportunityTemplateStages = pgTable(
+  'opportunity_template_stages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    templateId: uuid('template_id')
+      .references(() => opportunityTemplates.id)
+      .notNull(),
+    stageName: varchar('stage_name', { length: 100 }).notNull(),
+    stageOrder: integer('stage_order').notNull(),
+    defaultProbability: integer('default_probability').notNull(), // 0-100
+    requiredActivities: jsonb('required_activities'), // Array of required activity names
+    exitCriteria: jsonb('exit_criteria'), // Array of criteria to exit this stage
+    averageDuration: integer('average_duration'), // in days
+    isRequired: boolean('is_required').default(true),
+    companyId: uuid('company_id')
+      .references(() => companies.id)
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  }
+);
+
+export const opportunityTemplateActivities = pgTable(
+  'opportunity_template_activities',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    templateId: uuid('template_id')
+      .references(() => opportunityTemplates.id)
+      .notNull(),
+    activityName: varchar('activity_name', { length: 255 }).notNull(),
+    activityType: varchar('activity_type', { length: 100 }).notNull(),
+    description: text('description'),
+    isRequired: boolean('is_required').default(false),
+    daysFromStageStart: integer('days_from_stage_start'), // When to trigger this activity
+    estimatedDuration: integer('estimated_duration'), // in minutes
+    assignedRole: varchar('assigned_role', { length: 100 }), // Role that should perform this activity
+    companyId: uuid('company_id')
+      .references(() => companies.id)
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  }
+);
+
 // Type definitions for TypeScript
 export type Lead = typeof leads.$inferSelect;
 export type NewLead = typeof leads.$inferInsert;
@@ -604,3 +671,14 @@ export type NewPOSInvoiceItem = typeof posInvoiceItems.$inferInsert;
 
 export type SalesTarget = typeof salesTargets.$inferSelect;
 export type NewSalesTarget = typeof salesTargets.$inferInsert;
+
+export type OpportunityTemplate = typeof opportunityTemplates.$inferSelect;
+export type NewOpportunityTemplate = typeof opportunityTemplates.$inferInsert;
+export type OpportunityTemplateStage =
+  typeof opportunityTemplateStages.$inferSelect;
+export type NewOpportunityTemplateStage =
+  typeof opportunityTemplateStages.$inferInsert;
+export type OpportunityTemplateActivity =
+  typeof opportunityTemplateActivities.$inferSelect;
+export type NewOpportunityTemplateActivity =
+  typeof opportunityTemplateActivities.$inferInsert;

@@ -3,6 +3,7 @@ import {
   Opportunity,
   OpportunityActivity,
   OpportunityCompetitor,
+  customers,
   leads,
   opportunities,
   opportunityActivities,
