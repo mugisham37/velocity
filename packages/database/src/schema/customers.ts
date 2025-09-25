@@ -87,31 +87,6 @@ export const customerContactsRelations = relations(
   })
 );
 
-// Customer Credit Management
-export const customerCreditLimits = pgTable('customer_credit_limits', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  customerId: uuid('customer_id')
-    .references(() => customers.id)
-    .notNull(),
-  creditLimit: decimal('credit_limit', { precision: 15, scale: 2 }).notNull(),
-  availableCredit: decimal('available_credit', {
-    precision: 15,
-    scale: 2,
-  }).notNull(),
-  usedCredit: decimal('used_credit', { precision: 15, scale: 2 })
-    .default('0')
-    .notNull(),
-  effectiveDate: timestamp('effective_date').notNull(),
-  expiryDate: timestamp('expiry_date'),
-  approvedBy: uuid('approved_by').notNull(),
-  notes: text('notes'),
-  companyId: uuid('company_id')
-    .references(() => companies.id)
-    .notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
-
 // Customer Segmentation
 export const customerSegments = pgTable('customer_segments', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -188,19 +163,6 @@ export const customerPortalUsers = pgTable('customer_portal_users', {
 });
 
 // Relations for new tables
-export const customerCreditLimitsRelations = relations(
-  customerCreditLimits,
-  ({ one }) => ({
-    customer: one(customers, {
-      fields: [customerCreditLimits.customerId],
-      references: [customers.id],
-    }),
-    company: one(companies, {
-      fields: [customerCreditLimits.companyId],
-      references: [companies.id],
-    }),
-  })
-);
 
 export const customerSegmentsRelations = relations(
   customerSegments,

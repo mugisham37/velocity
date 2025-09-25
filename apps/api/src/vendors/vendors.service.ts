@@ -8,17 +8,16 @@ import {
   vendorEvaluations,
   vendorPerformanceMetrics,
   vendorPortalUsers,
-  vendors
+  vendors,
 } from '@kiro/database';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import { and, avg, desc, eq, like, sql } from 'drizzle-orm';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
 import { BaseService } from '../common/services/base.service';
 import { NotificationService } from '../common/services/notification.service';
-import { eq, and, like, sql, desc, asc, avg, sum } from frrizzle - orm;
-';
 
 export interface CreateVendorDto {
   vendorName: string;
@@ -106,7 +105,12 @@ export interface VendorPortalUserDto {
 }
 
 @Injectable()
-export class VendorsService extends BaseService<typeof vendors, Vendor, NewVendor, UpdateVendorDto> {
+export class VendorsService extends BaseService<
+  typeof vendors,
+  Vendor,
+  NewVendor,
+  UpdateVendorDto
+> {
   protected table = vendors;
   protected tableName = 'vendors';
 
@@ -122,14 +126,21 @@ export class VendorsService extends BaseService<typeof vendors, Vendor, NewVendo
   /**
    * Create vendor with auto-generated code
    */
-  async createVendor(data: CreateVendorDto, companyId: string, userId?: string): Promise<Vendor> {
-    return await this.transaction(async (tx) => {
+  async createVendor(
+    data: CreateVendorDto,
+    companyId: string,
+    userId?: string
+  ): Promise<Vendor> {
+    return await this.transaction(async tx => {
       // Generate vendor code
       const vendorCode = await this.generateVendorCode(companyId);
 
       // Validate parent vendor if provided
       if (data.parentVendorId) {
-        const parentVendor = await this.findById(data.parentVendorId, companyId);
+        const parentVendor = await this.findById(
+          data.parentVendorId,
+          companyId
+        );
         if (!parentVendor) {
           throw new BadRequestException('Parent vendor not found');
         }
@@ -175,12 +186,14 @@ export class VendorsService extends BaseService<typeof vendors, Vendor, NewVendo
 
       // Assign to categories if provided
       if (data.categoryIds && data.categoryIds.length > 0) {
-        const categoryMemberships = data.categoryIds.map((categoryId, index) => ({
-          vendorId: vendor.id,
-          categoryId,
-          isPrimary: index === 0, // First category is primary
-          companyId,
-        }));
+        const categoryMemberships = data.categoryIds.map(
+          (categoryId, index) => ({
+            vendorId: vendor.id,
+            categoryId,
+            isPrimary: index === 0, // First category is primary
+            companyId,
+          })
+        );
 
         await tx.insert(vendorCategoryMemberships).values(categoryMemberships);
       }
@@ -190,7 +203,11 @@ export class VendorsService extends BaseService<typeof vendors, Vendor, NewVendo
         entityType: 'vendors',
         entityId: vendor.id,
         action: 'CREATE',
-        newValues: { ...vendor, contacts: data.contacts, categoryIds: data.categoryIds },
+        newValues: {
+          ...vendor,
+          contacts: data.contacts,
+          categoryIds: data.categoryIds,
+        },
         companyId,
         userId,
       });
@@ -202,19 +219,35 @@ export class VendorsService extends BaseService<typeof vendors, Vendor, NewVendo
   /**
    * Update vendor
    */
-  async updateVendor(id: string, data: UpdateVendorDto, companyId: string, userId?: string): Promise<Vendor> {
+  async updateVendor(
+    id: string,
+    data: UpdateVendorDto,
+    companyId: string,
+    userId?: string
+  ): Promise<Vendor> {
     const oldVendor = await this.findByIdOrFail(id, companyId);
 
     // Validate parent vendor change
-    if (data.parentVendorId && data.parentVendorId !== oldVendor.parentVendorId) {
+    if (
+      data.parentVendorId &&
+      data.parentVendorId !== oldVendor.parentVendorId
+    ) {
       const parentVendor = await this.findById(data.parentVendorId, companyId);
       if (!parentVendor) {
         throw new BadRequestException('Parent vendor not found');
       }
 
       // Check for circular reference
-      if (await this.wouldCreateCircularReference(id, data.parentVendorId, companyId)) {
-        throw new BadRequestException('Cannot create circular reference in vendor hierarchy');
+      if (
+        await this.wouldCreateCircularReference(
+          id,
+          data.parentVendorId,
+          companyId
+        )
+      ) {
+        throw new BadRequestException(
+          'Cannot create circular reference in vendor hierarchy'
+        );
       }
     }
 
@@ -237,7 +270,10 @@ export class VendorsService extends BaseService<typeof vendors, Vendor, NewVendo
   /**
    * Find vendor by code
    */
-  async findByVendorCode(vendorCode: string, companyId: string): Promise<Vendor | null> {
+  async findByVendorCode(
+    vendorCode: string,
+    companyId: string
+  ): Promise<Vendor | null> {
     const [vendor] = await this.database
       .select()
       .from(vendors)
@@ -255,7 +291,11 @@ export class VendorsService extends BaseService<typeof vendors, Vendor, NewVendo
   /**
    * Create vendor contact
    */
-  async createVendorContact(data: CreateVendorContactDto & { vendorId: string }, companyId: string, userId?: string): Promise<VendorContact> {
+  async createVendorContact(
+    data: CreateVendorContactDto & { vendorId: string },
+    companyId: string,
+    userId?: string
+  ): Promise<VendorContact> {
     // Validate vendor exists
     await this.findByIdOrFail(data.vendorId, companyId);
 
@@ -302,7 +342,11 @@ export class VendorsService extends BaseService<typeof vendors, Vendor, NewVendo
   /**
    * Record performance metric
    */
-  async recordPerformanceMetric(data: CreatePerformanceMetricDto, companyId: string, userId?: string): Promise<void> {
+  async recordPerformanceMetric(
+    data: CreatePerformanceMetricDto,
+    companyId: string,
+    userId?: string
+  ): Promise<void> {
     // Validate vendor exists
     await this.findByIdOrFail(data.vendorId, companyId);
 
@@ -333,7 +377,11 @@ export class VendorsService extends BaseService<typeof vendors, Vendor, NewVendo
   /**
    * Create vendor evaluation
    */
-  async createVendorEvaluation(data: CreateVendorEvaluationDto, companyId: string, userId: string): Promise<any> {
+  async createVendorEvaluation(
+    data: CreateVendorEvaluationDto,
+    companyId: string,
+    userId: string
+  ): Promise<any> {
     // Validate vendor exists
     await this.findByIdOrFail(data.vendorId, companyId);
 
@@ -397,7 +445,11 @@ export class VendorsService extends BaseService<typeof vendors, Vendor, NewVendo
   /**
    * Create vendor category
    */
-  async createVendorCategory(data: CreateVendorCategoryDto, companyId: string, userId?: string): Promise<any> {
+  async createVendorCategory(
+    data: CreateVendorCategoryDto,
+    companyId: string,
+    userId?: string
+  ): Promise<any> {
     // Validate parent category if provided
     if (data.parentCategoryId) {
       const [parentCategory] = await this.database
@@ -442,7 +494,11 @@ export class VendorsService extends BaseService<typeof vendors, Vendor, NewVendo
   /**
    * Create vendor portal user
    */
-  async createPortalUser(data: VendorPortalUserDto, companyId: string, userId?: string): Promise<any> {
+  async createPortalUser(
+    data: VendorPortalUserDto,
+    companyId: string,
+    userId?: string
+  ): Promise<any> {
     // Validate vendor exists
     await this.findByIdOrFail(data.vendorId, companyId);
 
@@ -526,7 +582,10 @@ export class VendorsService extends BaseService<typeof vendors, Vendor, NewVendo
   /**
    * Get vendor performance summary
    */
-  async getVendorPerformanceSummary(vendorId: string, companyId: string): Promise<any> {
+  async getVendorPerformanceSummary(
+    vendorId: string,
+    companyId: string
+  ): Promise<any> {
     // Validate vendor exists
     await this.findByIdOrFail(vendorId, companyId);
 
@@ -534,7 +593,9 @@ export class VendorsService extends BaseService<typeof vendors, Vendor, NewVendo
       .select({
         metricType: vendorPerformanceMetrics.metricType,
         avgValue: avg(sql`CAST(${vendorPerformanceMetrics.value} AS DECIMAL)`),
-        avgTarget: avg(sql`CAST(${vendorPerformanceMetrics.target} AS DECIMAL)`),
+        avgTarget: avg(
+          sql`CAST(${vendorPerformanceMetrics.target} AS DECIMAL)`
+        ),
         metricCount: sql<number>`COUNT(*)`,
       })
       .from(vendorPerformanceMetrics)
