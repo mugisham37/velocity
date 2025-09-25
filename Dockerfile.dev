@@ -1,0 +1,24 @@
+# Development Dockerfile with hot reloading
+FROM node:18-alpine
+
+# Install dependencies for native modules
+RUN apk add --no-cache libc6-compat python3 make g++
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY turbo.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Expose ports for different services
+EXPOSE 3000 3001 3002 4000
+
+# Start development server with hot reloading
+CMD ["npm", "run", "dev"]
