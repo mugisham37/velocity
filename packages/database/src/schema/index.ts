@@ -101,6 +101,26 @@ export type NewVendorContact = InferInsertModel<typeof vendorContacts>;
 // Item types
 export type Item = InferSelectModel<typeof items>;
 export type NewItem = InferInsertModel<typeof items>;
+export type ItemCategory = InferSelectModel<typeof itemCategories>;
+export type NewItemCategory = InferInsertModel<typeof itemCategories>;
+export type ItemAttribute = InferSelectModel<typeof itemAttributes>;
+export type NewItemAttribute = InferInsertModel<typeof itemAttributes>;
+export type ItemAttributeValue = InferSelectModel<typeof itemAttributeValues>;
+export type NewItemAttributeValue = InferInsertModel<
+  typeof itemAttributeValues
+>;
+export type ItemVariant = InferSelectModel<typeof itemVariants>;
+export type NewItemVariant = InferInsertModel<typeof itemVariants>;
+export type ItemCrossReference = InferSelectModel<typeof itemCrossReferences>;
+export type NewItemCrossReference = InferInsertModel<
+  typeof itemCrossReferences
+>;
+export type ItemDocument = InferSelectModel<typeof itemDocuments>;
+export type NewItemDocument = InferInsertModel<typeof itemDocuments>;
+export type ItemLifecycle = InferSelectModel<typeof itemLifecycle>;
+export type NewItemLifecycle = InferInsertModel<typeof itemLifecycle>;
+export type ItemPricingTier = InferSelectModel<typeof itemPricingTiers>;
+export type NewItemPricingTier = InferInsertModel<typeof itemPricingTiers>;
 export type ItemPrice = InferSelectModel<typeof itemPrices>;
 export type NewItemPrice = InferInsertModel<typeof itemPrices>;
 export type StockLevel = InferSelectModel<typeof stockLevels>;

@@ -11,13 +11,10 @@ import { WinstonModule } from 'nest-winston';
 import { AccountsModule } from './accounts/accounts.module';
 import { AuthModule } from './auth/auth.module';
 import { createWinstonLogger } from './common/logger/winston.config';
-import { CompaniesModule } from './companies/companies.module';
 import { CustomersModule } from './customers/customers.module';
 import { HealthModule } from './health/health.module';
-import { ItemsModule } from './items/items.module';
-import { UsersModule } from './users/users.module';
+import { SalesCRMModule } from './sales-crm/sales-crm.module';
 import { VendorsModule } from './vendors/vendors.module';
-import { WarehousesModule } from './warehouses/warehouses.module';
 
 @Module({
   imports: [
@@ -65,13 +62,10 @@ import { WarehousesModule } from './warehouses/warehouses.module';
     // Feature Modules
     HealthModule,
     AuthModule,
-    UsersModule,
-    CompaniesModule,
     AccountsModule,
     CustomersModule,
     VendorsModule,
-    ItemsModule,
-    WarehousesModule,
+    InventoryModule,
     SalesCRMModule,
   ],
 })

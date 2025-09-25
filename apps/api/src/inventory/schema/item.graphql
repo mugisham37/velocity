@@ -1,0 +1,495 @@
+enum ItemType {
+  STOCK
+  SERVICE
+  NON_STOCK
+}
+
+enum ItemStage {
+  INTRODUCTION
+  GROWTH
+  MATURITY
+  DECLINE
+  DISCONTINUATION
+}
+
+enum BarcodeType {
+  EAN
+  UPC
+  CODE128
+  CODE39
+  QR
+}
+
+enum AttributeType {
+  TEXT
+  NUMBER
+  DATE
+  BOOLEAN
+  SELECT
+}
+
+enum CrossReferenceType {
+  SUBSTITUTE
+  ALTERNATIVE
+  ACCESSORY
+  RELATED
+}
+
+enum DocumentType {
+  IMAGE
+  PDF
+  VIDEO
+  MANUAL
+  CERTIFICATE
+}
+
+type Item {
+  id: ID!
+  itemCode: String!
+  itemName: String!
+  up: String
+  categoryId: ID
+  category: ItemCategory
+  description: String
+  itemType: ItemType!
+  hasVariants: Boolean!
+  templateItemId: ID
+  templateItem: Item
+  currentStage: ItemStage!
+  discontinuedDate: DateTime
+  replacementItemId: ID
+  replacementItem: Item
+  stockUom: String!
+  salesUom: String
+  purchaseUom: String
+  salesUomConversionFactor: Float
+  purchaseUomConversionFactor: Float
+  standardRate: Float!
+  valuationRate: Float!
+  lastPurchaseRate: Float!
+  isStockItem: Boolean!
+  hasSerialNo: Boolean!
+  hasBatchNo: Boolean!
+  hasExpiryDate: Boolean!
+  inspectionRequired: Boolean!
+  qualityInspectionTemplate: String
+  reorderLevel: Float!
+  reorderQty: Float!
+  minOrderQty: Float!
+  maxOrderQty: Float
+  leadTimeDays: Int!
+  weight: Float
+  weightUom: String
+  length: Float
+  width: Float
+  height: Float
+  dimensionUom: String
+  taxCategory: String
+  incomeAccount: String
+  expenseAccount: String
+  costOfGoodsSoldAccount: String
+  assetAccount: String
+  brand: String
+  manufacturer: String
+  manufacturerPartNo: String
+  countryOfOrigin: String
+  hsCode: String
+  barcode: String
+  barcodeType: BarcodeType
+  isActive: Boolean!
+  isSalesItem: Boolean!
+  isPurchaseItem: Boolean!
+  isFixedAsset: Boolean!
+  createdBy: ID
+  updatedBy: ID
+  companyId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Relations
+  attributeValues: [ItemAttributeValue!]
+  variants: [Item!]
+  crossReferences: [ItemCrossReference!]
+  documents: [ItemDocument!]
+  lifecycle: [ItemLifecycle!]
+  pricingTiers: [ItemPricingTier!]
+  stockLevels: [StockLevel!]
+}
+
+type ItemCategory {
+  id: ID!
+  categoryCode: String!
+  categoryName: String!
+  parentCategoryId: ID
+  parentCategory: ItemCategory
+  description: String
+  isGroup: Boolean!
+  isActive: Boolean!
+  companyId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Relations
+  childCategories: [ItemCategory!]
+  items: [Item!]
+}
+
+type ItemAttribute {
+  id: ID!
+  attributeName: String!
+  attributeType: AttributeType!
+  isRequired: Boolean!
+  defaultValue: String
+  selectOptions: [String!]
+  validationRules: JSON
+  companyId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Relations
+  itemAttributeValues: [ItemAttributeValue!]
+}
+
+type ItemAttributeValue {
+  id: ID!
+  itemId: ID!
+  item: Item!
+  attributeId: ID!
+  attribute: ItemAttribute!
+  value: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ItemVariant {
+  id: ID!
+  templateItemId: ID!
+  templateItem: Item!
+  variantItemId: ID!
+  variantItem: Item!
+  variantAttributes: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ItemCrossReference {
+  id: ID!
+  itemId: ID!
+  item: Item!
+  referenceItemId: ID!
+  referenceItem: Item!
+  referenceType: CrossReferenceType!
+  priority: Int!
+  isActive: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ItemDocument {
+  id: ID!
+  itemId: ID!
+  item: Item!
+  documentType: DocumentType!
+  fileName: String!
+  filePath: String!
+  fileSize: Int
+  mimeType: String
+  version: Int!
+  isActive: Boolean!
+  isPrimary: Boolean!
+  description: String
+  uploadedBy: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ItemLifecycle {
+  id: ID!
+  itemId: ID!
+  item: Item!
+  stage: ItemStage!
+  effectiveDate: DateTime!
+  reason: String
+  notes: String
+  createdBy: ID!
+  createdAt: DateTime!
+}
+
+type ItemPricingTier {
+  id: ID!
+  itemId: ID!
+  item: Item!
+  priceList: String!
+  currency: String!
+  customerId: ID
+  customer: Customer
+  minQty: Float!
+  maxQty: Float
+  rate: Float!
+  discountPercent: Float!
+  validFrom: DateTime!
+  validUpto: DateTime
+  isActive: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ItemConnection {
+  items: [Item!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
+input CreateItemInput {
+  itemCode: String!
+  itemName: String!
+  itemGroup: String
+  categoryId: ID
+  description: String
+  itemType: ItemType = STOCK
+  hasVariants: Boolean = false
+  templateItemId: ID
+  currentStage: ItemStage = INTRODUCTION
+  stockUom: String!
+  salesUom: String
+  purchaseUom: String
+  salesUomConversionFactor: Float = 1
+  purchaseUomConversionFactor: Float = 1
+  standardRate: Float = 0
+  valuationRate: Float = 0
+  isStockItem: Boolean = true
+  hasSerialNo: Boolean = false
+  hasBatchNo: Boolean = false
+  hasExpiryDate: Boolean = false
+  inspectionRequired: Boolean = false
+  qualityInspectionTemplate: String
+  reorderLevel: Float = 0
+  reorderQty: Float = 0
+  minOrderQty: Float = 1
+  maxOrderQty: Float
+  leadTimeDays: Int = 0
+  weight: Float
+  weightUom: String
+  length: Float
+  width: Float
+  height: Float
+  dimensionUom: String
+  taxCategory: String
+  incomeAccount: String
+  expenseAccount: String
+  costOfGoodsSoldAccount: String
+  assetAccount: String
+  brand: String
+  manufacturer: String
+  manufacturerPartNo: String
+  countryOfOrigin: String
+  hsCode: String
+  barcode: String
+  barcodeType: BarcodeType
+  isActive: Boolean = true
+  isSalesItem: Boolean = true
+  isPurchaseItem: Boolean = true
+  isFixedAsset: Boolean = false
+  companyId: ID!
+}
+
+input UpdateItemInput {
+  itemName: String
+  itemGroup: String
+  categoryId: ID
+  description: String
+  currentStage: ItemStage
+  discontinuedDate: DateTime
+  replacementItemId: ID
+  salesUom: String
+  purchaseUom: String
+  salesUomConversionFactor: Float
+  purchaseUomConversionFactor: Float
+  standardRate: Float
+  valuationRate: Float
+  inspectionRequired: Boolean
+  qualityInspectionTemplate: String
+  reorderLevel: Float
+  reorderQty: Float
+  minOrderQty: Float
+  maxOrderQty: Float
+  leadTimeDays: Int
+  weight: Float
+  weightUom: String
+  length: Float
+  width: Float
+  height: Float
+  dimensionUom: String
+  taxCategory: String
+  incomeAccount: String
+  expenseAccount: String
+  costOfGoodsSoldAccount: String
+  assetAccount: String
+  brand: String
+  manufacturer: String
+  manufacturerPartNo: String
+  countryOfOrigin: String
+  hsCode: String
+  barcode: String
+  barcodeType: BarcodeType
+  isActive: Boolean
+  isSalesItem: Boolean
+  isPurchaseItem: Boolean
+  isFixedAsset: Boolean
+}
+
+input CreateItemCategoryInput {
+  categoryCode: String!
+  categoryName: String!
+  parentCategoryId: ID
+  description: String
+  isGroup: Boolean = false
+  isActive: Boolean = true
+  companyId: ID!
+}
+
+input UpdateItemCategoryInput {
+  categoryName: String
+  parentCategoryId: ID
+  description: String
+  isGroup: Boolean
+  isActive: Boolean
+}
+
+input CreateItemAttributeInput {
+  attributeName: String!
+  attributeType: AttributeType!
+  isRequired: Boolean = false
+  defaultValue: String
+  selectOptions: [String!]
+  validationRules: JSON
+  companyId: ID!
+}
+
+input CreateItemAttributeValueInput {
+  itemId: ID!
+  attributeId: ID!
+  value: String!
+}
+
+input CreateItemVariantInput {
+  templateItemId: ID!
+  variantItemId: ID!
+  variantAttributes: JSON
+}
+
+input CreateItemCrossReferenceInput {
+  itemId: ID!
+  referenceItemId: ID!
+  referenceType: CrossReferenceType!
+  priority: Int = 1
+  isActive: Boolean = true
+}
+
+input CreateItemDocumentInput {
+  itemId: ID!
+  documentType: DocumentType!
+  fileName: String!
+  filePath: String!
+  fileSize: Int
+  mimeType: String
+  version: Int = 1
+  isActive: Boolean = true
+  isPrimary: Boolean = false
+  description: String
+  uploadedBy: ID!
+}
+
+input CreateItemLifecycleInput {
+  itemId: ID!
+  stage: ItemStage!
+  effectiveDate: DateTime!
+  reason: String
+  notes: String
+  createdBy: ID!
+}
+
+input CreateItemPricingTierInput {
+  itemId: ID!
+  priceList: String!
+  currency: String!
+  customerId: ID
+  minQty: Float!
+  maxQty: Float
+  rate: Float!
+  discountPercent: Float = 0
+  validFrom: DateTime!
+  validUpto: DateTime
+  isActive: Boolean = true
+}
+
+input ItemFilterInput {
+  search: String
+  categoryId: ID
+  itemType: ItemType
+  currentStage: ItemStage
+  brand: String
+  manufacturer: String
+  isActive: Boolean
+  isSalesItem: Boolean
+  isPurchaseItem: Boolean
+  hasVariants: Boolean
+  hasSerialNo: Boolean
+  hasBatchNo: Boolean
+  page: Int = 1
+  limit: Int = 20
+  sortBy: String = "itemName"
+  sortOrder: String = "asc"
+}
+
+type Query {
+  item(id: ID!): Item
+  items(filter: ItemFilterInput!): ItemConnection!
+  searchItems(searchTerm: String!, limit: Int = 10): [Item!]!
+  itemByCode(itemCode: String!): Item
+  itemCategories: [ItemCategory!]!
+  itemCategoryHierarchy: [ItemCategory!]!
+  itemsByCategory(categoryId: ID!): [Item!]!
+  itemAttributes: [ItemAttribute!]!
+  itemVariants(templateItemId: ID!): [ItemVariant!]!
+  itemCrossReferences(itemId: ID!): [ItemCrossReference!]!
+  itemDocuments(itemId: ID!): [ItemDocument!]!
+  itemLifecycle(itemId: ID!): [ItemLifecycle!]!
+  itemPricingTiers(itemId: ID!, customerId: ID): [ItemPricingTier!]!
+}
+
+type Mutation {
+  createItem(input: CreateItemInput!): Item!
+  updateItem(id: ID!, input: UpdateItemInput!): Item!
+  deleteItem(id: ID!): MutationResponse!
+
+  createItemCategory(input: CreateItemCategoryInput!): ItemCategory!
+  updateItemCategory(id: ID!, input: UpdateItemCategoryInput!): ItemCategory!
+
+  createItemAttribute(input: CreateItemAttributeInput!): ItemAttribute!
+  setItemAttributeValue(
+    input: CreateItemAttributeValueInput!
+  ): ItemAttributeValue!
+
+  createItemVariant(input: CreateItemVariantInput!): ItemVariant!
+
+  createItemCrossReference(
+    input: CreateItemCrossReferenceInput!
+  ): ItemCrossReference!
+
+  createItemDocument(input: CreateItemDocumentInput!): ItemDocument!
+
+  createItemLifecycleEntry(input: CreateItemLifecycleInput!): ItemLifecycle!
+
+  createItemPricingTier(input: CreateItemPricingTierInput!): ItemPricingTier!
+}
+
+type MutationResponse {
+  success: Boolean!
+  message: String
+}
+
+scalar DateTime
+scalar JSON
