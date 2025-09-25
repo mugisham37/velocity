@@ -120,7 +120,7 @@ The implementation follows a layered approach, starting with foundational infras
   - Add bank transaction categorization with machine learning suggestions
   - _Requirements: REQ-BANK-001, REQ-BANK-002, REQ-BANK-003, REQ-BANK-004, REQ-BANK-005, REQ-BANK-007_
 
-- [ ] 4. Sales & CRM Implementation
+- [-] 4. Sales & CRM Implementation
   - Build comprehensive lead management system with scoring and nurturing
   - Implement opportunity pipeline with forecasting and analytics
   - Create sales order processing with complex pricing and approval workflows
@@ -128,7 +128,7 @@ The implementation follows a layered approach, starting with foundational infras
   - Implement customer relationship management with 360-degree view
   - _Requirements: REQ-CRM-001, REQ-OPP-001, REQ-SO-001, REQ-POS-001, REQ-CUST-004_
 
-- [ ] 4.1 Lead Management System
+- [x] 4.1 Lead Management System
   - Create lead capture forms with web-to-lead and API integration
   - Implement AI-powered lead scoring with customizable criteria and weights
   - Build lead qualification process with structured questionnaires

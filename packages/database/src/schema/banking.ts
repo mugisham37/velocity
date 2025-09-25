@@ -12,7 +12,6 @@ import {
 } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts';
 import { companies } from './companies';
-ums;
 export const bankAccountTypeEnum = pgEnum('bank_account_type', [
   'checking',
   'savings',

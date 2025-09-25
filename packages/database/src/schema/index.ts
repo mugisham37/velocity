@@ -8,6 +8,7 @@ export * from './companies';
 export * from './customers';
 export * from './items';
 export * from './notifications';
+export * from './sales-crm';
 export * from './users';
 export * from './vendors';
 export * from './warehouses';

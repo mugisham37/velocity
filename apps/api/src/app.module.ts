@@ -1,20 +1,23 @@
+import { rateLimitConfig } from '@kiro/config';
+import {
+  ApolloFederationDriver,
+  ApolloFederationDriverConfig,
+} from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { WinstonModule } from 'nest-winston';
-import { HealthModule } from './health/health.module';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
-import { CompaniesModule } from './companies/companies.module';
 import { AccountsModule } from './accounts/accounts.module';
-import { CustomersModule } from './customers/customers.module';
-import { VendorsModule } from './vendors/vendors.module';
-import { ItemsModule } from './items/items.module';
-import { WarehousesModule } from './warehouses/warehouses.module';
+import { AuthModule } from './auth/auth.module';
 import { createWinstonLogger } from './common/logger/winston.config';
-import { rateLimitConfig } from '@kiro/config';
+import { CompaniesModule } from './companies/companies.module';
+import { CustomersModule } from './customers/customers.module';
+import { HealthModule } from './health/health.module';
+import { ItemsModule } from './items/items.module';
+import { UsersModule } from './users/users.module';
+import { VendorsModule } from './vendors/vendors.module';
+import { WarehousesModule } from './warehouses/warehouses.module';
 
 @Module({
   imports: [
@@ -30,10 +33,12 @@ import { rateLimitConfig } from '@kiro/config';
     }),
 
     // Rate Limiting
-    ThrottlerModule.forRoot([{
-      ttl: rateLimitConfig.windowMs,
-      limit: rateLimitConfig.max,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: rateLimitConfig.windowMs,
+        limit: rateLimitConfig.max,
+      },
+    ]),
 
     // GraphQL with Apollo Federation
     GraphQLModule.forRoot<ApolloFederationDriverConfig>({
@@ -44,7 +49,7 @@ import { rateLimitConfig } from '@kiro/config';
       playground: process.env.NODE_ENV === 'development',
       introspection: process.env.NODE_ENV === 'development',
       context: ({ request, reply }) => ({ request, reply }),
-      formatError: (error) => {
+      formatError: error => {
         // Log GraphQL errors
         console.error('GraphQL Error:', error);
         return {
@@ -67,6 +72,7 @@ import { rateLimitConfig } from '@kiro/config';
     VendorsModule,
     ItemsModule,
     WarehousesModule,
+    SalesCRMModule,
   ],
 })
 export class AppModule {}

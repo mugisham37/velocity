@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import {
   boolean,
   decimal,
@@ -8,8 +9,7 @@ import {
   timestamp,
   uuid,
   varchar,
-} from 'drizzlcore';
-import { relations } from 'drizzle-orm';
+} from 'drizzle-orm/pg-core';
 import { accounts } from './accounts';
 import { companies } from './companies';
 import { vendors } from './vendors';
