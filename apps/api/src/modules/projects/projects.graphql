@@ -1,0 +1,867 @@
+enum ProjectStatus {
+  Draft
+  Planning
+  Active
+  OnHold
+  Completed
+  Cancelled
+}
+
+enum TaskStatus {
+  Open
+  Working
+  PendingReview
+  Overdue
+  Template
+  Completed
+  Cancelled
+}
+
+enum Priority {
+  Low
+  Medium
+  High
+  Urgent
+}
+
+enum TaskType {
+  Task
+  Milestone
+  Summary
+  ProjectSummary
+}
+
+enum DependencyType {
+  FS
+  SS
+  FF
+  SF
+}
+
+enum MilestoneStatus {
+  Pending
+  InProgress
+  Completed
+  Overdue
+}
+
+type Project {
+  id: ID!
+  projectCode: String!
+  projectName: String!
+  description: String
+  projectType: String!
+  status: ProjectStatus!
+  priority: Priority!
+  startDate: String
+  endDate: String
+  expectedStartDate: String
+  expectedEndDate: String
+  actualStartDate: String
+  actualEndDate: String
+  percentComplete: Float!
+  projectManagerId: ID
+  companyId: ID!
+  customFields: JSON
+  isTemplate: Boolean!
+  templateId: ID
+  createdAt: String!
+  updatedAt: String!
+
+  # Relations
+  projectManager: User
+  tasks: [ProjectTask!]!
+  teamMembers: [ProjectTeamMember!]!
+  milestones: [ProjectMilestone!]!
+}
+
+type ProjectTask {
+  id: ID!
+  taskCode: String!
+  taskName: String!
+  description: String
+  projectId: ID!
+  parentTaskId: ID
+  assignedToId: ID
+  status: TaskStatus!
+  priority: Priority!
+  taskType: TaskType!
+  startDate: String
+  endDate: String
+  expectedStartDate: String
+  expectedEndDate: String
+  actualStartDate: String
+  actualEndDate: String
+  duration: Int
+  estimatedHours: Float
+  actualHours: Float!
+  percentComplete: Float!
+  isMilestone: Boolean!
+  customFields: JSON
+  createdAt: String!
+  updatedAt: String!
+
+  # Relations
+  pt: Project!
+  assignedTo: User
+  parentTask: ProjectTask
+  subtasks: [ProjectTask!]!
+  dependencies: [TaskDependency!]!
+}
+
+type TaskDependency {
+  id: ID!
+  predecessorTaskId: ID!
+  successorTaskId: ID!
+  dependencyType: DependencyType!
+  lagDays: Int!
+  createdAt: String!
+
+  # Relations
+  predecessorTask: ProjectTask!
+  successorTask: ProjectTask!
+}
+
+type ProjectTeamMember {
+  id: ID!
+  projectId: ID!
+  userId: ID!
+  role: String!
+  allocationPercentage: Float!
+  startDate: String
+  endDate: String
+  isActive: Boolean!
+  createdAt: String!
+
+  # Relations
+  project: Project!
+  user: User!
+}
+
+type ProjectMilestone {
+  id: ID!
+  projectId: ID!
+  milestoneName: String!
+  description: String
+  targetDate: String!
+  actualDate: String
+  status: MilestoneStatus!
+  isCompleted: Boolean!
+  createdAt: String!
+  updatedAt: String!
+
+  # Relations
+  project: Project!
+}
+
+type ProjectTemplate {
+  id: ID!
+  templateName: String!
+  description: String
+  category: String
+  companyId: ID!
+  isPublic: Boolean!
+  templateData: JSON!
+  createdAt: String!
+  updatedAt: String!
+}
+
+# Gantt Chart Types
+type GanttTask {
+  id: ID!
+  text: String!
+  start_date: String!
+  end_date: String!
+  duration: Int!
+  progress: Float!
+  parent: ID
+  type: String!
+  open: Boolean
+}
+
+type GanttLink {
+  id: ID!
+  source: ID!
+  target: ID!
+  type: String!
+  lag: Int
+}
+
+type GanttData {
+  tasks: [GanttTask!]!
+  links: [GanttLink!]!
+}
+
+# Critical Path Analysis
+type CriticalPathTask {
+  taskId: ID!
+  taskName: String!
+  duration: Int!
+  earlyStart: String!
+  earlyFinish: String!
+  lateStart: String!
+  lateFinish: String!
+  totalFloat: Int!
+  isCritical: Boolean!
+}
+
+type CriticalPathAnalysis {
+  projectId: ID!
+  criticalPath: [CriticalPathTask!]!
+  projectDuration: Int!
+  analysisDate: String!
+}
+
+# Input Types
+input CreateProjectInput {
+  projectCode: String!
+  projectName: String!
+  description: String
+  projectType: String!
+  priority: Priority = Medium
+  startDate: String
+  endDate: String
+  expectedStartDate: String
+  expectedEndDate: String
+  projectManagerId: ID
+  customFields: JSON
+  templateId: ID
+}
+
+input UpdateProjectInput {
+  projectCode: String
+  projectName: String
+  description: String
+  projectType: String
+  status: ProjectStatus
+  priority: Priority
+  startDate: String
+  endDate: String
+  expectedStartDate: String
+  expectedEndDate: String
+  actualStartDate: String
+  actualEndDate: String
+  percentComplete: Float
+  projectManagerId: ID
+  customFields: JSON
+}
+
+input CreateProjectTaskInput {
+  taskCode: String!
+  taskName: String!
+  description: String
+  projectId: ID!
+  parentTaskId: ID
+  assignedToId: ID
+  priority: Priority = Medium
+  taskType: TaskType = Task
+  startDate: String
+  endDate: String
+  expectedStartDate: String
+  expectedEndDate: String
+  duration: Int
+  estimatedHours: Float
+  isMilestone: Boolean = false
+  customFields: JSON
+}
+
+input UpdateProjectTaskInput {
+  taskCode: String
+  taskName: String
+  description: String
+  parentTaskId: ID
+  assignedToId: ID
+  status: TaskStatus
+  priority: Priority
+  taskType: TaskType
+  startDate: String
+  endDate: String
+  expectedStartDate: String
+  expectedEndDate: String
+  actualStartDate: String
+  actualEndDate: String
+  duration: Int
+  estimatedHours: Float
+  actualHours: Float
+  percentComplete: Float
+  isMilestone: Boolean
+  customFields: JSON
+}
+
+input CreateTaskDependencyInput {
+  predecessorTaskId: ID!
+  successorTaskId: ID!
+  dependencyType: DependencyType = FS
+  lagDays: Int = 0
+}
+
+input CreateProjectTeamMemberInput {
+  projectId: ID!
+  userId: ID!
+  role: String!
+  allocationPercentage: Float = 100
+  startDate: String
+  endDate: String
+}
+
+input CreateProjectMilestoneInput {
+  projectId: ID!
+  milestoneName: String!
+  description: String
+  targetDate: String!
+}
+
+input UpdateProjectMilestoneInput {
+  milestoneName: String
+  description: String
+  targetDate: String
+  actualDate: String
+  status: MilestoneStatus
+  isCompleted: Boolean
+}
+
+input CreateProjectTemplateInput {
+  templateName: String!
+  description: String
+  category: String
+  isPublic: Boolean = false
+  templateData: JSON!
+}
+
+input ProjectFilter {
+  status: ProjectStatus
+  projectManagerId: ID
+  projectType: String
+  priority: Priority
+}
+
+# Queries
+type Query {
+  projects(filter: ProjectFilter): [Project!]!
+  project(id: ID!): Project
+  projectTasks(projectId: ID!): [ProjectTask!]!
+  projectTask(id: ID!): ProjectTask
+  projectGanttData(projectId: ID!): GanttData!
+  projectCriticalPath(projectId: ID!): CriticalPathAnalysis!
+  projectTemplates: [ProjectTemplate!]!
+  projectTeamMembers(projectId: ID!): [ProjectTeamMember!]!
+  projectMilestones(projectId: ID!): [ProjectMilestone!]!
+}
+
+# Mutations
+type Mutation {
+  # Project Management
+  createProject(input: CreateProjectInput!): Project!
+  updateProject(id: ID!, input: UpdateProjectInput!): Project!
+  deleteProject(id: ID!): Boolean!
+
+  # Task Management
+  createProjectTask(input: CreateProjectTaskInput!): ProjectTask!
+  updateProjectTask(id: ID!, input: UpdateProjectTaskInput!): ProjectTask!
+  deleteProjectTask(id: ID!): Boolean!
+
+  # Task Dependencies
+  createTaskDependency(input: CreateTaskDependencyInput!): Boolean!
+  deleteTaskDependency(predecessorId: ID!, successorId: ID!): Boolean!
+
+  # Team Management
+  addProjectTeamMember(input: CreateProjectTeamMemberInput!): Boolean!
+  removeProjectTeamMember(projectId: ID!, userId: ID!): Boolean!
+
+  # Milestones
+  createProjectMilestone(input: CreateProjectMilestoneInput!): Boolean!
+  updateProjectMilestone(id: ID!, input: UpdateProjectMilestoneInput!): Boolean!
+
+  # Templates
+  createProjectTemplate(input: CreateProjectTemplateInput!): Boolean!
+  applyProjectTemplate(projectId: ID!, templateId: ID!): Boolean!
+}
+# Project Accounting Types
+
+enum BudgetStatus {
+  Draft
+  Submitted
+  Approved
+  Rejected
+}
+
+enum CostType {
+  Labor
+  Material
+  Overhead
+  Travel
+  Other
+}
+
+enum CostStatus {
+  Pending
+  Approved
+  Invoiced
+  Paid
+}
+
+enum RevenueType {
+  Fixed
+  TimeAndMaterial
+  Milestone
+  Recurring
+}
+
+enum RevenueStatus {
+  Planned
+  Recognized
+  Invoiced
+  Collected
+}
+
+enum InvoiceStatus {
+  Draft
+  Sent
+  Paid
+  Overdue
+  Cancelled
+}
+
+enum RecognitionMethod {
+  Percentage
+  Milestone
+  Completed
+}
+
+type ProjectBudget {
+  id: ID!
+  projectId: ID!
+  budgetName: String!
+  budgetType: String!
+  totalBudget: Float!
+  laborBudget: Float!
+  materialBudget: Float!
+  overheadBudget: Float!
+  contingencyBudget: Float!
+  status: BudgetStatus!
+  approvedBy: ID
+  approvedAt: String
+  budgetPeriodStart: String
+  budgetPeriodEnd: String
+  notes: String
+  createdBy: ID!
+  createdAt: String!
+  updatedAt: String!
+
+  # Relations
+  project: P
+  approver: User
+  creator: User!
+  categories: [ProjectBudgetCategory!]!
+}
+
+type ProjectBudgetCategory {
+  id: ID!
+  budgetId: ID!
+  categoryName: String!
+  categoryCode: String!
+  budgetedAmount: Float!
+  description: String
+  isActive: Boolean!
+  createdAt: String!
+  updatedAt: String!
+
+  # Relations
+  budget: ProjectBudget!
+  costs: [ProjectCost!]!
+}
+
+type ProjectCost {
+  id: ID!
+  projectId: ID!
+  taskId: ID
+  budgetCategoryId: ID
+  costType: CostType!
+  costDate: String!
+  description: String!
+  quantity: Float!
+  unitCost: Float!
+  totalCost: Float!
+  isBillable: Boolean!
+  billingRate: Float
+  billableAmount: Float
+  invoiceId: ID
+  status: CostStatus!
+  approvedBy: ID
+  approvedAt: String
+  attachments: [String!]
+  customFields: JSON
+  createdBy: ID!
+  createdAt: String!
+  updatedAt: String!
+
+  # Relations
+  project: Project!
+  task: ProjectTask
+  budgetCategory: ProjectBudgetCategory
+  approver: User
+  creator: User!
+}
+
+type ProjectRevenue {
+  id: ID!
+  projectId: ID!
+  revenueType: RevenueType!
+  description: String!
+  revenueDate: String!
+  amount: Float!
+  recognizedAmount: Float!
+  milestoneId: ID
+  invoiceId: ID
+  status: RevenueStatus!
+  recognitionMethod: RecognitionMethod!
+  recognitionPercentage: Float!
+  notes: String
+  createdBy: ID!
+  createdAt: String!
+  updatedAt: String!
+
+  # Relations
+  project: Project!
+  milestone: ProjectMilestone
+  creator: User!
+}
+
+type ProjectInvoice {
+  id: ID!
+  projectId: ID!
+  invoiceNumber: String!
+  invoiceDate: String!
+  dueDate: String!
+  billingPeriodStart: String
+  billingPeriodEnd: String
+  subtotal: Float!
+  taxAmount: Float!
+  totalAmount: Float!
+  paidAmount: Float!
+  status: InvoiceStatus!
+  paymentTerms: String
+  notes: String
+  customerId: ID
+  sentAt: String
+  paidAt: String
+  createdBy: ID!
+  createdAt: String!
+  updatedAt: String!
+
+  # Relations
+  project: Project!
+  customer: User
+  creator: User!
+  lineItems: [ProjectInvoiceLineItem!]!
+}
+
+type ProjectInvoiceLineItem {
+  id: ID!
+  invoiceId: ID!
+  taskId: ID
+  costId: ID
+  description: String!
+  quantity: Float!
+  unitPrice: Float!
+  lineTotal: Float!
+  taxRate: Float!
+  taxAmount: Float!
+  createdAt: String!
+
+  # Relations
+  invoice: ProjectInvoice!
+  task: ProjectTask
+  cost: ProjectCost
+}
+
+type ProjectProfitability {
+  id: ID!
+  projectId: ID!
+  analysisDate: String!
+  totalRevenue: Float!
+  totalCosts: Float!
+  grossProfit: Float!
+  grossMargin: Float!
+  laborCosts: Float!
+  materialCosts: Float!
+  overheadCosts: Float!
+  budgetVariance: Float!
+  scheduleVariance: Float!
+  earnedValue: Float!
+  actualCost: Float!
+  plannedValue: Float!
+  costPerformanceIndex: Float!
+  schedulePerformanceIndex: Float!
+  estimateAtCompletion: Float
+  estimateToComplete: Float
+  createdAt: String!
+
+  # Relations
+  project: Project!
+}
+
+type ProjectFinancialSummary {
+  projectId: ID!
+  projectName: String!
+  totalBudget: Float!
+  totalCosts: Float!
+  totalRevenue: Float!
+  grossProfit: Float!
+  grossMargin: Float!
+  budgetVariance: Float!
+  costsByCategory: CostsByCategory!
+  invoicesSummary: InvoicesSummary!
+  profitabilityMetrics: ProfitabilityMetrics!
+}
+
+type CostsByCategory {
+  labor: Float!
+  material: Float!
+  overhead: Float!
+  travel: Float!
+  other: Float!
+}
+
+type InvoicesSummary {
+  totalInvoiced: Float!
+  totalPaid: Float!
+  outstanding: Float!
+  overdue: Float!
+}
+
+type ProfitabilityMetrics {
+  costPerformanceIndex: Float!
+  schedulePerformanceIndex: Float!
+  earnedValue: Float!
+  estimateAtCompletion: Float!
+}
+
+# Input Types for Project Accounting
+
+input CreateProjectBudgetInput {
+  projectId: ID!
+  budgetName: String!
+  budgetType: String = "Original"
+  totalBudget: Float!
+  laborBudget: Float = 0
+  materialBudget: Float = 0
+  overheadBudget: Float = 0
+  contingencyBudget: Float = 0
+  budgetPeriodStart: String
+  budgetPeriodEnd: String
+  notes: String
+}
+
+input UpdateProjectBudgetInput {
+  budgetName: String
+  budgetType: String
+  totalBudget: Float
+  laborBudget: Float
+  materialBudget: Float
+  overheadBudget: Float
+  contingencyBudget: Float
+  status: BudgetStatus
+  budgetPeriodStart: String
+  budgetPeriodEnd: String
+  notes: String
+}
+
+input CreateProjectBudgetCategoryInput {
+  budgetId: ID!
+  categoryName: String!
+  categoryCode: String!
+  budgetedAmount: Float!
+  description: String
+}
+
+input UpdateProjectBudgetCategoryInput {
+  categoryName: String
+  categoryCode: String
+  budgetedAmount: Float
+  description: String
+  isActive: Boolean
+}
+
+input CreateProjectCostInput {
+  projectId: ID!
+  taskId: ID
+  budgetCategoryId: ID
+  costType: CostType!
+  costDate: String!
+  description: String!
+  quantity: Float = 1
+  unitCost: Float!
+  totalCost: Float!
+  isBillable: Boolean = true
+  billingRate: Float
+  billableAmount: Float
+  attachments: [String!]
+  customFields: JSON
+}
+
+input UpdateProjectCostInput {
+  taskId: ID
+  budgetCategoryId: ID
+  costType: CostType
+  costDate: String
+  description: String
+  quantity: Float
+  unitCost: Float
+  totalCost: Float
+  isBillable: Boolean
+  billingRate: Float
+  billableAmount: Float
+  status: CostStatus
+  attachments: [String!]
+  customFields: JSON
+}
+
+input CreateProjectRevenueInput {
+  projectId: ID!
+  revenueType: RevenueType!
+  description: String!
+  revenueDate: String!
+  amount: Float!
+  milestoneId: ID
+  recognitionMethod: RecognitionMethod = "Percentage"
+  recognitionPercentage: Float = 0
+  notes: String
+}
+
+input UpdateProjectRevenueInput {
+  revenueType: RevenueType
+  description: String
+  revenueDate: String
+  amount: Float
+  recognizedAmount: Float
+  milestoneId: ID
+  status: RevenueStatus
+  recognitionMethod: RecognitionMethod
+  recognitionPercentage: Float
+  notes: String
+}
+
+input ProjectInvoiceLineItemInput {
+  taskId: ID
+  costId: ID
+  description: String!
+  quantity: Float!
+  unitPrice: Float!
+  taxRate: Float = 0
+}
+
+input CreateProjectInvoiceInput {
+  projectId: ID!
+  invoiceNumber: String!
+  invoiceDate: String!
+  dueDate: String!
+  billingPeriodStart: String
+  billingPeriodEnd: String
+  customerId: ID
+  paymentTerms: String
+  notes: String
+  lineItems: [ProjectInvoiceLineItemInput!]!
+}
+
+input UpdateProjectInvoiceInput {
+  invoiceNumber: String
+  invoiceDate: String
+  dueDate: String
+  billingPeriodStart: String
+  billingPeriodEnd: String
+  status: InvoiceStatus
+  paidAmount: Float
+  customerId: ID
+  paymentTerms: String
+  notes: String
+  sentAt: String
+  paidAt: String
+}
+
+input ProjectCostFilter {
+  costType: CostType
+  status: CostStatus
+  startDate: String
+  endDate: String
+}
+
+# Extended Queries for Project Accounting
+extend type Query {
+  # Budget queries
+  projectBudgets(projectId: ID!): [ProjectBudget!]!
+  projectBudget(id: ID!): ProjectBudget
+  budgetCategories(budgetId: ID!): [ProjectBudgetCategory!]!
+
+  # Cost queries
+  projectCosts(projectId: ID!, filter: ProjectCostFilter): [ProjectCost!]!
+  projectCost(id: ID!): ProjectCost
+
+  # Revenue queries
+  projectRevenue(projectId: ID!): [ProjectRevenue!]!
+  projectRevenueItem(id: ID!): ProjectRevenue
+
+  # Invoice queries
+  projectInvoices(projectId: ID!): [ProjectInvoice!]!
+  projectInvoice(id: ID!): ProjectInvoice
+
+  # Analysis queries
+  projectProfitability(projectId: ID!): ProjectProfitability!
+  projectFinancialSummary(projectId: ID!): ProjectFinancialSummary!
+}
+
+# Extended Mutations for Project Accounting
+extend type Mutation {
+  # Budget management
+  createProjectBudget(input: CreateProjectBudgetInput!): ProjectBudget!
+  updateProjectBudget(id: ID!, input: UpdateProjectBudgetInput!): ProjectBudget!
+  approveProjectBudget(budgetId: ID!): ProjectBudget!
+  deleteProjectBudget(id: ID!): Boolean!
+
+  # Budget categories
+  createBudgetCategory(
+    input: CreateProjectBudgetCategoryInput!
+  ): ProjectBudgetCategory!
+  updateBudgetCategory(
+    id: ID!
+    input: UpdateProjectBudgetCategoryInput!
+  ): ProjectBudgetCategory!
+  deleteBudgetCategory(id: ID!): Boolean!
+
+  # Cost management
+  createProjectCost(input: CreateProjectCostInput!): ProjectCost!
+  updateProjectCost(id: ID!, input: UpdateProjectCostInput!): ProjectCost!
+  approveProjectCost(costId: ID!): ProjectCost!
+  deleteProjectCost(id: ID!): Boolean!
+
+  # Revenue management
+  createProjectRevenue(input: CreateProjectRevenueInput!): ProjectRevenue!
+  updateProjectRevenue(
+    id: ID!
+    input: UpdateProjectRevenueInput!
+  ): ProjectRevenue!
+  deleteProjectRevenue(id: ID!): Boolean!
+
+  # Invoice management
+  createProjectInvoice(input: CreateProjectInvoiceInput!): ProjectInvoice!
+  updateProjectInvoice(
+    id: ID!
+    input: UpdateProjectInvoiceInput!
+  ): ProjectInvoice!
+  updateInvoiceStatus(
+    invoiceId: ID!
+    status: InvoiceStatus!
+    paidAmount: Float
+  ): ProjectInvoice!
+  deleteProjectInvoice(id: ID!): Boolean!
+
+  # Time and material billing
+  generateTimeAndMaterialInvoice(
+    projectId: ID!
+    billingPeriodStart: String!
+    billingPeriodEnd: String!
+  ): ProjectInvoice!
+
+  # Analysis
+  calculateProjectProfitability(projectId: ID!): ProjectProfitability!
+}

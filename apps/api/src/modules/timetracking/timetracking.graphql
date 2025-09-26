@@ -1,0 +1,447 @@
+enum TimesheetStatus {
+  Draft
+  Submitted
+  Approved
+  Rejected
+  Paid
+}
+
+enum ApprovalStatus {
+  Pending
+  Approved
+  Rejected
+}
+
+enum TimesheetPeriod {
+  Weekly
+  BiWeekly
+  Monthly
+}
+
+enum ReportType {
+  Summary
+  Detailed
+  Utilization
+  Project
+  ee
+  Billable
+}
+
+type Timesheet {
+  id: ID!
+  timesheetCode: String!
+  employeeId: ID!
+  startDate: String!
+  endDate: String!
+  status: TimesheetStatus!
+  totalHours: Float!
+  billableHours: Float!
+  nonBillableHours: Float!
+  approvedBy: ID
+  approvedAt: String
+  submittedAt: String
+  companyId: ID!
+  notes: String
+  createdAt: String!
+  updatedAt: String!
+
+  # Relations
+  employee: User
+  approver: User
+  company: Company
+  timeEntries: [TimeEntry!]!
+  approvals: [TimeApproval!]!
+}
+
+type TimeEntry {
+  id: ID!
+  timesheetId: ID!
+  projectId: ID
+  taskId: ID
+  activityType: String!
+  description: String
+  startTime: String!
+  endTime: String
+  duration: Float!
+  isBillable: Boolean!
+  hourlyRate: Float
+  location: String
+  gpsCoordinates: GPSCoordinates
+  isManualEntry: Boolean!
+  deviceInfo: JSON
+  attachments: [String!]
+  customFields: JSON
+  createdAt: String!
+  updatedAt: String!
+
+  # Relations
+  timesheet: Timesheet!
+  project: Project
+  task: ProjectTask
+}
+
+type GPSCoordinates {
+  lat: Float!
+  lng: Float!
+  accuracy: Float
+}
+
+type TimeCategory {
+  id: ID!
+  categoryName: String!
+  categoryCode: String!
+  description: String
+  isBillable: Boolean!
+  defaultHourlyRate: Float
+  color: String
+  companyId: ID!
+  isActive: Boolean!
+  createdAt: String!
+  updatedAt: String!
+
+  # Relations
+  company: Company!
+}
+
+type TimeApproval {
+  id: ID!
+  timesheetId: ID!
+  approverId: ID!
+  status: ApprovalStatus!
+  comments: String
+  approvedHours: Float
+  rejectedHours: Float
+  approvalLevel: Int!
+  createdAt: String!
+  updatedAt: String!
+
+  # Relations
+  timesheet: Timesheet!
+  approver: User!
+}
+
+type TimeTrackingSettings {
+  id: ID!
+  companyId: ID!
+  requireProjectSelection: Boolean!
+  requireTaskSelection: Boolean!
+  allowManualTimeEntry: Boolean!
+  requireGpsTracking: Boolean!
+  maxDailyHours: Float!
+  maxWeeklyHours: Float!
+  timesheetPeriod: TimesheetPeriod!
+  autoSubmitTimesheets: Boolean!
+  requireApproval: Boolean!
+  approvalWorkflow: JSON
+  overtimeRules: JSON
+  roundingRules: JSON
+  createdAt: String!
+  updatedAt: String!
+
+  # Relations
+  company: Company!
+}
+
+type TimeReport {
+  id: ID!
+  reportName: String!
+  reportType: ReportType!
+  parameters: JSON!
+  generatedBy: ID!
+  companyId: ID!
+  reportData: JSON
+  isScheduled: Boolean!
+  scheduleConfig: JSON
+  createdAt: String!
+
+  # Relations
+  generatedByUser: User!
+  company: Company!
+}
+
+type Timer {
+  id: ID!
+  projectId: ID
+  taskId: ID
+  activityType: String!
+  description: String
+  startTime: String!
+  isRunning: Boolean!
+  elapsedTime: Int!
+}
+
+type UtilizationReport {
+  employeeId: ID!
+  employeeName: String!
+  period: DateRange!
+  totalHours: Float!
+  billableHours: Float!
+  nonBillableHours: Float!
+  utilizationRate: Float!
+  projectBreakdown: [ProjectBreakdown!]!
+}
+
+type ProjectBreakdown {
+  projectId: ID!
+  projectName: String!
+  hours: Float!
+  percentage: Float!
+}
+
+type ProjectTimeReport {
+  projectId: ID!
+  projectName: String!
+  period: DateRange!
+  totalHours: Float!
+  billableHours: Float!
+  totalCost: Float!
+  billableAmount: Float!
+  teamMembers: [TeamMemberTime!]!
+  taskBreakdown: [TaskBreakdown!]!
+}
+
+type TeamMemberTime {
+  employeeId: ID!
+  employeeName: String!
+  hours: Float!
+  cost: Float!
+}
+
+type TaskBreakdown {
+  taskId: ID!
+  taskName: String!
+  hours: Float!
+  percentage: Float!
+}
+
+type DateRange {
+  startDate: String!
+  endDate: String!
+}
+
+# Input Types
+input CreateTimesheetInput {
+  employeeId: ID!
+  startDate: String!
+  endDate: String!
+  notes: String
+}
+
+input UpdateTimesheetInput {
+  employeeId: ID
+  startDate: String
+  endDate: String
+  status: TimesheetStatus
+  totalHours: Float
+  billableHours: Float
+  nonBillableHours: Float
+  notes: String
+}
+
+input CreateTimeEntryInput {
+  timesheetId: ID!
+  projectId: ID
+  taskId: ID
+  activityType: String!
+  description: String
+  startTime: String!
+  endTime: String
+  duration: Float!
+  isBillable: Boolean = true
+  hourlyRate: Float
+  location: String
+  gpsCoordinates: GPSCoordinatesInput
+  isManualEntry: Boolean = false
+  deviceInfo: JSON
+  attachments: [String!]
+  customFields: JSON
+}
+
+input UpdateTimeEntryInput {
+  timesheetId: ID
+  projectId: ID
+  taskId: ID
+  activityType: String
+  description: String
+  startTime: String
+  endTime: String
+  duration: Float
+  isBillable: Boolean
+  hourlyRate: Float
+  location: String
+  gpsCoordinates: GPSCoordinatesInput
+  isManualEntry: Boolean
+  deviceInfo: JSON
+  attachments: [String!]
+  customFields: JSON
+}
+
+input GPSCoordinatesInput {
+  lat: Float!
+  lng: Float!
+  accuracy: Float
+}
+
+input CreateTimeCategoryInput {
+  categoryName: String!
+  categoryCode: String!
+  description: String
+  isBillable: Boolean = true
+  defaultHourlyRate: Float
+  color: String
+}
+
+input UpdateTimeCategoryInput {
+  categoryName: String
+  categoryCode: String
+  description: String
+  isBillable: Boolean
+  defaultHourlyRate: Float
+  color: String
+  isActive: Boolean
+}
+
+input CreateTimeApprovalInput {
+  timesheetId: ID!
+  status: ApprovalStatus!
+  comments: String
+  approvedHours: Float
+  rejectedHours: Float
+}
+
+input UpdateTimeTrackingSettingsInput {
+  requireProjectSelection: Boolean
+  requireTaskSelection: Boolean
+  allowManualTimeEntry: Boolean
+  requireGpsTracking: Boolean
+  maxDailyHours: Float
+  maxWeeklyHours: Float
+  timesheetPeriod: TimesheetPeriod
+  autoSubmitTimesheets: Boolean
+  requireApproval: Boolean
+  approvalWorkflow: JSON
+  overtimeRules: JSON
+  roundingRules: JSON
+}
+
+input CreateTimeReportInput {
+  reportName: String!
+  reportType: ReportType!
+  parameters: JSON!
+  isScheduled: Boolean = false
+  scheduleConfig: JSON
+}
+
+input TimeLogInput {
+  projectId: ID
+  taskId: ID
+  activityType: String!
+  description: String
+  duration: Float!
+  isBillable: Boolean = true
+  date: String!
+  startTime: String
+  endTime: String
+}
+
+input TimesheetFilter {
+  employeeId: ID
+  status: TimesheetStatus
+  startDate: String
+  endDate: String
+}
+
+input TimeEntryFilter {
+  timesheetId: ID
+  projectId: ID
+  taskId: ID
+  isBillable: Boolean
+  startDate: String
+  endDate: String
+}
+
+input UtilizationReportInput {
+  startDate: String!
+  endDate: String!
+  employeeId: ID
+}
+
+input ProjectTimeReportInput {
+  projectId: ID!
+  startDate: String!
+  endDate: String!
+}
+
+# Queries
+type Query {
+  # Timesheet queries
+  timesheets(filter: TimesheetFilter): [Timesheet!]!
+  timesheet(id: ID!): Timesheet
+  currentTimesheet: Timesheet
+
+  # Time entry queries
+  timeEntries(filter: TimeEntryFilter): [TimeEntry!]!
+  timeEntry(id: ID!): TimeEntry
+  timesheetEntries(timesheetId: ID!): [TimeEntry!]!
+
+  # Time category queries
+  timeCategories: [TimeCategory!]!
+  timeCategory(id: ID!): TimeCategory
+
+  # Time tracking settings
+  timeTrackingSettings: TimeTrackingSettings
+
+  # Timer queries
+  activeTimer: Timer
+
+  # Reporting queries
+  utilizationReport(input: UtilizationReportInput!): [UtilizationReport!]!
+  projectTimeReport(input: ProjectTimeReportInput!): ProjectTimeReport!
+  timeReports: [TimeReport!]!
+}
+
+# Mutations
+type Mutation {
+  # Timesheet management
+  createTimesheet(input: CreateTimesheetInput!): Timesheet!
+  updateTimesheet(id: ID!, input: UpdateTimesheetInput!): Timesheet!
+  submitTimesheet(id: ID!): Timesheet!
+  deleteTimesheet(id: ID!): Boolean!
+
+  # Time entry management
+  createTimeEntry(input: CreateTimeEntryInput!): TimeEntry!
+  updateTimeEntry(id: ID!, input: UpdateTimeEntryInput!): TimeEntry!
+  deleteTimeEntry(id: ID!): Boolean!
+
+  # Time category management
+  createTimeCategory(input: CreateTimeCategoryInput!): TimeCategory!
+  updateTimeCategory(id: ID!, input: UpdateTimeCategoryInput!): TimeCategory!
+  deleteTimeCategory(id: ID!): Boolean!
+
+  # Timer management
+  startTimer(projectId: ID, taskId: ID, activityType: String!): Timer!
+  stopTimer(description: String): TimeEntry
+  pauseTimer: Timer!
+  resumeTimer: Timer!
+
+  # Manual time logging
+  logTime(input: TimeLogInput!): TimeEntry!
+
+  # Approval workflow
+  approveTimesheet(timesheetId: ID!, comments: String): Boolean!
+  rejectTimesheet(timesheetId: ID!, comments: String!): Boolean!
+
+  # Settings management
+  updateTimeTrackingSettings(
+    input: UpdateTimeTrackingSettingsInput!
+  ): TimeTrackingSettings!
+
+  # Report generation
+  generateTimeReport(input: CreateTimeReportInput!): TimeReport!
+}
+
+# Subscriptions
+type Subscription {
+  timerUpdated(userId: ID!): Timer
+  timesheetStatusChanged(timesheetId: ID!): Timesheet
+}
