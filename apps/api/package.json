@@ -49,6 +49,12 @@
     "class-transformer": "^0.5.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
+    "tesseract.js": "^4.1.1",
+    "sharp": "^0.32.6",
+    "pdf-parse": "^1.1.1",
+    "natural": "^6.5.0",
+    "ml-matrix": "^6.10.4",
+    "simple-statistics": "^7.8.3",
     "@kiro/database": "*",
     "@kiro/config": "*"
   },
