@@ -12,6 +12,7 @@ import { AccountsModule } from './accounts/accounts.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AssetsModule } from './assets/assets.module';
 import { AuthModule } from './auth/auth.module';
+import { CollaborationModule } from './collaboration/collaboration.module';
 import { createWinstonLogger } from './common/logger/winston.config';
 import { CustomersModule } from './customers/customers.module';
 import { HealthModule } from './health/health.module';
@@ -81,6 +82,7 @@ import { WorkflowsModule } from './workflows/workflows.module';
     IoTModule,
     WorkflowsModule,
     CollaborationModule,
+    ReportsModule,
   ],
 })
 export class AppModule {}

@@ -56,6 +56,18 @@ export const formatNumber = (
   return new Intl.NumberFormat(locale, options).format(number);
 };
 
+export const formatPercentage = (
+  value: number,
+  decimals: number = 1,
+  locale: string = 'en-US'
+): string => {
+  return new Intl.NumberFormat(locale, {
+    style: 'percent',
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value / 100);
+};
+
 // String utilities
 export const truncateText = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text;
