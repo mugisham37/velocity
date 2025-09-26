@@ -15,6 +15,7 @@ export * from './maintenance';
 export * from './manufacturing';
 export * from './notifications';
 export * from './sales-crm';
+export * from './security';
 export * from './serial-batch-tracking';
 export * from './stock-transactions';
 export * from './users';

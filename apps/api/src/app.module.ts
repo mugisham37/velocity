@@ -86,6 +86,7 @@ import { WorkflowsModule } from './workflows/workflows.module';
     AnalyticsModule,
     IoTModule,
     WorkflowsModule,
+    SecurityModule,
     CollaborationModule,
     ReportsModule,
   ],
