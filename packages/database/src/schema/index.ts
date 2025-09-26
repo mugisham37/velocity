@@ -267,6 +267,13 @@ import {
   bomScrapItems,
   bomUpdateLog,
   boms,
+  capacityPlanResults,
+  capacityPlans,
+  mrpResults,
+  mrpRuns,
+  productionForecasts,
+  productionPlanItems,
+  productionPlans,
   workstations,
 } from './manufacturing';
 
@@ -286,3 +293,43 @@ export type BOMUpdateLog = InferSelectModel<typeof bomUpdateLog>;
 export type NewBOMUpdateLog = InferInsertModel<typeof bomUpdateLog>;
 export type Workstation = InferSelectModel<typeof workstations>;
 export type NewWorkstation = InferInsertModel<typeof workstations>;
+
+// Production Planning types
+export type ProductionPlan = InferSelectModel<typeof productionPlans>;
+export type NewProductionPlan = InferInsertModel<typeof productionPlans>;
+export type ProductionPlanItem = InferSelectModel<typeof productionPlanItems>;
+export type NewProductionPlanItem = InferInsertModel<
+  typeof productionPlanItems
+>;
+export type MRPRun = InferSelectModel<typeof mrpRuns>;
+export type NewMRPRun = InferInsertModel<typeof mrpRuns>;
+export type MRPResult = InferSelectModel<typeof mrpResults>;
+export type NewMRPResult = InferInsertModel<typeof mrpResults>;
+export type CapacityPlan = InferSelectModel<typeof capacityPlans>;
+export type NewCapacityPlan = InferInsertModel<typeof capacityPlans>;
+export type CapacityPlanResult = InferSelectModel<typeof capacityPlanResults>;
+export type NewCapacityPlanResult = InferInsertModel<
+  typeof capacityPlanResults
+>;
+export type ProductionForecast = InferSelectModel<typeof productionForecasts>;
+export type NewProductionForecast = InferInsertModel<
+  typeof productionForecasts
+>;
+
+// Work Order types
+export type WorkOrder = InferSelectModel<typeof workOrders>;
+export type NewWorkOrder = InferInsertModel<typeof workOrders>;
+export type WorkOrderOperation = InferSelectModel<typeof workOrderOperations>;
+export type NewWorkOrderOperation = InferInsertModel<
+  typeof workOrderOperations
+>;
+export type WorkOrderItem = InferSelectModel<typeof workOrderItems>;
+export type NewWorkOrderItem = InferInsertModel<typeof workOrderItems>;
+export type WorkOrderStockEntry = InferSelectModel<
+  typeof workOrderStockEntries
+>;
+export type NewWorkOrderStockEntry = InferInsertModel<
+  typeof workOrderStockEntries
+>;
+export type WorkOrderTimeLog = InferSelectModel<typeof workOrderTimeLogs>;
+export type NewWorkOrderTimeLog = InferInsertModel<typeof workOrderTimeLogs>;

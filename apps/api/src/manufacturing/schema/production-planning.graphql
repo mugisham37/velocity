@@ -1,0 +1,508 @@
+# Production Planning GraphQL Schema
+
+# Enums
+enum ProductionPlanStatus {
+  DRAFT
+  SUBMITTED
+  COMPLETED
+  CANCELLED
+}
+
+enum MRPRunStatus {
+  DRAFT
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum CapacityPlanStatus {
+  DRAFT
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum ForecastType {
+  MANUAL
+  AI_GENERATED
+  HISTORICAL_AVERAGE
+}
+
+enum ActionRequired {
+  PURCHASE
+  MANUFACTURE
+  TRANSFER
+}
+
+# Production Plan Types
+type ProductionPlan {
+  id: ID!
+  planName: String!
+  companyId: ID!
+  fromDate: DateTime!
+  toDate: DateTime!
+  status: ProductionPlanStatus!
+  description: String
+  getItemsFromOpenSalesOrders: Boolean!
+  downloadMaterialsRequired: Boolean!
+  ignoreExistingOrderedQty: Boolean!
+  considerMinOrderQty: Boolean!
+  includeNonStockItems: Boolean!
+  includeSubcontractedItems: Boolean!
+  createdBy: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  items: [ProductionPlanItem!]!
+}
+
+type ProductionPlanItem {
+  id: ID!
+  productionPlanId: ID!
+  itemId: ID!
+  itemCode: String!
+  itemName: String!
+  bomId: ID
+  bomNo: String
+  plannedQty: Float!
+  pendingQty: Float!
+  producedQty: Float!
+  uom: String!
+  warehouseId: ID
+  plannedStartDate: DateTime
+  plannedEndDate: DateTime
+  actualStartDate: DateTime
+  actualEndDate: DateTime
+  description: String
+  salesOrderId: ID
+  salesOrderItem: String
+  materialRequestId: ID
+  workOrderId: ID
+  idx: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# MRP Types
+type MRPRun {
+  id: ID!
+  runName: String!
+  companyId: ID!
+  fromDate: DateTime!
+  toDate: DateTime!
+  status: MRPRunStatus!
+  includeNonStockItems: Boolean!
+  includeSubcontractedItems: Boolean!
+  ignoreExistingOrderedQty: Boolean!
+  considerMinOrderQty: Boolean!
+  considerSafetyStock: Boolean!
+  warehouseId: ID
+  itemGroupId: ID
+  buyerId: ID
+  projectId: ID
+  runStartTime: DateTime
+  runEndTime: DateTime
+  errorLog: String
+  createdBy: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  results: [MRPResult!]!
+}
+
+type MRPResult {
+  id: ID!
+  mrpRunId: ID!
+  itemId: ID!
+  itemCode: String!
+  itemName: String!
+  warehouseId: ID
+  requiredDate: DateTime!
+  plannedOrderDate: DateTime
+  plannedOrderReceipt: DateTime
+  grossRequirement: Float!
+  scheduledReceipts: Float!
+  projectedAvailableBalance: Float!
+  netRequirement: Float!
+  plannedOrderQuantity: Float!
+  uom: String!
+  leadTimeDays: Int!
+  safetyStock: Float!
+  minOrderQty: Float!
+  maxOrderQty: Float!
+  orderMultiple: Float!
+  actionRequired: ActionRequired
+  sourceDocument: String
+  sourceDocumentId: ID
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# Capacity Planning Types
+type CapacityPlan {
+  id: ID!
+  planName: String!
+  companyId: ID!
+  fromDate: DateTime!
+  toDate: DateTime!
+  status: CapacityPlanStatus!
+  workstationId: ID
+  includeWorkOrders: Boolean!
+  includeProductionPlans: Boolean!
+  includeMaintenanceSchedule: Boolean!
+  capacityUom: String!
+  runStartTime: DateTime
+  runEndTime: DateTime
+  errorLog: String
+  createdBy: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  results: [CapacityPlanResult!]!
+}
+
+type CapacityPlanResult {
+  id: ID!
+  capacityPlanId: ID!
+  workstationId: ID!
+  workstationName: String!
+  planningDate: DateTime!
+  availableCapacity: Float!
+  plannedCapacity: Float!
+  capacityUtilization: Float!
+  overloadHours: Float!
+  underloadHours: Float!
+  capacityUom: String!
+  sourceDocument: String
+  sourceDocumentId: ID
+  operationId: ID
+  operationName: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# Production Forecast Types
+type ProductionForecast {
+  id: ID!
+  forecastName: String!
+  companyId: ID!
+  itemId: ID!
+  itemCode: String!
+  itemName: String!
+  forecastDate: DateTime!
+  forecastQuantity: Float!
+  uom: String!
+  warehouseId: ID
+  salesOrderId: ID
+  forecastType: ForecastType!
+  confidenceLevel: Float!
+  seasonalFactor: Float!
+  trendFactor: Float!
+  actualQuantity: Float!
+  variance: Float!
+  variancePercentage: Float!
+  notes: String
+  isActive: Boolean!
+  createdBy: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# Summary Types
+type ProductionPlanSummary {
+  totalPlans: Int!
+  draftPlans: Int!
+  submittedPlans: Int!
+  completedPlans: Int!
+  totalItems: Int!
+  totalPlannedQuantity: Float!
+  totalProducedQuantity: Float!
+  completionPercentage: Float!
+}
+
+type MRPSummary {
+  totalRuns: Int!
+  completedRuns: Int!
+  totalItems: Int!
+  itemsRequiringPurchase: Int!
+  itemsRequiringManufacture: Int!
+  itemsRequiringTransfer: Int!
+  totalRequiredValue: Float!
+}
+
+type CapacityUtilizationSummary {
+  workstationId: ID!
+  workstationName: String!
+  totalAvailableCapacity: Float!
+  totalPlannedCapacity: Float!
+  utilizationPercentage: Float!
+  overloadHours: Float!
+  underloadHours: Float!
+  capacityUom: String!
+}
+
+type ForecastAccuracy {
+  itemId: ID!
+  itemCode: String!
+  itemName: String!
+  totalForecasts: Int!
+  averageAccuracy: Float!
+  totalForecastedQuantity: Float!
+  totalActualQuantity: Float!
+  totalVariance: Float!
+  averageVariancePercentage: Float!
+}
+
+# Gantt Chart Types
+type GanttChartItem {
+  id: ID!
+  name: String!
+  startDate: DateTime!
+  endDate: DateTime!
+  progress: Float!
+  parentId: ID
+  dependencies: [String!]
+  type: String!
+  workstationId: ID
+  workstationName: String
+}
+
+# Input Types
+input CreateProductionPlanInput {
+  planName: String!
+  companyId: ID!
+  fromDate: DateTime!
+  toDate: DateTime!
+  description: String
+  getItemsFromOpenSalesOrders: Boolean = false
+  downloadMaterialsRequired: Boolean = false
+  ignoreExistingOrderedQty: Boolean = false
+  considerMinOrderQty: Boolean = false
+  includeNonStockItems: Boolean = false
+  includeSubcontractedItems: Boolean = false
+  items: [CreateProductionPlanItemInput!]
+}
+
+input CreateProductionPlanItemInput {
+  itemId: ID!
+  itemCode: String!
+  itemName: String!
+  bomId: ID
+  bomNo: String
+  plannedQty: Float!
+  uom: String!
+  warehouseId: ID
+  plannedStartDate: DateTime
+  plannedEndDate: DateTime
+  description: String
+  salesOrderId: ID
+  salesOrderItem: String
+}
+
+input UpdateProductionPlanInput {
+  planName: String
+  fromDate: DateTime
+  toDate: DateTime
+  status: ProductionPlanStatus
+  description: String
+  getItemsFromOpenSalesOrders: Boolean
+  downloadMaterialsRequired: Boolean
+  ignoreExistingOrderedQty: Boolean
+  considerMinOrderQty: Boolean
+  includeNonStockItems: Boolean
+  includeSubcontractedItems: Boolean
+  items: [CreateProductionPlanItemInput!]
+}
+
+input ProductionPlanFilterInput {
+  companyId: ID
+  status: ProductionPlanStatus
+  planName: String
+  fromDate: DateTime
+  toDate: DateTime
+  search: String
+}
+
+input CreateMRPRunInput {
+  runName: String!
+  companyId: ID!
+  fromDate: DateTime!
+  toDate: DateTime!
+  includeNonStockItems: Boolean = false
+  includeSubcontractedItems: Boolean = false
+  ignoreExistingOrderedQty: Boolean = false
+  considerMinOrderQty: Boolean = false
+  considerSafetyStock: Boolean = true
+  warehouseId: ID
+  itemGroupId: ID
+  buyerId: ID
+  projectId: ID
+}
+
+input MRPRunFilterInput {
+  companyId: ID
+  status: MRPRunStatus
+  runName: String
+  fromDate: DateTime
+  toDate: DateTime
+  search: String
+}
+
+input MRPResultFilterInput {
+  mrpRunId: ID!
+  itemId: ID
+  warehouseId: ID
+  actionRequired: ActionRequired
+  search: String
+}
+
+input CreateCapacityPlanInput {
+  planName: String!
+  companyId: ID!
+  fromDate: DateTime!
+  toDate: DateTime!
+  workstationId: ID
+  includeWorkOrders: Boolean = true
+  includeProductionPlans: Boolean = true
+  includeMaintenanceSchedule: Boolean = false
+  capacityUom: String = "Hours"
+}
+
+input CapacityPlanFilterInput {
+  companyId: ID
+  status: CapacityPlanStatus
+  planName: String
+  workstationId: ID
+  fromDate: DateTime
+  toDate: DateTime
+  search: String
+}
+
+input CreateProductionForecastInput {
+  forecastName: String!
+  companyId: ID!
+  itemId: ID!
+  itemCode: String!
+  itemName: String!
+  forecastDate: DateTime!
+  forecastQuantity: Float!
+  uom: String!
+  warehouseId: ID
+  salesOrderId: ID
+  forecastType: ForecastType = MANUAL
+  confidenceLevel: Float
+  seasonalFactor: Float = 1
+  trendFactor: Float = 1
+  notes: String
+}
+
+input UpdateProductionForecastInput {
+  forecastName: String
+  forecastDate: DateTime
+  forecastQuantity: Float
+  forecastType: ForecastType
+  confidenceLevel: Float
+  seasonalFactor: Float
+  trendFactor: Float
+  actualQuantity: Float
+  notes: String
+  isActive: Boolean
+}
+
+input ProductionForecastFilterInput {
+  companyId: ID
+  itemId: ID
+  warehouseId: ID
+  forecastType: ForecastType
+  fromDate: DateTime
+  toDate: DateTime
+  isActive: Boolean
+  search: String
+}
+
+input GenerateGanttChartInput {
+  productionPlanId: ID
+  workstationId: ID
+  fromDate: DateTime!
+  toDate: DateTime!
+  includeProductionPlans: Boolean = true
+  includeWorkOrders: Boolean = true
+  includeOperations: Boolean = false
+}
+
+# Queries
+extend type Query {
+  # Production Plans
+  productionPlan(id: ID!): ProductionPlan
+  productionPlans(filter: ProductionPlanFilterInput): [ProductionPlan!]!
+  productionPlanItems(planId: ID!): [ProductionPlanItem!]!
+  productionPlanSummary(companyId: ID!): ProductionPlanSummary!
+
+  # MRP
+  mrpRun(id: ID!): MRPRun
+  mrpRuns(filter: MRPRunFilterInput): [MRPRun!]!
+  mrpResults(filter: MRPResultFilterInput!): [MRPResult!]!
+  mrpSummary(runId: ID!): MRPSummary!
+
+  # Capacity Planning
+  capacityPlan(id: ID!): CapacityPlan
+  capacityPlans(filter: CapacityPlanFilterInput): [CapacityPlan!]!
+  capacityPlanResults(planId: ID!): [CapacityPlanResult!]!
+  capacityUtilizationSummary(planId: ID!): [CapacityUtilizationSummary!]!
+
+  # Production Forecasts
+  productionForecast(id: ID!): ProductionForecast
+  productionForecasts(
+    filter: ProductionForecastFilterInput
+  ): [ProductionForecast!]!
+  forecastAccuracy(companyId: ID!): [ForecastAccuracy!]!
+
+  # Gantt Chart
+  generateGanttChart(input: GenerateGanttChartInput!): [GanttChartItem!]!
+}
+
+# Mutations
+extend type Mutation {
+  # Production Plans
+  createProductionPlan(input: CreateProductionPlanInput!): ProductionPlan!
+  updateProductionPlan(
+    id: ID!
+    input: UpdateProductionPlanInput!
+  ): ProductionPlan!
+  deleteProductionPlan(id: ID!): Boolean!
+
+  # MRP
+  createMRPRun(input: CreateMRPRunInput!): MRPRun!
+  executeMRPRun(id: ID!): Boolean!
+  deleteMRPRun(id: ID!): Boolean!
+
+  # Capacity Planning
+  createCapacityPlan(input: CreateCapacityPlanInput!): CapacityPlan!
+  executeCapacityPlan(id: ID!): Boolean!
+  deleteCapacityPlan(id: ID!): Boolean!
+
+  # Production Forecasts
+  createProductionForecast(
+    input: CreateProductionForecastInput!
+  ): ProductionForecast!
+  updateProductionForecast(
+    id: ID!
+    input: UpdateProductionForecastInput!
+  ): ProductionForecast!
+  deleteProductionForecast(id: ID!): Boolean!
+}
+
+# Subscriptions
+extend type Subscription {
+  # Production Plan Updates
+  productionPlanUpdated(planId: ID!): ProductionPlan!
+  productionPlanItemUpdated(planId: ID!): ProductionPlanItem!
+
+  # MRP Updates
+  mrpRunStatusChanged(runId: ID!): MRPRun!
+  mrpResultsUpdated(runId: ID!): [MRPResult!]!
+
+  # Capacity Planning Updates
+  capacityPlanStatusChanged(planId: ID!): CapacityPlan!
+  capacityUtilizationUpdated(planId: ID!): [CapacityUtilizationSummary!]!
+
+  # Production Forecast Updates
+  forecastAccuracyUpdated(companyId: ID!): [ForecastAccuracy!]!
+}

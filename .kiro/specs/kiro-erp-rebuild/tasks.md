@@ -210,7 +210,7 @@ The implementation follows a layered approach, starting with foundational infras
   - Add compliance reporting for regulated industries
   - _Requirements: REQ-STOCK-002, REQ-STOCK-003, REQ-STOCK-004_
 
-- [-] 6. Manufacturing Module
+- [x] 6. Manufacturing Module
   - Build bill of materials (BOM) management with multi-level structures
   - Implement production planning with MRP and capacity planning
   - Create work order management with shop floor control
@@ -227,8 +227,9 @@ The implementation follows a layered approach, starting with foundational infras
   - Add BOM comparison and impact analysis tools
   - _Requirements: REQ-BOM-001, REQ-BOM-002, REQ-BOM-003, REQ-BOM-004, REQ-BOM-005, REQ-BOM-006_
 
-- [ ] 6.2 Production Planning System
+- [x] 6.2 Production Planning System
   - Create master production schedule with demand forecasting
+
   - Implement material requirement planning (MRP) with lead time calculations
   - Build capacity planning with resource optimization
   - Create production forecasting with seasonal adjustments
@@ -236,7 +237,7 @@ The implementation follows a layered approach, starting with foundational infras
   - Add production scheduling with Gantt chart visualization
   - _Requirements: REQ-PROD-001, REQ-PROD-002, REQ-PROD-003, REQ-PROD-004, REQ-PROD-005, REQ-PROD-006_
 
-- [ ] 6.3 Work Order Management
+- [x] 6.3 Work Order Management
   - Create work order generation from sales orders and production plans
   - Implement operation routing with workstation assignments
   - Build material consumption tracking with backflushing options
@@ -245,7 +246,7 @@ The implementation follows a layered approach, starting with foundational infras
   - Add work order status tracking with real-time updates
   - _Requirements: REQ-WO-001, REQ-WO-002, REQ-WO-003, REQ-WO-004, REQ-WO-006_
 
-- [ ] 6.4 Shop Floor Control
+- [x] 6.4 Shop Floor Control
   - Create job card management with barcode scanning
   - Implement workstation management with capacity tracking
   - Build operation tracking with start/stop time recording
