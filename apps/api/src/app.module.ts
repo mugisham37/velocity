@@ -21,6 +21,7 @@ import { IoTModule } from './iot/iot.module';
 import { ManufacturingModule } from './manufacturing/manufacturing.module';
 import { SalesCRMModule } from './sales-crm/sales-crm.module';
 import { VendorsModule } from './vendors/vendors.module';
+import { WorkflowsModule } from './workflows/workflows.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { VendorsModule } from './vendors/vendors.module';
     AnalyticsModule,
     IoTModule,
     WorkflowsModule,
+    CollaborationModule,
   ],
 })
 export class AppModule {}
