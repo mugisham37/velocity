@@ -20,6 +20,7 @@ export * from './stock-transactions';
 export * from './users';
 export * from './vendors';
 export * from './warehouses';
+export * from './workflows';
 
 // Export types for better TypeScript support
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';

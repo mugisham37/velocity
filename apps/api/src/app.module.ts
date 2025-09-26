@@ -78,6 +78,7 @@ import { VendorsModule } from './vendors/vendors.module';
     AssetsModule,
     AnalyticsModule,
     IoTModule,
+    WorkflowsModule,
   ],
 })
 export class AppModule {}

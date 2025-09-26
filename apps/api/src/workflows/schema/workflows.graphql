@@ -1,0 +1,348 @@
+enum WorkflowStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum WorkflowPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum WorkflowStepType {
+  APPROVAL
+  TASK
+  CONDITION
+  PARALLEL
+  NOTIFICATION
+  INTEGRATION
+  DELAY
+}
+
+enum WorkflowStepStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DELEGATED
+}
+
+type WorkflowNode {
+  id: String!
+  type: String!
+  label: String!
+  data: JSON!
+  position: JSON!
+}
+
+type WorkflowEdge {
+  id: String!
+  source: String!
+  target: String!
+  data: JSON
+}
+
+type WorkflowDefinition {
+  nodes: [WorkflowNode!]!
+  edges: [WorkflowEdge!]!
+  settings: JSON
+}
+
+type Workflow {
+  id: ID!
+  companyId: ID!
+  name: String!
+  description: String
+  category: String!
+  version: Int!
+  isActive: Boolean!
+  isTemplate: Boolean!
+  definition: WorkflowDefinition!
+  tags: [String!]
+  permissions: JSON
+  createdBy: ID!
+  updatedBy: ID
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type WorkflowInstance {
+  id: ID!
+  workflowId: ID!
+  companyId: ID!
+  name: String
+  status: WorkflowStatus!
+  priority: WorkflowPriority!
+  contextData: JSON
+  currentStep: String
+  startedAt: DateTime
+  completedAt: DateTime
+  dueDate: DateTime
+  slaBreached: Boolean!
+  slaBreachedAt: DateTime
+  initiatedBy: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  workflow: Workflow
+  steps: [WorkflowStep!]
+}
+
+type WorkflowStep {
+  id: ID!
+  instanceId: ID!
+  stepId: String!
+  name: String!
+  type: WorkflowStepType!
+  status: WorkflowStepStatus!
+  assignedTo: ID
+  assignedRole: String
+  inputData: JSON
+  outputData: JSON
+  startedAt: DateTime
+  completedAt: DateTime
+  dueDate: DateTime
+  comments: String
+  attachments: JSON
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  approvals: [WorkflowApproval!]
+}
+
+type WorkflowApproval {
+  id: ID!
+  stepId: ID!
+  instanceId: ID!
+  approverId: ID!
+  status: ApprovalStatus!
+  decision: String
+  comments: String
+  reason: String
+  delegatedTo: ID
+  delegationReason: String
+  requestedAt: DateTime!
+  respondedAt: DateTime
+  dueDate: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type WorkflowTemplate {
+  id: ID!
+  name: String!
+  description: String
+  category: String!
+  industry: String
+  definition: WorkflowDefinition!
+  usageCount: Int!
+  isPublic: Boolean!
+  tags: [String!]
+  createdBy: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type WorkflowMetrics {
+  totalWorkflows: Int!
+  activeInstances: Int!
+  completedToday: Int!
+  overdueTasks: Int!
+  slaBreaches: Int!
+  averageCompletionTime: Float!
+  byCategory: [WorkflowCategoryMetric!]!
+}
+
+type WorkflowCategoryMetric {
+  category: String!
+  count: Int!
+  averageTime: Float!
+}
+
+input WorkflowNodeInput {
+  id: String!
+  type: String!
+  label: String!
+  data: JSON!
+  position: JSON!
+}
+
+input WorkflowEdgeInput {
+  id: String!
+  source: String!
+  target: String!
+  data: JSON
+}
+
+input WorkflowDefinitionInput {
+  nodes: [WorkflowNodeInput!]!
+  edges: [WorkflowEdgeInput!]!
+  settings: JSON
+}
+
+input CreateWorkflowInput {
+  name: String!
+  description: String
+  category: String!
+  definition: WorkflowDefinitionInput!
+  tags: [String!]
+  permissions: JSON
+  isTemplate: Boolean
+}
+
+input UpdateWorkflowInput {
+  name: String
+  description: String
+  category: String
+  definition: WorkflowDefinitionInput
+  tags: [String!]
+  permissions: JSON
+  isActive: Boolean
+}
+
+input CreateWorkflowInstanceInput {
+  workflowId: ID!
+  name: String
+  priority: WorkflowPriority
+  contextData: JSON
+  dueDate: String
+}
+
+input WorkflowApprovalInput {
+  approvalId: ID!
+  decision: String!
+  comments: String
+  reason: String
+  delegatedTo: ID
+  delegationReason: String
+}
+
+input CreateWorkflowTemplateInput {
+  name: String!
+  description: String
+  category: String!
+  industry: String
+  definition: WorkflowDefinitionInput!
+  tags: [String!]
+  isPublic: Boolean
+}
+
+input WorkflowAnalyticsFilter {
+  startDate: String
+  endDate: String
+  categories: [String!]
+  statuses: [WorkflowStatus!]
+  workflowIds: [String!]
+}
+
+type Query {
+  # Workflows
+  workflows(
+    category: String
+    isActive: Boolean
+    isTemplate: Boolean
+    limit: Int
+    offset: Int
+  ): [Workflow!]!
+
+  workflow(id: ID!): Workflow!
+  workflowCategories: [String!]!
+  validateWorkflowDefinition(definition: JSON!): String!
+
+  # Workflow Instances
+  workflowInstance(id: ID!): WorkflowInstance!
+  workflowInstances(
+    workflowId: ID!
+    status: [WorkflowStatus!]
+    limit: Int
+    offset: Int
+  ): [WorkflowInstance!]!
+
+  # Approvals
+  pendingApprovals: [WorkflowApproval!]!
+  approvalHistory(stepId: ID!, instanceId: ID!): [WorkflowApproval!]!
+  approvalMetrics: String!
+
+  # Templates
+  workflowTemplates(
+    category: String
+    industry: String
+    isPublic: Boolean
+    search: String
+    tags: [String!]
+    limit: Int
+    offset: Int
+  ): [WorkflowTemplate!]!
+
+  workflowTemplate(id: ID!): WorkflowTemplate!
+  workflowTemplatesByCategory(category: String!): [WorkflowTemplate!]!
+  workflowTemplatesByIndustry(industry: String!): [WorkflowTemplate!]!
+  popularWorkflowTemplates(limit: Int): [WorkflowTemplate!]!
+  workflowTemplateCategories: [String!]!
+  workflowTemplateIndustries: [String!]!
+  workflowTemplateTags: [String!]!
+  workflowTemplateStats: String!
+  searchWorkflowTemplates(
+    query: String!
+    category: String
+    industry: String
+    tags: [String!]
+  ): [WorkflowTemplate!]!
+
+  # Analytics
+  workflowMetrics(filter: WorkflowAnalyticsFilter): WorkflowMetrics!
+  workflowPerformance(workflowId: ID!, period: String): String!
+  approvalAnalytics(filter: WorkflowAnalyticsFilter): String!
+  workflowInsights: String!
+  slaMetrics(period: String): String!
+  overdueItems: String!
+}
+
+type Mutation {
+  # Workflows
+  createWorkflow(input: CreateWorkflowInput!): Workflow!
+  updateWorkflow(id: ID!, input: UpdateWorkflowInput!): Workflow!
+  deleteWorkflow(id: ID!): Boolean!
+  duplicateWorkflow(id: ID!, newName: String): Workflow!
+  createWorkflowVersion(id: ID!): Workflow!
+
+  # Workflow Instances
+  createWorkflowInstance(input: CreateWorkflowInstanceInput!): WorkflowInstance!
+  executeWorkflowStep(stepId: ID!, data: JSON): WorkflowStep!
+  completeWorkflowStep(stepId: ID!, data: JSON): Boolean!
+  cancelWorkflowInstance(id: ID!): Boolean!
+
+  # Approvals
+  processApproval(input: WorkflowApprovalInput!): WorkflowApproval!
+  bulkApprove(approvalIds: [ID!]!, comments: String): [WorkflowApproval!]!
+
+  # Templates
+  createWorkflowTemplate(input: CreateWorkflowTemplateInput!): WorkflowTemplate!
+  useWorkflowTemplate(
+    templateId: ID!
+    name: String
+    description: String
+  ): Workflow!
+  deleteWorkflowTemplate(id: ID!): Boolean!
+  createTemplateFromWorkflow(
+    workflowId: ID!
+    name: String!
+    category: String!
+    description: String
+    industry: String
+    tags: [String!]
+    isPublic: Boolean
+  ): WorkflowTemplate!
+}
+
+scalar DateTime
+scalar JSON
