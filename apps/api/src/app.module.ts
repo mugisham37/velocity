@@ -13,6 +13,7 @@ import { AuthModule } from './auth/auth.module';
 import { createWinstonLogger } from './common/logger/winston.config';
 import { CustomersModule } from './customers/customers.module';
 import { HealthModule } from './health/health.module';
+import { InventoryModule } from './inventory/inventory.module';
 import { SalesCRMModule } from './sales-crm/sales-crm.module';
 import { VendorsModule } from './vendors/vendors.module';
 
@@ -66,6 +67,7 @@ import { VendorsModule } from './vendors/vendors.module';
     CustomersModule,
     VendorsModule,
     InventoryModule,
+    ManufacturingModule,
     SalesCRMModule,
   ],
 })

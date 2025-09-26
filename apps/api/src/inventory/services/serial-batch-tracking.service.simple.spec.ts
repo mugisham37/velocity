@@ -1,5 +1,6 @@
 import { DatabaseService } from '@kiro/database';
 import { Test, TestingModule } from '@nestjs/testing';
+import { beforeEach } from 'node:test';
 import { vi } from 'vitest';
 import { SerialBatchTrackingService } from './serial-batch-tracking.service';
 

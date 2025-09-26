@@ -1,0 +1,293 @@
+type BOM {
+  id: ID!
+  bomNo: String!
+  itemId: ID!
+  companyId: ID!
+  version: String!
+  isActive: Boolean!
+  isDefault: Boolean!
+  description: String
+  quantity: Float!
+  uom: String!
+  operatingCost: Float!
+  rawMaterialCost: Float!
+  totalCost: Float!
+  bomType: String!
+  withOperations: Boolean!
+  transferMaterialAgainst: String!
+  allowAlternativeItem: Boolean!
+  allowSameItemMultipleTimes: Boolean!
+  setRateOfSubAssemblyItemBasedOnBom: Boolean!
+  currency: String!
+  priceListRate: Float!
+  baseRawMaterialCost: Float!
+  baseOperatingCost: Float!
+  baseTotalCost: Float!
+  inspectionRequired: Boolean!
+  qualityInspectionTemplate: String
+  projectId: ID
+  routingId: ID
+  createdBy: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Relations
+  items: [BOMItem!]!
+  operations: [BOMOperation!]!
+  scrapItems: [BOMScrapItem!]!
+}
+
+type BOMItem {
+  id: ID!
+  bomId: ID!
+  itemId: ID!
+  itemCode: String!
+  itemName: String!
+  description: String
+  imageUrl: String
+  qty: Float!
+  uom: String!
+  rate: Float!
+  baseRate: Float!
+  amount: Float!
+  baseAmount: Float!
+  stockQty: Float!
+  stockUom: String
+  conversionFactor: Float!
+  bomNo: String
+  allowAlternativeItem: Boolean!
+  includeItemInManufacturing: Boolean!
+  sourcedBySupplier: Boolean!
+  originalItem: ID
+  operationId: ID
+  idx: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Relations
+  alternativeItems: [BOMAlternativeItem!]!
+}
+
+type BOMOperation {
+  id: ID!
+  bomId: ID!
+  operationNo: String!
+  operationName: String!
+  description: String
+  workstationId: ID
+  workstationType: String
+  timeInMins: Float!
+  operatingCost: Float!
+  baseOperatingCost: Float!
+  hourRate: Float!
+  baseHourRate: Float!
+  batchSize: Int!
+  fixedTimeInMins: Float!
+  setUpTime: Float!
+  tearDownTime: Float!
+  sequenceId: Int!
+  idx: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type BOMScrapItem {
+  id: ID!
+  bomId: ID!
+  itemId: ID!
+  itemCode: String!
+  itemName: String!
+  stockQty: Float!
+  rate: Float!
+  amount: Float!
+  baseRate: Float!
+  baseAmount: Float!
+  stockUom: String
+  idx: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type BOMAlternativeItem {
+  id: ID!
+  bomItemId: ID!
+  alternativeItemId: ID!
+  alternativeItemCode: String!
+  alternativeItemName: String!
+  conversionFactor: Float!
+  priority: Int!
+  isActive: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type BOMUpdateLog {
+  id: ID!
+  bomId: ID!
+  updateType: String!
+  changeDescription: String
+  previousData: JSON
+  newData: JSON
+  updatedBy: ID!
+  createdAt: DateTime!
+}
+
+type BOMCostBreakdown {
+  materialCost: Float!
+  operatingCost: Float!
+  scrapCost: Float!
+  totalCost: Float!
+  currency: String!
+}
+
+type BOMExplosionItem {
+  itemId: ID!
+  itemCode: String!
+  itemName: String!
+  requiredQty: Float!
+  uom: String!
+  rate: Float!
+  amount: Float!
+  level: Int!
+  parentBomId: ID
+  bomNo: String
+}
+
+type BOMExplosionResult {
+  items: [BOMExplosionItem!]!
+  costBreakdown: BOMCostBreakdown!
+  totalQuantity: Float!
+}
+
+input CreateBOMItemInput {
+  itemId: ID!
+  itemCode: String!
+  itemName: String!
+  description: String
+  qty: Float!
+  uom: String!
+  rate: Float
+  conversionFactor: Float
+  bomNo: String
+  allowAlternativeItem: Boolean
+  includeItemInManufacturing: Boolean
+  sourcedBySupplier: Boolean
+  operationId: ID
+}
+
+input CreateBOMOperationInput {
+  operationNo: String!
+  operationName: String!
+  description: String
+  workstationId: ID
+  workstationType: String
+  timeInMins: Float
+  hourRate: Float
+  batchSize: Int
+  fixedTimeInMins: Float
+  setUpTime: Float
+  tearDownTime: Float
+  sequenceId: Int
+}
+
+input CreateBOMScrapItemInput {
+  itemId: ID!
+  itemCode: String!
+  itemName: String!
+  stockQty: Float
+  rate: Float
+  stockUom: String
+}
+
+input CreateBOMInput {
+  bomNo: String!
+  itemId: ID!
+  companyId: ID!
+  version: String
+  description: String
+  quantity: Float
+  uom: String!
+  bomType: String
+  withOperations: Boolean
+  transferMaterialAgainst: String
+  allowAlternativeItem: Boolean
+  allowSameItemMultipleTimes: Boolean
+  setRateOfSubAssemblyItemBasedOnBom: Boolean
+  currency: String
+  inspectionRequired: Boolean
+  qualityInspectionTemplate: String
+  projectId: ID
+  routingId: ID
+  items: [CreateBOMItemInput!]
+  operations: [CreateBOMOperationInput!]
+  scrapItems: [CreateBOMScrapItemInput!]
+}
+
+input UpdateBOMInput {
+  description: String
+  quantity: Float
+  uom: String
+  isActive: Boolean
+  isDefault: Boolean
+  withOperations: Boolean
+  transferMaterialAgainst: String
+  allowAlternativeItem: Boolean
+  allowSameItemMultipleTimes: Boolean
+  setRateOfSubAssemblyItemBasedOnBom: Boolean
+  inspectionRequired: Boolean
+  qualityInspectionTemplate: String
+  items: [CreateBOMItemInput!]
+  operations: [CreateBOMOperationInput!]
+  scrapItems: [CreateBOMScrapItemInput!]
+}
+
+input BOMFilterInput {
+  companyId: ID
+  itemId: ID
+  bomNo: String
+  version: String
+  isActive: Boolean
+  isDefault: Boolean
+  bomType: String
+  search: String
+}
+
+input CreateBOMVersionInput {
+  bomId: ID!
+  newVersion: String!
+  changeDescription: String
+  makeDefault: Boolean
+}
+
+input BOMCostCalculationInput {
+  bomId: ID!
+  includeOperations: Boolean
+  includeScrap: Boolean
+  quantity: Float
+}
+
+input BOMExplosionInput {
+  bomId: ID!
+  quantity: Float!
+  includeSubAssemblies: Boolean
+  includeOperations: Boolean
+  includeScrap: Boolean
+}
+
+type Query {
+  bom(id: ID!): BOM
+  boms(filter: BOMFilterInput): [BOM!]!
+  bomItems(bomId: ID!): [BOMItem!]!
+  bomOperations(bomId: ID!): [BOMOperation!]!
+  bomScrapItems(bomId: ID!): [BOMScrapItem!]!
+  bomAlternativeItems(bomItemId: ID!): [BOMAlternativeItem!]!
+  bomCostCalculation(input: BOMCostCalculationInput!): BOMCostBreakdown!
+  bomExplosion(input: BOMExplosionInput!): BOMExplosionResult!
+}
+
+type Mutation {
+  createBOM(input: CreateBOMInput!): BOM!
+  updateBOM(id: ID!, input: UpdateBOMInput!): BOM!
+  deleteBOM(id: ID!): Boolean!
+  createBOMVersion(input: CreateBOMVersionInput!): BOM!
+}

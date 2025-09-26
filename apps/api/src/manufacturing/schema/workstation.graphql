@@ -1,0 +1,96 @@
+type Workstation {
+  id: ID!
+  workstationName: String!
+  workstationType: String
+  companyId: ID!
+  warehouseId: ID
+  description: String
+  hourRate: Float!
+  hourRateElectricity: Float!
+  hourRateConsumable: Float!
+  hourRateRent: Float!
+  hourRateLabour: Float!
+  productionCapacity: Float!
+  workingHoursStart: String
+  workingHoursEnd: String
+  holidayList: String
+  isActive: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type WorkstationCapacityInfo {
+  totalCapacity: Float!
+  availableCapacity: Float!
+  utilizationPercentage: Float!
+  workingHoursStart: String!
+  workingHoursEnd: String!
+  dailyWorkingHours: Float!
+}
+
+type WorkstationCostBreakdown {
+  hourRate: Float!
+  electricityCost: Float!
+  consumableCost: Float!
+  rentCost: Float!
+  labourCost: Float!
+  totalHourlyRate: Float!
+  currency: String!
+}
+
+input CreateWorkstationInput {
+  workstationName: String!
+  workstationType: String
+  companyId: ID!
+  warehouseId: ID
+  description: String
+  hourRate: Float
+  hourRateElectricity: Float
+  hourRateConsumable: Float
+  hourRateRent: Float
+  hourRateLabour: Float
+  productionCapacity: Float
+  workingHoursStart: String
+  workingHoursEnd: String
+  holidayList: String
+}
+
+input UpdateWorkstationInput {
+  workstationName: String
+  workstationType: String
+  warehouseId: ID
+  description: String
+  hourRate: Float
+  hourRateElectricity: Float
+  hourRateConsumable: Float
+  hourRateRent: Float
+  hourRateLabour: Float
+  productionCapacity: Float
+  workingHoursStart: String
+  workingHoursEnd: String
+  holidayList: String
+  isActive: Boolean
+}
+
+input WorkstationFilterInput {
+  companyId: ID
+  warehouseId: ID
+  workstationType: String
+  isActive: Boolean
+  search: String
+}
+
+type Query {
+  workstation(id: ID!): Workstation
+  workstations(filter: WorkstationFilterInput): [Workstation!]!
+  workstationsByCompany(companyId: ID!): [Workstation!]!
+  workstationsByType(companyId: ID!, workstationType: String!): [Workstation!]!
+  workstationCapacity(id: ID!): WorkstationCapacityInfo!
+  workstationCostBreakdown(id: ID!): WorkstationCostBreakdown!
+}
+
+type Mutation {
+  createWorkstation(input: CreateWorkstationInput!): Workstation!
+  updateWorkstation(id: ID!, input: UpdateWorkstationInput!): Workstation!
+  deleteWorkstation(id: ID!): Boolean!
+}

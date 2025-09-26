@@ -7,6 +7,7 @@ export * from './banking';
 export * from './companies';
 export * from './customers';
 export * from './items';
+export * from './manufacturing';
 export * from './notifications';
 export * from './sales-crm';
 export * from './serial-batch-tracking';
@@ -257,3 +258,31 @@ export type QualityInspection = InferSelectModel<typeof qualityInspections>;
 export type NewQualityInspection = InferInsertModel<typeof qualityInspections>;
 export type ComplianceReport = InferSelectModel<typeof complianceReports>;
 export type NewComplianceReport = InferInsertModel<typeof complianceReports>;
+
+// Manufacturing types
+import {
+  bomAlternativeItems,
+  bomItems,
+  bomOperations,
+  bomScrapItems,
+  bomUpdateLog,
+  boms,
+  workstations,
+} from './manufacturing';
+
+export type BOM = InferSelectModel<typeof boms>;
+export type NewBOM = InferInsertModel<typeof boms>;
+export type BOMItem = InferSelectModel<typeof bomItems>;
+export type NewBOMItem = InferInsertModel<typeof bomItems>;
+export type BOMOperation = InferSelectModel<typeof bomOperations>;
+export type NewBOMOperation = InferInsertModel<typeof bomOperations>;
+export type BOMScrapItem = InferSelectModel<typeof bomScrapItems>;
+export type NewBOMScrapItem = InferInsertModel<typeof bomScrapItems>;
+export type BOMAlternativeItem = InferSelectModel<typeof bomAlternativeItems>;
+export type NewBOMAlternativeItem = InferInsertModel<
+  typeof bomAlternativeItems
+>;
+export type BOMUpdateLog = InferSelectModel<typeof bomUpdateLog>;
+export type NewBOMUpdateLog = InferInsertModel<typeof bomUpdateLog>;
+export type Workstation = InferSelectModel<typeof workstations>;
+export type NewWorkstation = InferInsertModel<typeof workstations>;
