@@ -4,7 +4,13 @@
   "pipeline": {
     "build": {
       "dependsOn": ["^build", "typecheck"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**", "build/**"]
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**",
+        "build/**",
+        ".expo/**"
+      ]
     },
     "start": {
       "dependsOn": ["build"],
@@ -64,6 +70,14 @@
     },
     "clean": {
       "cache": false
+    },
+    "android": {
+      "cache": false,
+      "persistent": true
+    },
+    "ios": {
+      "cache": false,
+      "persistent": true
     }
   }
 }

@@ -1,0 +1,91 @@
+{
+  "expo": {
+    "name": "KIRO ERP",
+    "slug": "kiro-erp-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kiro.erp",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to scan barcodes and capture documents.",
+        "NSMicrophoneUsageDescription": "This app uses the microphone to record voice notes.",
+        "NSLocationWhenInUseUsageDescription": "This app uses location to track attendance and field operations.",
+        "NSFaceIDUsageDescription": "This app uses Face ID for secure authentication."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.kiro.erp",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "USE_FINGERPRINT",
+        "USE_BIOMETRIC",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-dev-client",
+      [
+        "expo-barcode-scanner",
+        {
+          "cameraPermission": "Allow KIRO ERP to access camera for barcode scanning."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow KIRO ERP to access camera for document capture."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow KIRO ERP to use your location for attendance tracking and field operations."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow KIRO ERP to use Face ID for secure authentication."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "kiro-erp-mobile"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/kiro-erp-mobile"
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    }
+  }
+}
