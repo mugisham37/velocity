@@ -1,23 +1,26 @@
-import { NestFactory } from '@nestjs/core';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { ValidationPipe, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { WinstonModule } from 'nest-winston';
 import helmet from '@fastify/helmet';
+import { validateConfig } from '@kiro/config';
+import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
+import { WinstonModule } from 'nest-winston';
 import { AppModule } from './app.module';
-import { createWinstonLogger } from './common/logger/winston.config';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
-import { validateConfig } from '@kiro/config';
+import { createWinstonLogger } from './common/logger/winston.config';
 
 async function bootstrap() {
   // Validate configuration before starting
   const config = validateConfig();
-  
+
   // Create Winston logger
   const logger = createWinstonLogger();
-  
+
   // Create Fastify adapter with options
   const fastifyAdapter = new FastifyAdapter({
     logger: false, // We'll use Winston instead
@@ -56,7 +59,9 @@ async function bootstrap() {
 
   // CORS configuration
   await app.register(require('@fastify/cors'), {
-    origin: configService.get<string>('CORS_ORIGIN', 'http://localhost:3000').split(','),
+    origin: configService
+      .get<string>('CORS_ORIGIN', 'http://localhost:3000')
+      .split(','),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -80,7 +85,8 @@ async function bootstrap() {
   // Global interceptors
   app.useGlobalInterceptors(
     new LoggingInterceptor(logger),
-    new TransformInterceptor()
+    new TransformInterceptor(),
+    app.get('PerformanceInterceptor')
   );
 
   // Enable shutdown hooks
@@ -95,7 +101,7 @@ async function bootstrap() {
 }
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   console.error('Uncaught Exception:', error);
   process.exit(1);
 });
@@ -105,7 +111,7 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-bootstrap().catch((error) => {
+bootstrap().catch(error => {
   console.error('Failed to start application:', error);
   process.exit(1);
 });

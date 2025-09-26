@@ -9,6 +9,8 @@ import { SQL, and, asc, count, desc, eq, sql } from 'drizzle-orm';
 import { PgTable } from 'drizzle-orm/pg-core';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
+import { CacheService } from './cache.service';
+import { PerformanceMonitorService } from './performance-monitor.service';
 
 export interface PaginationOptions {
   page?: number;
@@ -44,11 +46,12 @@ export abstract class BaseService<
   protected abstract table: TTable;
   protected abstract tableName: string;
   protected database: Database;
-  private cache = new Map<string, { data: any; expires: number }>();
 
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
-    protected readonly logger: Logger
+    protected readonly logger: Logger,
+    protected readonly cacheService: CacheService,
+    protected readonly performanceMonitor: PerformanceMonitorService
   ) {
     this.database = db;
   }
@@ -83,10 +86,15 @@ export abstract class BaseService<
    * Find record by ID
    */
   async findById(id: string, companyId?: string): Promise<TSelect | null> {
+    const timer = this.performanceMonitor.createTimer(
+      `${this.tableName}.findById`
+    );
+
     try {
       const cacheKey = `${this.tableName}:${id}:${companyId || 'global'}`;
-      const cached = this.getFromCache(cacheKey);
+      const cached = await this.cacheService.get<TSelect>(cacheKey);
       if (cached) {
+        timer();
         return cached;
       }
 
@@ -95,18 +103,31 @@ export abstract class BaseService<
         conditions.push(eq((this.table as any).companyId, companyId));
       }
 
+      const queryStart = performance.now();
       const [result] = await this.database
         .select()
         .from(this.table)
         .where(and(...conditions))
         .limit(1);
 
+      const queryDuration = performance.now() - queryStart;
+      this.performanceMonitor.recordQueryPerformance(
+        `SELECT * FROM ${this.tableName} WHERE id = ? LIMIT 1`,
+        queryDuration,
+        [id]
+      );
+
       if (result) {
-        this.setCache(cacheKey, result);
+        await this.cacheService.set(cacheKey, result, {
+          ttl: 300, // 5 minutes
+          tags: [this.tableName, `${this.tableName}:${id}`],
+        });
       }
 
+      timer();
       return (result as TSelect) || null;
     } catch (error) {
+      timer();
       this.logger.error(`Failed to find ${this.tableName} by ID`, {
         error,
         id,
@@ -214,6 +235,10 @@ export abstract class BaseService<
     companyId?: string,
     additionalWhere?: SQL
   ): Promise<PaginationResult<TSelect>> {
+    const timer = this.performanceMonitor.createTimer(
+      `${this.tableName}.findAll`
+    );
+
     try {
       const {
         page = 1,
@@ -223,9 +248,11 @@ export abstract class BaseService<
       } = options;
 
       const offset = (page - 1) * limit;
-      const cacheKey = `${this.tableName}:list:${JSON.stringify({ options, companyId, additionalWhere })}`;
-      const cached = this.getFromCache(cacheKey);
+      const cacheKey = `${this.tableName}:list:${JSON.stringify({ options, companyId })}`;
+      const cached =
+        await this.cacheService.get<PaginationResult<TSelect>>(cacheKey);
       if (cached) {
+        timer();
         return cached;
       }
 
@@ -242,10 +269,17 @@ export abstract class BaseService<
         conditions.length > 0 ? and(...conditions) : undefined;
 
       // Get total count
+      const countStart = performance.now();
       const [{ total }] = await this.database
         .select({ total: count() })
         .from(this.table)
         .where(whereClause);
+
+      const countDuration = performance.now() - countStart;
+      this.performanceMonitor.recordQueryPerformance(
+        `SELECT COUNT(*) FROM ${this.tableName}`,
+        countDuration
+      );
 
       // Get data with pagination
       const orderBy =
@@ -253,6 +287,7 @@ export abstract class BaseService<
           ? asc((this.table as any)[sortBy])
           : desc((this.table as any)[sortBy]);
 
+      const queryStart = performance.now();
       const data = await this.database
         .select()
         .from(this.table)
@@ -260,6 +295,12 @@ export abstract class BaseService<
         .orderBy(orderBy)
         .limit(limit)
         .offset(offset);
+
+      const queryDuration = performance.now() - queryStart;
+      this.performanceMonitor.recordQueryPerformance(
+        `SELECT * FROM ${this.tableName} ORDER BY ${sortBy} ${sortOrder} LIMIT ${limit} OFFSET ${offset}`,
+        queryDuration
+      );
 
       const totalPages = Math.ceil(total / limit);
       const result = {
@@ -274,9 +315,15 @@ export abstract class BaseService<
         },
       };
 
-      this.setCache(cacheKey, result, 300); // Cache for 5 minutes
+      await this.cacheService.set(cacheKey, result, {
+        ttl: 300, // 5 minutes
+        tags: [this.tableName, `${this.tableName}:list`],
+      });
+
+      timer();
       return result;
     } catch (error) {
+      timer();
       this.logger.error(`Failed to find all ${this.tableName}`, {
         error,
         options,
@@ -383,29 +430,8 @@ export abstract class BaseService<
   /**
    * Cache management
    */
-  protected setCache(key: string, data: any, ttl: number = 600): void {
-    const expires = Date.now() + ttl * 1000;
-    this.cache.set(key, { data, expires });
-  }
-
-  protected getFromCache(key: string): any | null {
-    const cached = this.cache.get(key);
-    if (!cached) return null;
-
-    if (Date.now() > cached.expires) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return cached.data;
-  }
-
-  protected invalidateCache(): void {
-    // Clear all cache entries for this service
-    const keysToDelete = Array.from(this.cache.keys()).filter(key =>
-      key.startsWith(`${this.tableName}:`)
-    );
-    keysToDelete.forEach(key => this.cache.delete(key));
+  protected async invalidateCache(): Promise<void> {
+    await this.cacheService.invalidateByTags([this.tableName]);
   }
 
   /**

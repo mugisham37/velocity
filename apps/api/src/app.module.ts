@@ -20,6 +20,7 @@ import { HrModule } from './hr/hr.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { IoTModule } from './iot/iot.module';
 import { ManufacturingModule } from './manufacturing/manufacturing.module';
+import { PerformanceModule } from './performance/performance.module';
 import { SalesCRMModule } from './sales-crm/sales-crm.module';
 import { VendorsModule } from './vendors/vendors.module';
 import { WorkflowsModule } from './workflows/workflows.module';
@@ -66,6 +67,10 @@ import { WorkflowsModule } from './workflows/workflows.module';
       },
       plugins: [],
     }),
+
+    // Performance and Infrastructure
+    CommonPerformanceModule,
+    PerformanceModule,
 
     // Feature Modules
     HealthModule,
