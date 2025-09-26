@@ -9,6 +9,7 @@ export * from './customers';
 export * from './items';
 export * from './notifications';
 export * from './sales-crm';
+export * from './stock-transactions';
 export * from './users';
 export * from './vendors';
 export * from './warehouses';
@@ -61,6 +62,24 @@ import {
   warehouseLocations,
   warehouses,
 } from './index';
+import {
+  itemAttributeValues,
+  itemAttributes,
+  itemCategories,
+  itemCrossReferences,
+  itemDocuments,
+  itemLifecycle,
+  itemPricingTiers,
+  itemVariants,
+} from './items';
+import {
+  stockEntries,
+  stockEntryItems,
+  stockLedgerEntries,
+  stockReconciliationItems,
+  stockReconciliations,
+  stockReservations,
+} from './stock-transactions';
 
 // Company types
 export type Company = InferSelectModel<typeof companies>;
@@ -183,3 +202,23 @@ export type OnlinePayment = InferSelectModel<typeof onlinePayments>;
 export type NewOnlinePayment = InferInsertModel<typeof onlinePayments>;
 export type BankTransfer = InferSelectModel<typeof bankTransfers>;
 export type NewBankTransfer = InferInsertModel<typeof bankTransfers>;
+
+// Stock Transaction types
+export type StockEntry = InferSelectModel<typeof stockEntries>;
+export type NewStockEntry = InferInsertModel<typeof stockEntries>;
+export type StockEntryItem = InferSelectModel<typeof stockEntryItems>;
+export type NewStockEntryItem = InferInsertModel<typeof stockEntryItems>;
+export type StockLedgerEntry = InferSelectModel<typeof stockLedgerEntries>;
+export type NewStockLedgerEntry = InferInsertModel<typeof stockLedgerEntries>;
+export type StockReservation = InferSelectModel<typeof stockReservations>;
+export type NewStockReservation = InferInsertModel<typeof stockReservations>;
+export type StockReconciliation = InferSelectModel<typeof stockReconciliations>;
+export type NewStockReconciliation = InferInsertModel<
+  typeof stockReconciliations
+>;
+export type StockReconciliationItem = InferSelectModel<
+  typeof stockReconciliationItems
+>;
+export type NewStockReconciliationItem = InferInsertModel<
+  typeof stockReconciliationItems
+>;

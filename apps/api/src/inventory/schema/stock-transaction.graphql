@@ -1,0 +1,562 @@
+# Stock Transaction Types
+
+enum StockEntryType {
+  RECEIPT
+  ISSUE
+  TRANSFER
+  ADJUSTMENT
+  OPENING
+  CLOSING
+}
+
+enum StockEntryStatus {
+  DRAFT
+  SUBMITTED
+  CANCELLED
+}
+
+enum QualityStatus {
+  ACCEPTED
+  REJECTED
+  PENDING
+}
+
+enum ReservationType {
+  SALES_ORDER
+  WER
+  QUALITY_INSPECTION
+}
+
+enum ReservationStatus {
+  ACTIVE
+  DELIVERED
+  CANCELLED
+  EXPIRED
+}
+
+enum ReconciliationType {
+  FULL
+  PARTIAL
+  CYCLE_COUNT
+}
+
+enum ReconciliationStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+# Stock Entry Types
+
+type StockEntry {
+  id: ID!
+  entryNumber: String!
+  entryType: StockEntryType!
+  referenceType: String
+  referenceNumber: String
+  referenceId: ID
+  transactionDate: DateTime!
+  postingDate: DateTime!
+  warehouseId: ID!
+  warehouse: Warehouse
+  fromWarehouseId: ID
+  fromWarehouse: Warehouse
+  toWarehouseId: ID
+  toWarehouse: Warehouse
+  status: StockEntryStatus!
+  docStatus: StockEntryStatus!
+  requiresApproval: Boolean!
+  approvedBy: ID
+  approver: User
+  approvedAt: DateTime
+  totalValue: Float!
+  currency: String!
+  purpose: String
+  remarks: String
+  isGlPosted: Boolean!
+  glPostingDate: DateTime
+  stockEntryItems: [StockEntryItem!]
+  createdBy: ID!
+  creator: User
+  updatedBy: ID
+  updater: User
+  companyId: ID!
+  company: Company
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type StockEntryItem {
+  id: ID!
+  stockEntryId: ID!
+  stockEntry: StockEntry
+  itemId: ID!
+  item: Item
+  locationId: ID
+  location: WarehouseLocation
+  fromLocationId: ID
+  fromLocation: WarehouseLocation
+  toLocationId: ID
+  toLocation: WarehouseLocation
+  qty: Float!
+  uom: String!
+  conversionFactor: Float!
+  stockUomQty: Float!
+  valuationRate: Float!
+  amount: Float!
+  serialNumbers: [String!]
+  batchNumbers: JSON
+  hasSerialNo: Boolean!
+  hasBatchNo: Boolean!
+  qualityInspection: String
+  inspectionRequired: Boolean!
+  qualityStatus: QualityStatus!
+  remarks: String
+  actualQtyBefore: Float!
+  actualQtyAfter: Float!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# Stock Reservation Types
+
+type StockReservation {
+  id: ID!
+  itemId: ID!
+  item: Item
+  warehouseId: ID!
+  warehouse: Warehouse
+  locationId: ID
+  location: WarehouseLocation
+  reservationType: ReservationType!
+  referenceType: String!
+  referenceNumber: String!
+  referenceId: ID!
+  reservedQty: Float!
+  deliveredQty: Float!
+  uom: String!
+  serialNumbers: [String!]
+  batchNumbers: JSON
+  reservationDate: DateTime!
+  expectedDeliveryDate: DateTime
+  expiryDate: DateTime
+  status: ReservationStatus!
+  priority: Int!
+  remarks: String
+  createdBy: ID!
+  creator: User
+  updatedBy: ID
+  updater: User
+  companyId: ID!
+  company: Company
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# Stock Reconciliation Types
+
+type StockReconciliation {
+  id: ID!
+  reconciliationNumber: String!
+  reconciliationDate: DateTime!
+  warehouseId: ID!
+  warehouse: Warehouse
+  status: ReconciliationStatus!
+  reconciliationType: ReconciliationType!
+  totalItemsCount: Int!
+  itemsWithVariance: Int!
+  totalVarianceValue: Float!
+  purpose: String
+  remarks: String
+  requiresApproval: Boolean!
+  approvedBy: ID
+  approver: User
+  approvedAt: DateTime
+  reconciliationItems: [StockReconciliationItem!]
+  createdBy: ID!
+  creator: User
+  updatedBy: ID
+  updater: User
+  companyId: ID!
+  company: Company
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type StockReconciliationItem {
+  id: ID!
+  reconciliationId: ID!
+  reconciliation: StockReconciliation
+  itemId: ID!
+  item: Item
+  locationId: ID
+  location: WarehouseLocation
+  systemQty: Float!
+  physicalQty: Float!
+  varianceQty: Float!
+  valuationRate: Float!
+  varianceValue: Float!
+  serialNumbers: [String!]
+  batchNumbers: JSON
+  isReconciled: Boolean!
+  varianceReason: String
+  remarks: String
+  countedBy: ID
+  counter: User
+  countedAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# Stock Ledger Types
+
+type StockLedgerEntry {
+  id: ID!
+  itemId: ID!
+  item: Item
+  warehouseId: ID!
+  warehouse: Warehouse
+  locationId: ID
+  location: WarehouseLocation
+  voucherType: String!
+  voucherNumber: String!
+  voucherId: ID!
+  postingDate: DateTime!
+  postingTime: DateTime!
+  actualQty: Float!
+  qtyAfterTransaction: Float!
+  incomingRate: Float!
+  valuationRate: Float!
+  stockValue: Float!
+  stockValueDifference: Float!
+  serialNo: String
+  batchNo: String
+  reservedQty: Float!
+  reservedStock: Float!
+  projectId: ID
+  companyId: ID!
+  company: Company
+  createdAt: DateTime!
+}
+
+# Connection Types
+
+type StockEntryConnection {
+  entries: [StockEntry!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
+type StockReservationConnection {
+  reservations: [StockReservation!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
+type StockReconciliationConnection {
+  reconciliations: [StockReconciliation!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
+type StockLedgerConnection {
+  entries: [StockLedgerEntry!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
+# Input Types
+
+input CreateStockEntryItemInput {
+  itemId: ID!
+  locationId: ID
+  fromLocationId: ID
+  toLocationId: ID
+  qty: Float!
+  uom: String!
+  conversionFactor: Float
+  valuationRate: Float
+  serialNumbers: [String!]
+  batchNumbers: JSON
+  qualityInspection: String
+  inspectionRequired: Boolean
+  qualityStatus: QualityStatus
+  remarks: String
+}
+
+input CreateStockEntryInput {
+  entryNumber: String!
+  entryType: StockEntryType!
+  referenceType: String
+  referenceNumber: String
+  referenceId: ID
+  transactionDate: DateTime!
+  postingDate: DateTime!
+  warehouseId: ID!
+  fromWarehouseId: ID
+  toWarehouseId: ID
+  purpose: String
+  remarks: String
+  requiresApproval: Boolean
+  items: [CreateStockEntryItemInput!]!
+  companyId: ID!
+}
+
+input UpdateStockEntryInput {
+  entryNumber: String
+  entryType: StockEntryType
+  referenceType: String
+  referenceNumber: String
+  referenceId: ID
+  transactionDate: DateTime
+  postingDate: DateTime
+  warehouseId: ID
+  fromWarehouseId: ID
+  toWarehouseId: ID
+  status: StockEntryStatus
+  purpose: String
+  remarks: String
+  requiresApproval: Boolean
+}
+
+input CreateStockReservationInput {
+  itemId: ID!
+  warehouseId: ID!
+  locationId: ID
+  reservationType: ReservationType!
+  referenceType: String!
+  referenceNumber: String!
+  referenceId: ID!
+  reservedQty: Float!
+  uom: String!
+  reservationDate: DateTime!
+  expectedDeliveryDate: DateTime
+  expiryDate: DateTime
+  serialNumbers: [String!]
+  batchNumbers: JSON
+  priority: Int
+  remarks: String
+  companyId: ID!
+}
+
+input UpdateStockReservationInput {
+  reservedQty: Float
+  deliveredQty: Float
+  expectedDeliveryDate: DateTime
+  expiryDate: DateTime
+  status: ReservationStatus
+  serialNumbers: [String!]
+  batchNumbers: JSON
+  priority: Int
+  remarks: String
+}
+
+input CreateStockReconciliationItemInput {
+  itemId: ID!
+  locationId: ID
+  systemQty: Float!
+  physicalQty: Float!
+  valuationRate: Float
+  serialNumbers: [String!]
+  batchNumbers: JSON
+  varianceReason: String
+  remarks: String
+  countedBy: ID
+  countedAt: DateTime
+}
+
+input CreateStockReconciliationInput {
+  reconciliationNumber: String!
+  reconciliationDate: DateTime!
+  warehouseId: ID!
+  reconciliationType: ReconciliationType!
+  purpose: String
+  remarks: String
+  requiresApproval: Boolean
+  items: [CreateStockReconciliationItemInput!]!
+  companyId: ID!
+}
+
+input UpdateStockReconciliationInput {
+  reconciliationNumber: String
+  reconciliationDate: DateTime
+  status: ReconciliationStatus
+  purpose: String
+  remarks: String
+  requiresApproval: Boolean
+}
+
+# Filter Inputs
+
+input StockEntryFilterInput {
+  search: String
+  entryType: StockEntryType
+  warehouseId: ID
+  status: StockEntryStatus
+  referenceType: String
+  fromDate: DateTime
+  toDate: DateTime
+  page: Int
+  limit: Int
+  sortBy: String
+  sortOrder: String
+}
+
+input StockReservationFilterInput {
+  search: String
+  itemId: ID
+  warehouseId: ID
+  reservationType: ReservationType
+  status: ReservationStatus
+  referenceType: String
+  fromDate: DateTime
+  toDate: DateTime
+  page: Int
+  limit: Int
+  sortBy: String
+  sortOrder: String
+}
+
+input StockReconciliationFilterInput {
+  search: String
+  warehouseId: ID
+  status: ReconciliationStatus
+  reconciliationType: ReconciliationType
+  fromDate: DateTime
+  toDate: DateTime
+  page: Int
+  limit: Int
+  sortBy: String
+  sortOrder: String
+}
+
+input StockLevelQueryInput {
+  itemId: ID
+  warehouseId: ID
+  locationId: ID
+  asOfDate: DateTime
+  includeReserved: Boolean
+  includeOrdered: Boolean
+}
+
+input StockLedgerQueryInput {
+  itemId: ID
+  warehouseId: ID
+  voucherType: String
+  voucherNumber: String
+  fromDate: DateTime
+  toDate: DateTime
+  page: Int
+  limit: Int
+  sortBy: String
+  sortOrder: String
+}
+
+# Queries
+
+extend type Query {
+  # Stock Entries
+  stockEntry(id: ID!): StockEntry
+  stockEntries(
+    filter: StockEntryFilterInput!
+    companyId: ID!
+  ): StockEntryConnection!
+
+  # Stock Reservations
+  stockReservation(id: ID!): StockReservation
+  stockReservations(
+    filter: StockReservationFilterInput!
+    companyId: ID!
+  ): StockReservationConnection!
+
+  # Stock Reconciliations
+  stockReconciliation(id: ID!): StockReconciliation
+  stockReconciliations(
+    filter: StockReconciliationFilterInput!
+    companyId: ID!
+  ): StockReconciliationConnection!
+
+  # Stock Levels and Ledger
+  stockLevels(query: StockLevelQueryInput!, companyId: ID!): [StockLevel!]!
+  stockLedger(
+    query: StockLedgerQueryInput!
+    companyId: ID!
+  ): StockLedgerConnection!
+
+  # Available Stock
+  availableStock(itemId: ID!, warehouseId: ID!, locationId: ID): Float!
+}
+
+# Mutations
+
+extend type Mutation {
+  # Stock Entry Management
+  createStockEntry(input: CreateStockEntryInput!): StockEntry!
+  updateStockEntry(id: ID!, input: UpdateStockEntryInput!): StockEntry!
+  submitStockEntry(id: ID!): StockEntry!
+  cancelStockEntry(id: ID!): StockEntry!
+
+  # Stock Reservation Management
+  createStockReservation(input: CreateStockReservationInput!): StockReservation!
+  updateStockReservation(
+    id: ID!
+    input: UpdateStockReservationInput!
+  ): StockReservation!
+  releaseStockReservation(id: ID!): StockReservation!
+
+  # Stock Reconciliation Management
+  createStockReconciliation(
+    input: CreateStockReconciliationInput!
+  ): StockReconciliation!
+  updateStockReconciliation(
+    id: ID!
+    input: UpdateStockReconciliationInput!
+  ): StockReconciliation!
+  submitStockReconciliation(id: ID!): StockReconciliation!
+
+  # Bulk Operations
+  bulkUpdateStockLevels(updates: [BulkStockUpdateInput!]!): [StockLevel!]!
+  processStockAdjustment(
+    adjustments: [StockAdjustmentInput!]!
+    companyId: ID!
+  ): StockEntry!
+}
+
+# Bulk Operation Inputs
+
+input BulkStockUpdateInput {
+  itemId: ID!
+  warehouseId: ID!
+  locationId: ID
+  newQty: Float!
+  valuationRate: Float
+  reason: String!
+}
+
+input StockAdjustmentInput {
+  itemId: ID!
+  warehouseId: ID!
+  locationId: ID
+  adjustmentQty: Float!
+  valuationRate: Float
+  reason: String!
+  remarks: String
+}
+
+# Subscriptions
+
+extend type Subscription {
+  # Real-time stock updates
+  stockLevelUpdated(itemId: ID, warehouseId: ID): StockLevel!
+  stockEntryStatusChanged(entryId: ID!): StockEntry!
+  stockReservationUpdated(reservationId: ID!): StockReservation!
+}

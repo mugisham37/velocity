@@ -1,10 +1,13 @@
 import { relations } from 'drizzle-orm';
 import {
   boolean,
+  decimal,
+  index,
   jsonb,
   pgTable,
   text,
   timestamp,
+  unique,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
