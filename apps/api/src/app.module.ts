@@ -17,6 +17,7 @@ import { CustomersModule } from './customers/customers.module';
 import { HealthModule } from './health/health.module';
 import { HrModule } from './hr/hr.module';
 import { InventoryModule } from './inventory/inventory.module';
+import { IoTModule } from './iot/iot.module';
 import { ManufacturingModule } from './manufacturing/manufacturing.module';
 import { SalesCRMModule } from './sales-crm/sales-crm.module';
 import { VendorsModule } from './vendors/vendors.module';
@@ -76,6 +77,7 @@ import { VendorsModule } from './vendors/vendors.module';
     SalesCRMModule,
     AssetsModule,
     AnalyticsModule,
+    IoTModule,
   ],
 })
 export class AppModule {}

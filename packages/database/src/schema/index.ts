@@ -9,6 +9,7 @@ export * from './companies';
 export * from './customers';
 export * from './depreciation';
 export * from './hr';
+export * from './iot';
 export * from './items';
 export * from './maintenance';
 export * from './manufacturing';
@@ -442,3 +443,50 @@ export type SparePart = InferSelectModel<typeof spareParts>;
 export type NewSparePart = InferInsertModel<typeof spareParts>;
 export type MaintenanceCost = InferSelectModel<typeof maintenanceCosts>;
 export type NewMaintenanceCost = InferInsertModel<typeof maintenanceCosts>;
+
+// IoT types
+import {
+  energyConsumption,
+  environmentalMonitoring,
+  equipmentMetrics,
+  iotAlerts,
+  iotDevices,
+  iotGateways,
+  iotSensorData,
+  iotSensors,
+  predictiveMaintenanceModels,
+  predictiveMaintenancePredictions,
+} from './iot';
+
+export type IoTDevice = InferSelectModel<typeof iotDevices>;
+export type NewIoTDevice = InferInsertModel<typeof iotDevices>;
+export type IoTSensor = InferSelectModel<typeof iotSensors>;
+export type NewIoTSensor = InferInsertModel<typeof iotSensors>;
+export type IoTSensorData = InferSelectModel<typeof iotSensorData>;
+export type NewIoTSensorData = InferInsertModel<typeof iotSensorData>;
+export type EquipmentMetric = InferSelectModel<typeof equipmentMetrics>;
+export type NewEquipmentMetric = InferInsertModel<typeof equipmentMetrics>;
+export type IoTAlert = InferSelectModel<typeof iotAlerts>;
+export type NewIoTAlert = InferInsertModel<typeof iotAlerts>;
+export type IoTGateway = InferSelectModel<typeof iotGateways>;
+export type NewIoTGateway = InferInsertModel<typeof iotGateways>;
+export type PredictiveMaintenanceModel = InferSelectModel<
+  typeof predictiveMaintenanceModels
+>;
+export type NewPredictiveMaintenanceModel = InferInsertModel<
+  typeof predictiveMaintenanceModels
+>;
+export type PredictiveMaintenancePrediction = InferSelectModel<
+  typeof predictiveMaintenancePredictions
+>;
+export type NewPredictiveMaintenancePrediction = InferInsertModel<
+  typeof predictiveMaintenancePredictions
+>;
+export type EnvironmentalMonitoring = InferSelectModel<
+  typeof environmentalMonitoring
+>;
+export type NewEnvironmentalMonitoring = InferInsertModel<
+  typeof environmentalMonitoring
+>;
+export type EnergyConsumption = InferSelectModel<typeof energyConsumption>;
+export type NewEnergyConsumption = InferInsertModel<typeof energyConsumption>;

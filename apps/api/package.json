@@ -55,6 +55,7 @@
     "natural": "^6.5.0",
     "ml-matrix": "^6.10.4",
     "simple-statistics": "^7.8.3",
+    "mqtt": "^5.3.0",
     "@kiro/database": "*",
     "@kiro/config": "*"
   },
@@ -70,6 +71,7 @@
     "@types/jsonwebtoken": "^9.0.3",
     "@types/qrcode": "^1.5.2",
     "@types/uuid": "^9.0.5",
+    "@types/mqtt": "^2.5.0",
     "typescript": "^5.2.2",
     "vitest": "^0.34.6",
     "@vitest/coverage-v8": "^0.34.6",
