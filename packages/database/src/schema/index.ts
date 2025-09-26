@@ -2,12 +2,15 @@
 export * from './accounts';
 export * from './accounts-payable';
 export * from './accounts-receivable';
+export * from './assets';
 export * from './audit';
 export * from './banking';
 export * from './companies';
 export * from './customers';
+export * from './depreciation';
 export * from './hr';
 export * from './items';
+export * from './maintenance';
 export * from './manufacturing';
 export * from './notifications';
 export * from './sales-crm';
@@ -373,3 +376,69 @@ export type EmployeeOnboardingTask = InferSelectModel<
 export type NewEmployeeOnboardingTask = InferInsertModel<
   typeof employeeOnboardingTasks
 >;
+// Asset Management types
+import {
+  assetCategories,
+  assetDisposals,
+  assetLocations,
+  assetTransfers,
+  assets,
+} from './assets';
+import {
+  assetRevaluations,
+  depreciationEntries,
+  depreciationMethods,
+  depreciationSchedules,
+} from './depreciation';
+import {
+  maintenanceCosts,
+  maintenanceHistory,
+  maintenanceSchedules,
+  maintenanceWorkOrders,
+  spareParts,
+} from './maintenance';
+
+export type Asset = InferSelectModel<typeof assets>;
+export type NewAsset = InferInsertModel<typeof assets>;
+export type AssetCategory = InferSelectModel<typeof assetCategories>;
+export type NewAssetCategory = InferInsertModel<typeof assetCategories>;
+export type AssetLocation = InferSelectModel<typeof assetLocations>;
+export type NewAssetLocation = InferInsertModel<typeof assetLocations>;
+export type AssetTransfer = InferSelectModel<typeof assetTransfers>;
+export type NewAssetTransfer = InferInsertModel<typeof assetTransfers>;
+export type AssetDisposal = InferSelectModel<typeof assetDisposals>;
+export type NewAssetDisposal = InferInsertModel<typeof assetDisposals>;
+
+// Depreciation types
+export type DepreciationSchedule = InferSelectModel<
+  typeof depreciationSchedules
+>;
+export type NewDepreciationSchedule = InferInsertModel<
+  typeof depreciationSchedules
+>;
+export type DepreciationEntry = InferSelectModel<typeof depreciationEntries>;
+export type NewDepreciationEntry = InferInsertModel<typeof depreciationEntries>;
+export type AssetRevaluation = InferSelectModel<typeof assetRevaluations>;
+export type NewAssetRevaluation = InferInsertModel<typeof assetRevaluations>;
+export type DepreciationMethod = InferSelectModel<typeof depreciationMethods>;
+export type NewDepreciationMethod = InferInsertModel<
+  typeof depreciationMethods
+>;
+
+// Maintenance types
+export type MaintenanceSchedule = InferSelectModel<typeof maintenanceSchedules>;
+export type NewMaintenanceSchedule = InferInsertModel<
+  typeof maintenanceSchedules
+>;
+export type MaintenanceWorkOrder = InferSelectModel<
+  typeof maintenanceWorkOrders
+>;
+export type NewMaintenanceWorkOrder = InferInsertModel<
+  typeof maintenanceWorkOrders
+>;
+export type MaintenanceHistory = InferSelectModel<typeof maintenanceHistory>;
+export type NewMaintenanceHistory = InferInsertModel<typeof maintenanceHistory>;
+export type SparePart = InferSelectModel<typeof spareParts>;
+export type NewSparePart = InferInsertModel<typeof spareParts>;
+export type MaintenanceCost = InferSelectModel<typeof maintenanceCosts>;
+export type NewMaintenanceCost = InferInsertModel<typeof maintenanceCosts>;

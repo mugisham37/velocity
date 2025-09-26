@@ -9,6 +9,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { WinstonModule } from 'nest-winston';
 import { AccountsModule } from './accounts/accounts.module';
+import { AssetsModule } from './assets/assets.module';
 import { AuthModule } from './auth/auth.module';
 import { createWinstonLogger } from './common/logger/winston.config';
 import { CustomersModule } from './customers/customers.module';
@@ -72,6 +73,7 @@ import { VendorsModule } from './vendors/vendors.module';
     ManufacturingModule,
     HrModule,
     SalesCRMModule,
+    AssetsModule,
   ],
 })
 export class AppModule {}

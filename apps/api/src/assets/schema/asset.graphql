@@ -1,0 +1,473 @@
+# Asset Management GraphQL Schema
+
+# Enums
+enum AssetStatus {
+  ACTIVE
+  INACTIVE
+  UNDER_MAINTENANCE
+  DISPOSED
+}
+
+enum AssetCondition {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+}
+
+enum DepreciationMethod {
+  STRAIGHT_LINE
+  DECLINING_BALANCE
+  UNITS_OF_PRODUCTION
+  SUM_OF_YEAIGITS
+}
+
+enum TransferStatus {
+  PENDING
+  APPROVED
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
+}
+
+enum DisposalMethod {
+  SALE
+  SCRAP
+  DONATION
+  TRADE_IN
+}
+
+enum DisposalStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+}
+
+# Types
+type Asset {
+  id: ID!
+  assetCode: String!
+  assetName: String!
+  assetCategoryId: ID
+  assetCategory: AssetCategory
+  description: String
+  specifications: JSON
+  serialNumber: String
+  modelNumber: String
+  manufacturer: String
+  supplier: String
+  purchaseDate: DateTime
+  purchaseAmount: String
+  currentValue: String
+  salvageValue: String
+  depreciationMethod: DepreciationMethod
+  usefulLife: Int
+  depreciationStartDate: DateTime
+  currentLocationId: ID
+  currentLocation: AssetLocation
+  custodianId: ID
+  custodian: User
+  departmentId: ID
+  status: AssetStatus!
+  condition: AssetCondition!
+  barcode: String
+  rfidTag: String
+  qrCode: String
+  warrantyExpiryDate: DateTime
+  insurancePolicyNumber: String
+  insuranceExpiryDate: DateTime
+  complianceCertifications: JSON
+  documents: JSON
+  companyId: ID!
+  company: Company!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: ID
+  updatedBy: ID
+  createdByUser: User
+  updatedByUser: User
+
+  # Related data
+  transfers: [AssetTransfer!]!
+  disposals: [AssetDisposal!]!
+  depreciationSchedules: [DepreciationSchedule!]!
+  maintenanceSchedules: [MaintenanceSchedule!]!
+  maintenanceWorkOrders: [MaintenanceWorkOrder!]!
+}
+
+type AssetCategory {
+  id: ID!
+  categoryCode: String!
+  categoryName: String!
+  parentCategoryId: ID
+  parentCategory: AssetCategory
+  childCategories: [AssetCategory!]!
+  description: String
+  defaultDepreciationMethod: DepreciationMethod
+  defaultUsefulLife: Int
+  defaultSalvageValuePercent: String
+  assetAccountId: ID
+  assetAccount: Account
+  depreciationAccountId: ID
+  depreciationAccount: Account
+  accumulatedDepreciationAccountId: ID
+  accumulatedDepreciationAccount: Account
+  customAttributes: JSON
+  companyId: ID!
+  company: Company!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: ID
+  updatedBy: ID
+  createdByUser: User
+  updatedByUser: User
+
+  # Related data
+  assets: [Asset!]!
+}
+
+type AssetLocation {
+  id: ID!
+  locationCode: String!
+  locationName: String!
+  parentLocationId: ID
+  parentLocation: AssetLocation
+  childLocations: [AssetLocation!]!
+  address: String
+  city: String
+  state: String
+  country: String
+  postalCode: String
+  latitude: String
+  longitude: String
+  description: String
+  locationManagerId: ID
+  locationManager: User
+  capacity: Int
+  companyId: ID!
+  company: Company!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: ID
+  updatedBy: ID
+  createdByUser: User
+  updatedByUser: User
+
+  # Related data
+  assets: [Asset!]!
+  transfersFrom: [AssetTransfer!]!
+  transfersTo: [AssetTransfer!]!
+}
+
+type AssetTransfer {
+  id: ID!
+  transferNumber: String!
+  assetId: ID!
+  asset: Asset!
+  fromLocationId: ID
+  fromLocation: AssetLocation
+  toLocationId: ID!
+  toLocation: AssetLocation!
+  fromCustodianId: ID
+  fromCustodian: User
+  toCustodianId: ID
+  toCustodian: User
+  transferDate: DateTime!
+  transferReason: String
+  notes: String
+  status: TransferStatus!
+  approvedBy: ID
+  approvedByUser: User
+  approvedAt: DateTime
+  completedAt: DateTime
+  companyId: ID!
+  company: Company!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: ID
+  updatedBy: ID
+  createdByUser: User
+  updatedByUser: User
+}
+
+type AssetDisposal {
+  id: ID!
+  disposalNumber: String!
+  assetId: ID!
+  asset: Asset!
+  disposalDate: DateTime!
+  disposalMethod: DisposalMethod!
+  disposalReason: String
+  bookValue: String!
+  disposalAmount: String
+  gainLoss: String
+  buyerName: String
+  buyerContact: String
+  documents: JSON
+  notes: String
+  status: DisposalStatus!
+  approvedBy: ID
+  approvedByUser: User
+  approvedAt: DateTime
+  companyId: ID!
+  company: Company!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: ID
+  updatedBy: ID
+  createdByUser: User
+  updatedByUser: User
+}
+
+# Paginated Results
+type AssetConnection {
+  data: [Asset!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
+# Input Types
+input CreateAssetInput {
+  assetCode: String!
+  assetName: String!
+  assetCategoryId: ID
+  description: String
+  specifications: JSON
+  serialNumber: String
+  modelNumber: String
+  manufacturer: String
+  supplier: String
+  purchaseDate: DateTime
+  purchaseAmount: String
+  currentValue: String
+  salvageValue: String
+  depreciationMethod: DepreciationMethod
+  usefulLife: Int
+  depreciationStartDate: DateTime
+  currentLocationId: ID
+  custodianId: ID
+  departmentId: ID
+  status: AssetStatus
+  condition: AssetCondition
+  barcode: String
+  rfidTag: String
+  qrCode: String
+  warrantyExpiryDate: DateTime
+  insurancePolicyNumber: String
+  insuranceExpiryDate: DateTime
+  complianceCertifications: JSON
+  documents: JSON
+  companyId: ID!
+}
+
+input UpdateAssetInput {
+  assetName: String
+  assetCategoryId: ID
+  description: String
+  specifications: JSON
+  serialNumber: String
+  modelNumber: String
+  manufacturer: String
+  supplier: String
+  purchaseDate: DateTime
+  purchaseAmount: String
+  currentValue: String
+  salvageValue: String
+  depreciationMethod: DepreciationMethod
+  usefulLife: Int
+  depreciationStartDate: DateTime
+  currentLocationId: ID
+  custodianId: ID
+  departmentId: ID
+  status: AssetStatus
+  condition: AssetCondition
+  barcode: String
+  rfidTag: String
+  qrCode: String
+  warrantyExpiryDate: DateTime
+  insurancePolicyNumber: String
+  insuranceExpiryDate: DateTime
+  complianceCertifications: JSON
+  documents: JSON
+}
+
+input AssetFilterInput {
+  search: String
+  categoryId: ID
+  locationId: ID
+  custodianId: ID
+  status: AssetStatus
+  condition: AssetCondition
+  manufacturer: String
+  purchaseDateFrom: DateTime
+  purchaseDateTo: DateTime
+  valueFrom: String
+  valueTo: String
+  page: Int = 1
+  limit: Int = 20
+  sortBy: String = "createdAt"
+  sortOrder: SortOrder = DESC
+}
+
+input CreateAssetCategoryInput {
+  categoryCode: String!
+  categoryName: String!
+  parentCategoryId: ID
+  description: String
+  defaultDepreciationMethod: DepreciationMethod
+  defaultUsefulLife: Int
+  defaultSalvageValuePercent: String
+  assetAccountId: ID
+  depreciationAccountId: ID
+  accumulatedDepreciationAccountId: ID
+  customAttributes: JSON
+  companyId: ID!
+}
+
+input UpdateAssetCategoryInput {
+  categoryName: String
+  parentCategoryId: ID
+  description: String
+  defaultDepreciationMethod: DepreciationMethod
+  defaultUsefulLife: Int
+  defaultSalvageValuePercent: String
+  assetAccountId: ID
+  depreciationAccountId: ID
+  accumulatedDepreciationAccountId: ID
+  customAttributes: JSON
+}
+
+input CreateAssetLocationInput {
+  locationCode: String!
+  locationName: String!
+  parentLocationId: ID
+  address: String
+  city: String
+  state: String
+  country: String
+  postalCode: String
+  latitude: String
+  longitude: String
+  description: String
+  locationManagerId: ID
+  capacity: Int
+  companyId: ID!
+}
+
+input UpdateAssetLocationInput {
+  locationName: String
+  parentLocationId: ID
+  address: String
+  city: String
+  state: String
+  country: String
+  postalCode: String
+  latitude: String
+  longitude: String
+  description: String
+  locationManagerId: ID
+  capacity: Int
+}
+
+input CreateAssetTransferInput {
+  assetId: ID!
+  fromLocationId: ID
+  toLocationId: ID!
+  fromCustodianId: ID
+  toCustodianId: ID
+  transferDate: DateTime!
+  transferReason: String
+  notes: String
+  companyId: ID!
+}
+
+input UpdateAssetTransferInput {
+  toLocationId: ID
+  toCustodianId: ID
+  transferDate: DateTime
+  transferReason: String
+  notes: String
+  status: TransferStatus
+}
+
+input CreateAssetDisposalInput {
+  assetId: ID!
+  disposalDate: DateTime!
+  disposalMethod: DisposalMethod!
+  disposalReason: String
+  bookValue: String!
+  disposalAmount: String
+  buyerName: String
+  buyerContact: String
+  documents: JSON
+  notes: String
+  companyId: ID!
+}
+
+input UpdateAssetDisposalInput {
+  disposalDate: DateTime
+  disposalMethod: DisposalMethod
+  disposalReason: String
+  bookValue: String
+  disposalAmount: String
+  buyerName: String
+  buyerContact: String
+  documents: JSON
+  notes: String
+  status: DisposalStatus
+}
+
+# Queries
+type Query {
+  # Assets
+  asset(id: ID!): Asset
+  assets(filter: AssetFilterInput!): AssetConnection!
+
+  # Asset Categories
+  assetCategory(id: ID!): AssetCategory
+  assetCategories: [AssetCategory!]!
+
+  # Asset Locations
+  assetLocation(id: ID!): AssetLocation
+  assetLocations: [AssetLocation!]!
+
+  # Asset Transfers
+  assetTransfer(id: ID!): AssetTransfer
+  assetTransfers(assetId: ID): [AssetTransfer!]!
+
+  # Asset Disposals
+  assetDisposal(id: ID!): AssetDisposal
+  assetDisposals(assetId: ID): [AssetDisposal!]!
+}
+
+# Mutations
+type Mutation {
+  # Assets
+  createAsset(input: CreateAssetInput!): Asset!
+  updateAsset(id: ID!, input: UpdateAssetInput!): Asset!
+  deleteAsset(id: ID!): Boolean!
+
+  # Asset Categories
+  createAssetCategory(input: CreateAssetCategoryInput!): AssetCategory!
+  updateAssetCategory(id: ID!, input: UpdateAssetCategoryInput!): AssetCategory!
+  deleteAssetCategory(id: ID!): Boolean!
+
+  # Asset Locations
+  createAssetLocation(input: CreateAssetLocationInput!): AssetLocation!
+  updateAssetLocation(id: ID!, input: UpdateAssetLocationInput!): AssetLocation!
+  deleteAssetLocation(id: ID!): Boolean!
+
+  # Asset Transfers
+  createAssetTransfer(input: CreateAssetTransferInput!): AssetTransfer!
+  updateAssetTransfer(id: ID!, input: UpdateAssetTransferInput!): AssetTransfer!
+  approveAssetTransfer(id: ID!): AssetTransfer!
+  completeAssetTransfer(id: ID!): AssetTransfer!
+
+  # Asset Disposals
+  createAssetDisposal(input: CreateAssetDisposalInput!): AssetDisposal!
+  updateAssetDisposal(id: ID!, input: UpdateAssetDisposalInput!): AssetDisposal!
+  approveAssetDisposal(id: ID!): AssetDisposal!
+  completeAssetDisposal(id: ID!): AssetDisposal!
+}
