@@ -58,3 +58,5 @@ export interface AuditFields {
   createdAt: Date;
   updatedAt: Date;
 }
+// Export module-specific types
+export * from './hr';

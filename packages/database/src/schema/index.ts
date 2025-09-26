@@ -6,6 +6,7 @@ export * from './audit';
 export * from './banking';
 export * from './companies';
 export * from './customers';
+export * from './hr';
 export * from './items';
 export * from './manufacturing';
 export * from './notifications';
@@ -274,6 +275,11 @@ import {
   productionForecasts,
   productionPlanItems,
   productionPlans,
+  workOrderItems,
+  workOrderOperations,
+  workOrderStockEntries,
+  workOrderTimeLogs,
+  workOrders,
   workstations,
 } from './manufacturing';
 
@@ -333,3 +339,37 @@ export type NewWorkOrderStockEntry = InferInsertModel<
 >;
 export type WorkOrderTimeLog = InferSelectModel<typeof workOrderTimeLogs>;
 export type NewWorkOrderTimeLog = InferInsertModel<typeof workOrderTimeLogs>;
+// HR types
+import {
+  departments,
+  designations,
+  employeeDocuments,
+  employeeOnboarding,
+  employeeOnboardingTasks,
+  employees,
+  onboardingTasks,
+  onboardingTemplates,
+} from './hr';
+
+export type Employee = InferSelectModel<typeof employees>;
+export type NewEmployee = InferInsertModel<typeof employees>;
+export type Department = InferSelectModel<typeof departments>;
+export type NewDepartment = InferInsertModel<typeof departments>;
+export type Designation = InferSelectModel<typeof designations>;
+export type NewDesignation = InferInsertModel<typeof designations>;
+export type EmployeeDocument = InferSelectModel<typeof employeeDocuments>;
+export type NewEmployeeDocument = InferInsertModel<typeof employeeDocuments>;
+export type OnboardingTemplate = InferSelectModel<typeof onboardingTemplates>;
+export type NewOnboardingTemplate = InferInsertModel<
+  typeof onboardingTemplates
+>;
+export type OnboardingTask = InferSelectModel<typeof onboardingTasks>;
+export type NewOnboardingTask = InferInsertModel<typeof onboardingTasks>;
+export type EmployeeOnboarding = InferSelectModel<typeof employeeOnboarding>;
+export type NewEmployeeOnboarding = InferInsertModel<typeof employeeOnboarding>;
+export type EmployeeOnboardingTask = InferSelectModel<
+  typeof employeeOnboardingTasks
+>;
+export type NewEmployeeOnboardingTask = InferInsertModel<
+  typeof employeeOnboardingTasks
+>;

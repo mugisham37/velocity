@@ -1,6 +1,6 @@
+import { databaseConfig } from '@kiro/config';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { databaseConfig } from '@kiro/config';
 import * as schema from './schema';
 
 // Create PostgreSQL connection
@@ -23,6 +23,8 @@ const timescaleClient = postgres(databaseConfig.timescaleUrl, {
 export const timescaleDb = drizzle(timescaleClient);
 
 // Export schema and types
+export * from './database.module';
+export * from './database.service';
 export * from './schema';
 export type Database = typeof db;
 export type TimescaleDatabase = typeof timescaleDb;
