@@ -9,7 +9,7 @@ import {
   timestamp,
   unique,
   uuid,
-  varchar
+  varchar,
 } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts';
 import { companies } from './companies';
@@ -22,7 +22,10 @@ export const assets = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     assetCode: varchar('asset_code', { length: 50 }).notNull(),
     assetName: varchar('asset_name', { length: 255 }).notNull(),
-    assetCategoryId: uuid('asset_category_id').references(() => assetCategories.id
+    assetCategoryId: uuid('asset_category_id').references(
+      () => assetCategories.id
+    ),
+
     // Asset Details
     description: text('description'),
     specifications: jsonb('specifications'),
@@ -35,15 +38,21 @@ export const assets = pgTable(
     purchaseDate: timestamp('purchase_date'),
     purchaseAmount: decimal('purchase_amount', { precision: 15, scale: 2 }),
     currentValue: decimal('current_value', { precision: 15, scale: 2 }),
-    salvageValue: decimal('salvage_value', { precision: 15, scale: 2 }).default('0'),
+    salvageValue: decimal('salvage_value', { precision: 15, scale: 2 }).default(
+      '0'
+    ),
 
     // Depreciation Settings
-    depreciationMethod: varchar('depreciation_method', { length: 50 }).default('Straight Line'),
+    depreciationMethod: varchar('depreciation_method', { length: 50 }).default(
+      'Straight Line'
+    ),
     usefulLife: integer('useful_life'), // in months
     depreciationStartDate: timestamp('depreciation_start_date'),
 
     // Location and Tracking
-    currentLocationId: uuid('current_location_id').references(() => assetLocations.id),
+    currentLocationId: uuid('current_location_id').references(
+      () => assetLocations.id
+    ),
     custodianId: uuid('custodian_id').references(() => users.id),
     departmentId: uuid('department_id'),
 
@@ -66,13 +75,15 @@ export const assets = pgTable(
     documents: jsonb('documents'),
 
     // Audit Fields
-    companyId: uuid('company_id').references(() => companies.id).notNull(),
+    companyId: uuid('company_id')
+      .references(() => companies.id)
+      .notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdBy: uuid('created_by').references(() => users.id),
     updatedBy: uuid('updated_by').references(() => users.id),
   },
-  (table) => ({
+  table => ({
     assetCodeCompanyIdx: unique().on(table.assetCode, table.companyId),
     serialNumberIdx: index().on(table.serialNumber),
     barcodeIdx: index().on(table.barcode),
@@ -95,26 +106,37 @@ export const assetCategories = pgTable(
     description: text('description'),
 
     // Default Settings for Assets in this Category
-    defaultDepreciationMethod: varchar('default_depreciation_method', { length: 50 }),
+    defaultDepreciationMethod: varchar('default_depreciation_method', {
+      length: 50,
+    }),
     defaultUsefulLife: integer('default_useful_life'),
-    defaultSalvageValuePercent: decimal('default_salvage_value_percent', { precision: 5, scale: 2 }),
+    defaultSalvageValuePercent: decimal('default_salvage_value_percent', {
+      precision: 5,
+      scale: 2,
+    }),
 
     // GL Account Mappings
     assetAccountId: uuid('asset_account_id').references(() => accounts.id),
-    depreciationAccountId: uuid('depreciation_account_id').references(() => accounts.id),
-    accumulatedDepreciationAccountId: uuid('accumulated_depreciation_account_id').references(() => accounts.id),
+    depreciationAccountId: uuid('depreciation_account_id').references(
+      () => accounts.id
+    ),
+    accumulatedDepreciationAccountId: uuid(
+      'accumulated_depreciation_account_id'
+    ).references(() => accounts.id),
 
     // Custom Attributes
     customAttributes: jsonb('custom_attributes'),
 
     // Audit Fields
-    companyId: uuid('company_id').references(() => companies.id).notNull(),
+    companyId: uuid('company_id')
+      .references(() => companies.id)
+      .notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdBy: uuid('created_by').references(() => users.id),
     updatedBy: uuid('updated_by').references(() => users.id),
   },
-  (table) => ({
+  table => ({
     categoryCodeCompanyIdx: unique().on(table.categoryCode, table.companyId),
     parentCategoryIdx: index().on(table.parentCategoryId),
   })
@@ -146,13 +168,15 @@ export const assetLocations = pgTable(
     capacity: integer('capacity'),
 
     // Audit Fields
-    companyId: uuid('company_id').references(() => companies.id).notNull(),
+    companyId: uuid('company_id')
+      .references(() => companies.id)
+      .notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdBy: uuid('created_by').references(() => users.id),
     updatedBy: uuid('updated_by').references(() => users.id),
   },
-  (table) => ({
+  table => ({
     locationCodeCompanyIdx: unique().on(table.locationCode, table.companyId),
     parentLocationIdx: index().on(table.parentLocationId),
     managerIdx: index().on(table.locationManagerId),
@@ -165,11 +189,17 @@ export const assetTransfers = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     transferNumber: varchar('transfer_number', { length: 50 }).notNull(),
-    assetId: uuid('asset_id').references(() => assets.id).notNull(),
+    assetId: uuid('asset_id')
+      .references(() => assets.id)
+      .notNull(),
 
     // Transfer Details
-    fromLocationId: uuid('from_location_id').references(() => assetLocations.id),
-    toLocationId: uuid('to_location_id').references(() => assetLocations.id).notNull(),
+    fromLocationId: uuid('from_location_id').references(
+      () => assetLocations.id
+    ),
+    toLocationId: uuid('to_location_id')
+      .references(() => assetLocations.id)
+      .notNull(),
     fromCustodianId: uuid('from_custodian_id').references(() => users.id),
     toCustodianId: uuid('to_custodian_id').references(() => users.id),
 
@@ -185,14 +215,19 @@ export const assetTransfers = pgTable(
     completedAt: timestamp('completed_at'),
 
     // Audit Fields
-    companyId: uuid('company_id').references(() => companies.id).notNull(),
+    companyId: uuid('company_id')
+      .references(() => companies.id)
+      .notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdBy: uuid('created_by').references(() => users.id),
     updatedBy: uuid('updated_by').references(() => users.id),
   },
-  (table) => ({
-    transferNumberCompanyIdx: unique().on(table.transferNumber, table.companyId),
+  table => ({
+    transferNumberCompanyIdx: unique().on(
+      table.transferNumber,
+      table.companyId
+    ),
     assetIdx: index().on(table.assetId),
     statusIdx: index().on(table.status),
     transferDateIdx: index().on(table.transferDate),
@@ -205,7 +240,9 @@ export const assetDisposals = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     disposalNumber: varchar('disposal_number', { length: 50 }).notNull(),
-    assetId: uuid('asset_id').references(() => assets.id).notNull(),
+    assetId: uuid('asset_id')
+      .references(() => assets.id)
+      .notNull(),
 
     // Disposal Details
     disposalDate: timestamp('disposal_date').notNull(),
@@ -214,7 +251,10 @@ export const assetDisposals = pgTable(
 
     // Financial Information
     bookValue: decimal('book_value', { precision: 15, scale: 2 }).notNull(),
-    disposalAmount: decimal('disposal_amount', { precision: 15, scale: 2 }).default('0'),
+    disposalAmount: decimal('disposal_amount', {
+      precision: 15,
+      scale: 2,
+    }).default('0'),
     gainLoss: decimal('gain_loss', { precision: 15, scale: 2 }),
 
     // Buyer/Recipient Information
@@ -231,14 +271,19 @@ export const assetDisposals = pgTable(
     approvedAt: timestamp('approved_at'),
 
     // Audit Fields
-    companyId: uuid('company_id').references(() => companies.id).notNull(),
+    companyId: uuid('company_id')
+      .references(() => companies.id)
+      .notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdBy: uuid('created_by').references(() => users.id),
     updatedBy: uuid('updated_by').references(() => users.id),
   },
-  (table) => ({
-    disposalNumberCompanyIdx: unique().on(table.disposalNumber, table.companyId),
+  table => ({
+    disposalNumberCompanyIdx: unique().on(
+      table.disposalNumber,
+      table.companyId
+    ),
     assetIdx: index().on(table.assetId),
     statusIdx: index().on(table.status),
     disposalDateIdx: index().on(table.disposalDate),
@@ -275,49 +320,55 @@ export const assetsRelations = relations(assets, ({ one, many }) => ({
   disposals: many(assetDisposals),
 }));
 
-export const assetCategoriesRelations = relations(assetCategories, ({ one, many }) => ({
-  company: one(companies, {
-    fields: [assetCategories.companyId],
-    references: [companies.id],
-  }),
-  parentCategory: one(assetCategories, {
-    fields: [assetCategories.parentCategoryId],
-    references: [assetCategories.id],
-  }),
-  childCategories: many(assetCategories),
-  assets: many(assets),
-  assetAccount: one(accounts, {
-    fields: [assetCategories.assetAccountId],
-    references: [accounts.id],
-  }),
-  depreciationAccount: one(accounts, {
-    fields: [assetCategories.depreciationAccountId],
-    references: [accounts.id],
-  }),
-  accumulatedDepreciationAccount: one(accounts, {
-    fields: [assetCategories.accumulatedDepreciationAccountId],
-    references: [accounts.id],
-  }),
-}));
+export const assetCategoriesRelations = relations(
+  assetCategories,
+  ({ one, many }) => ({
+    company: one(companies, {
+      fields: [assetCategories.companyId],
+      references: [companies.id],
+    }),
+    parentCategory: one(assetCategories, {
+      fields: [assetCategories.parentCategoryId],
+      references: [assetCategories.id],
+    }),
+    childCategories: many(assetCategories),
+    assets: many(assets),
+    assetAccount: one(accounts, {
+      fields: [assetCategories.assetAccountId],
+      references: [accounts.id],
+    }),
+    depreciationAccount: one(accounts, {
+      fields: [assetCategories.depreciationAccountId],
+      references: [accounts.id],
+    }),
+    accumulatedDepreciationAccount: one(accounts, {
+      fields: [assetCategories.accumulatedDepreciationAccountId],
+      references: [accounts.id],
+    }),
+  })
+);
 
-export const assetLocationsRelations = relations(assetLocations, ({ one, many }) => ({
-  company: one(companies, {
-    fields: [assetLocations.companyId],
-    references: [companies.id],
-  }),
-  parentLocation: one(assetLocations, {
-    fields: [assetLocations.parentLocationId],
-    references: [assetLocations.id],
-  }),
-  childLocations: many(assetLocations),
-  locationManager: one(users, {
-    fields: [assetLocations.locationManagerId],
-    references: [users.id],
-  }),
-  assets: many(assets),
-  transfersFrom: many(assetTransfers, { relationName: 'fromLocation' }),
-  transfersTo: many(assetTransfers, { relationName: 'toLocation' }),
-}));
+export const assetLocationsRelations = relations(
+  assetLocations,
+  ({ one, many }) => ({
+    company: one(companies, {
+      fields: [assetLocations.companyId],
+      references: [companies.id],
+    }),
+    parentLocation: one(assetLocations, {
+      fields: [assetLocations.parentLocationId],
+      references: [assetLocations.id],
+    }),
+    childLocations: many(assetLocations),
+    locationManager: one(users, {
+      fields: [assetLocations.locationManagerId],
+      references: [users.id],
+    }),
+    assets: many(assets),
+    transfersFrom: many(assetTransfers, { relationName: 'fromLocation' }),
+    transfersTo: many(assetTransfers, { relationName: 'toLocation' }),
+  })
+);
 
 export const assetTransfersRelations = relations(assetTransfers, ({ one }) => ({
   company: one(companies, {

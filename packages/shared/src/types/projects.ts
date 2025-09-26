@@ -1,46 +1,46 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // Enums
 export const ProjectStatus = z.enum([
-  "Draft",
-  "Planning",
-  "Active",
-  "On Hold",
-leted",
-  "Cancelled",
+  'Draft',
+  'Planning',
+  'Active',
+  'On Hold',
+  'Completed',
+  'Cancelled',
 ]);
 
 export const TaskStatus = z.enum([
-  "Open",
-  "Working",
-  "Pending Review",
-  "Overdue",
-  "Template",
-  "Completed",
-  "Cancelled",
+  'Open',
+  'Working',
+  'Pending Review',
+  'Overdue',
+  'Template',
+  'Completed',
+  'Cancelled',
 ]);
 
-export const Priority = z.enum(["Low", "Medium", "High", "Urgent"]);
+export const Priority = z.enum(['Low', 'Medium', 'High', 'Urgent']);
 
 export const TaskType = z.enum([
-  "Task",
-  "Milestone",
-  "Summary",
-  "Project Summary",
+  'Task',
+  'Milestone',
+  'Summary',
+  'Project Summary',
 ]);
 
 export const DependencyType = z.enum([
-  "FS", // Finish-to-Start
-  "SS", // Start-to-Start
-  "FF", // Finish-to-Finish
-  "SF", // Start-to-Finish
+  'FS', // Finish-to-Start
+  'SS', // Start-to-Start
+  'FF', // Finish-to-Finish
+  'SF', // Start-to-Finish
 ]);
 
 export const MilestoneStatus = z.enum([
-  "Pending",
-  "In Progress",
-  "Completed",
-  "Overdue",
+  'Pending',
+  'In Progress',
+  'Completed',
+  'Overdue',
 ]);
 
 // Base schemas
@@ -147,7 +147,7 @@ export const CreateProjectSchema = z.object({
   projectName: z.string().min(1).max(255),
   description: z.string().optional(),
   projectType: z.string().min(1).max(50),
-  priority: Priority.default("Medium"),
+  priority: Priority.default('Medium'),
   startDate: z.string().date().optional(),
   endDate: z.string().date().optional(),
   expectedStartDate: z.string().date().optional(),
@@ -171,8 +171,8 @@ export const CreateProjectTaskSchema = z.object({
   projectId: z.string().uuid(),
   parentTaskId: z.string().uuid().optional(),
   assignedToId: z.string().uuid().optional(),
-  priority: Priority.default("Medium"),
-  taskType: TaskType.default("Task"),
+  priority: Priority.default('Medium'),
+  taskType: TaskType.default('Task'),
   startDate: z.string().date().optional(),
   endDate: z.string().date().optional(),
   expectedStartDate: z.string().date().optional(),
@@ -183,18 +183,20 @@ export const CreateProjectTaskSchema = z.object({
   customFields: z.record(z.any()).optional(),
 });
 
-export const UpdateProjectTaskSchema = CreateProjectTaskSchema.partial().extend({
-  status: TaskStatus.optional(),
-  actualStartDate: z.string().date().optional(),
-  actualEndDate: z.string().date().optional(),
-  actualHours: z.number().optional(),
-  percentComplete: z.number().min(0).max(100).optional(),
-});
+export const UpdateProjectTaskSchema = CreateProjectTaskSchema.partial().extend(
+  {
+    status: TaskStatus.optional(),
+    actualStartDate: z.string().date().optional(),
+    actualEndDate: z.string().date().optional(),
+    actualHours: z.number().optional(),
+    percentComplete: z.number().min(0).max(100).optional(),
+  }
+);
 
 export const CreateTaskDependencySchema = z.object({
   predecessorTaskId: z.string().uuid(),
   successorTaskId: z.string().uuid(),
-  dependencyType: DependencyType.default("FS"),
+  dependencyType: DependencyType.default('FS'),
   lagDays: z.number().int().default(0),
 });
 
@@ -214,11 +216,12 @@ export const CreateProjectMilestoneSchema = z.object({
   targetDate: z.string().date(),
 });
 
-export const UpdateProjectMilestoneSchema = CreateProjectMilestoneSchema.partial().extend({
-  actualDate: z.string().date().optional(),
-  status: MilestoneStatus.optional(),
-  isCompleted: z.boolean().optional(),
-});
+export const UpdateProjectMilestoneSchema =
+  CreateProjectMilestoneSchema.partial().extend({
+    actualDate: z.string().date().optional(),
+    status: MilestoneStatus.optional(),
+    isCompleted: z.boolean().optional(),
+  });
 
 export const CreateProjectTemplateSchema = z.object({
   templateName: z.string().min(1).max(255),
@@ -237,7 +240,7 @@ export const GanttTaskSchema = z.object({
   duration: z.number(),
   progress: z.number().min(0).max(1),
   parent: z.string().uuid().optional(),
-  type: z.enum(["task", "project", "milestone"]),
+  type: z.enum(['task', 'project', 'milestone']),
   open: z.boolean().optional(),
 });
 
@@ -245,7 +248,7 @@ export const GanttLinkSchema = z.object({
   id: z.string().uuid(),
   source: z.string().uuid(),
   target: z.string().uuid(),
-  type: z.enum(["0", "1", "2", "3"]), // 0=FS, 1=SS, 2=FF, 3=SF
+  type: z.enum(['0', '1', '2', '3']), // 0=FS, 1=SS, 2=FF, 3=SF
   lag: z.number().optional(),
 });
 
@@ -287,9 +290,15 @@ export type UpdateProject = z.infer<typeof UpdateProjectSchema>;
 export type CreateProjectTask = z.infer<typeof CreateProjectTaskSchema>;
 export type UpdateProjectTask = z.infer<typeof UpdateProjectTaskSchema>;
 export type CreateTaskDependency = z.infer<typeof CreateTaskDependencySchema>;
-export type CreateProjectTeamMember = z.infer<typeof CreateProjectTeamMemberSchema>;
-export type CreateProjectMilestone = z.infer<typeof CreateProjectMilestoneSchema>;
-export type UpdateProjectMilestone = z.infer<typeof UpdateProjectMilestoneSchema>;
+export type CreateProjectTeamMember = z.infer<
+  typeof CreateProjectTeamMemberSchema
+>;
+export type CreateProjectMilestone = z.infer<
+  typeof CreateProjectMilestoneSchema
+>;
+export type UpdateProjectMilestone = z.infer<
+  typeof UpdateProjectMilestoneSchema
+>;
 export type CreateProjectTemplate = z.infer<typeof CreateProjectTemplateSchema>;
 
 export type GanttTask = z.infer<typeof GanttTaskSchema>;
@@ -309,13 +318,13 @@ export const ProjectBudgetSchema = z.object({
   id: z.string().uuid(),
   projectId: z.string().uuid(),
   budgetName: z.string().min(1).max(255),
-  budgetType: z.enum(["Original", "Revised", "Approved"]),
+  budgetType: z.enum(['Original', 'Revised', 'Approved']),
   totalBudget: z.number(),
   laborBudget: z.number(),
   materialBudget: z.number(),
   overheadBudget: z.number(),
   contingencyBudget: z.number(),
-  status: z.enum(["Draft", "Submitted", "Approved", "Rejected"]),
+  status: z.enum(['Draft', 'Submitted', 'Approved', 'Rejected']),
   approvedBy: z.string().uuid().optional(),
   approvedAt: z.string().datetime().optional(),
   budgetPeriodStart: z.string().date().optional(),
@@ -343,7 +352,7 @@ export const ProjectCostSchema = z.object({
   projectId: z.string().uuid(),
   taskId: z.string().uuid().optional(),
   budgetCategoryId: z.string().uuid().optional(),
-  costType: z.enum(["Labor", "Material", "Overhead", "Travel", "Other"]),
+  costType: z.enum(['Labor', 'Material', 'Overhead', 'Travel', 'Other']),
   costDate: z.string().date(),
   description: z.string().min(1),
   quantity: z.number(),
@@ -353,7 +362,7 @@ export const ProjectCostSchema = z.object({
   billingRate: z.number().optional(),
   billableAmount: z.number().optional(),
   invoiceId: z.string().uuid().optional(),
-  status: z.enum(["Pending", "Approved", "Invoiced", "Paid"]),
+  status: z.enum(['Pending', 'Approved', 'Invoiced', 'Paid']),
   approvedBy: z.string().uuid().optional(),
   approvedAt: z.string().datetime().optional(),
   attachments: z.array(z.string()).optional(),
@@ -366,15 +375,15 @@ export const ProjectCostSchema = z.object({
 export const ProjectRevenueSchema = z.object({
   id: z.string().uuid(),
   projectId: z.string().uuid(),
-  revenueType: z.enum(["Fixed", "TimeAndMaterial", "Milestone", "Recurring"]),
+  revenueType: z.enum(['Fixed', 'TimeAndMaterial', 'Milestone', 'Recurring']),
   description: z.string().min(1),
   revenueDate: z.string().date(),
   amount: z.number(),
   recognizedAmount: z.number(),
   milestoneId: z.string().uuid().optional(),
   invoiceId: z.string().uuid().optional(),
-  status: z.enum(["Planned", "Recognized", "Invoiced", "Collected"]),
-  recognitionMethod: z.enum(["Percentage", "Milestone", "Completed"]),
+  status: z.enum(['Planned', 'Recognized', 'Invoiced', 'Collected']),
+  recognitionMethod: z.enum(['Percentage', 'Milestone', 'Completed']),
   recognitionPercentage: z.number().min(0).max(100),
   notes: z.string().optional(),
   createdBy: z.string().uuid(),
@@ -394,7 +403,7 @@ export const ProjectInvoiceSchema = z.object({
   taxAmount: z.number(),
   totalAmount: z.number(),
   paidAmount: z.number(),
-  status: z.enum(["Draft", "Sent", "Paid", "Overdue", "Cancelled"]),
+  status: z.enum(['Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled']),
   paymentTerms: z.string().max(100).optional(),
   notes: z.string().optional(),
   customerId: z.string().uuid().optional(),
@@ -446,7 +455,7 @@ export const ProjectProfitabilitySchema = z.object({
 export const CreateProjectBudgetSchema = z.object({
   projectId: z.string().uuid(),
   budgetName: z.string().min(1).max(255),
-  budgetType: z.enum(["Original", "Revised", "Approved"]).default("Original"),
+  budgetType: z.enum(['Original', 'Revised', 'Approved']).default('Original'),
   totalBudget: z.number().positive(),
   laborBudget: z.number().default(0),
   materialBudget: z.number().default(0),
@@ -457,9 +466,10 @@ export const CreateProjectBudgetSchema = z.object({
   notes: z.string().optional(),
 });
 
-export const UpdateProjectBudgetSchema = CreateProjectBudgetSchema.partial().extend({
-  status: z.enum(["Draft", "Submitted", "Approved", "Rejected"]).optional(),
-});
+export const UpdateProjectBudgetSchema =
+  CreateProjectBudgetSchema.partial().extend({
+    status: z.enum(['Draft', 'Submitted', 'Approved', 'Rejected']).optional(),
+  });
 
 export const CreateProjectBudgetCategorySchema = z.object({
   budgetId: z.string().uuid(),
@@ -469,15 +479,16 @@ export const CreateProjectBudgetCategorySchema = z.object({
   description: z.string().optional(),
 });
 
-export const UpdateProjectBudgetCategorySchema = CreateProjectBudgetCategorySchema.partial().extend({
-  isActive: z.boolean().optional(),
-});
+export const UpdateProjectBudgetCategorySchema =
+  CreateProjectBudgetCategorySchema.partial().extend({
+    isActive: z.boolean().optional(),
+  });
 
 export const CreateProjectCostSchema = z.object({
   projectId: z.string().uuid(),
   taskId: z.string().uuid().optional(),
   budgetCategoryId: z.string().uuid().optional(),
-  costType: z.enum(["Labor", "Material", "Overhead", "Travel", "Other"]),
+  costType: z.enum(['Labor', 'Material', 'Overhead', 'Travel', 'Other']),
   costDate: z.string().date(),
   description: z.string().min(1),
   quantity: z.number().positive().default(1),
@@ -490,26 +501,33 @@ export const CreateProjectCostSchema = z.object({
   customFields: z.record(z.any()).optional(),
 });
 
-export const UpdateProjectCostSchema = CreateProjectCostSchema.partial().extend({
-  status: z.enum(["Pending", "Approved", "Invoiced", "Paid"]).optional(),
-});
+export const UpdateProjectCostSchema = CreateProjectCostSchema.partial().extend(
+  {
+    status: z.enum(['Pending', 'Approved', 'Invoiced', 'Paid']).optional(),
+  }
+);
 
 export const CreateProjectRevenueSchema = z.object({
   projectId: z.string().uuid(),
-  revenueType: z.enum(["Fixed", "TimeAndMaterial", "Milestone", "Recurring"]),
+  revenueType: z.enum(['Fixed', 'TimeAndMaterial', 'Milestone', 'Recurring']),
   description: z.string().min(1),
   revenueDate: z.string().date(),
   amount: z.number().positive(),
   milestoneId: z.string().uuid().optional(),
-  recognitionMethod: z.enum(["Percentage", "Milestone", "Completed"]).default("Percentage"),
+  recognitionMethod: z
+    .enum(['Percentage', 'Milestone', 'Completed'])
+    .default('Percentage'),
   recognitionPercentage: z.number().min(0).max(100).default(0),
   notes: z.string().optional(),
 });
 
-export const UpdateProjectRevenueSchema = CreateProjectRevenueSchema.partial().extend({
-  recognizedAmount: z.number().optional(),
-  status: z.enum(["Planned", "Recognized", "Invoiced", "Collected"]).optional(),
-});
+export const UpdateProjectRevenueSchema =
+  CreateProjectRevenueSchema.partial().extend({
+    recognizedAmount: z.number().optional(),
+    status: z
+      .enum(['Planned', 'Recognized', 'Invoiced', 'Collected'])
+      .optional(),
+  });
 
 export const CreateProjectInvoiceSchema = z.object({
   projectId: z.string().uuid(),
@@ -521,22 +539,27 @@ export const CreateProjectInvoiceSchema = z.object({
   customerId: z.string().uuid().optional(),
   paymentTerms: z.string().max(100).optional(),
   notes: z.string().optional(),
-  lineItems: z.array(z.object({
-    taskId: z.string().uuid().optional(),
-    costId: z.string().uuid().optional(),
-    description: z.string().min(1),
-    quantity: z.number().positive(),
-    unitPrice: z.number().positive(),
-    taxRate: z.number().min(0).max(1).default(0),
-  })),
+  lineItems: z.array(
+    z.object({
+      taskId: z.string().uuid().optional(),
+      costId: z.string().uuid().optional(),
+      description: z.string().min(1),
+      quantity: z.number().positive(),
+      unitPrice: z.number().positive(),
+      taxRate: z.number().min(0).max(1).default(0),
+    })
+  ),
 });
 
-export const UpdateProjectInvoiceSchema = CreateProjectInvoiceSchema.partial().extend({
-  status: z.enum(["Draft", "Sent", "Paid", "Overdue", "Cancelled"]).optional(),
-  paidAmount: z.number().optional(),
-  sentAt: z.string().datetime().optional(),
-  paidAt: z.string().datetime().optional(),
-});
+export const UpdateProjectInvoiceSchema =
+  CreateProjectInvoiceSchema.partial().extend({
+    status: z
+      .enum(['Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled'])
+      .optional(),
+    paidAmount: z.number().optional(),
+    sentAt: z.string().datetime().optional(),
+    paidAt: z.string().datetime().optional(),
+  });
 
 // Type exports
 export type ProjectBudget = z.infer<typeof ProjectBudgetSchema>;
@@ -544,13 +567,19 @@ export type ProjectBudgetCategory = z.infer<typeof ProjectBudgetCategorySchema>;
 export type ProjectCost = z.infer<typeof ProjectCostSchema>;
 export type ProjectRevenue = z.infer<typeof ProjectRevenueSchema>;
 export type ProjectInvoice = z.infer<typeof ProjectInvoiceSchema>;
-export type ProjectInvoiceLineItem = z.infer<typeof ProjectInvoiceLineItemSchema>;
+export type ProjectInvoiceLineItem = z.infer<
+  typeof ProjectInvoiceLineItemSchema
+>;
 export type ProjectProfitability = z.infer<typeof ProjectProfitabilitySchema>;
 
 export type CreateProjectBudget = z.infer<typeof CreateProjectBudgetSchema>;
 export type UpdateProjectBudget = z.infer<typeof UpdateProjectBudgetSchema>;
-export type CreateProjectBudgetCategory = z.infer<typeof CreateProjectBudgetCategorySchema>;
-export type UpdateProjectBudgetCategory = z.infer<typeof UpdateProjectBudgetCategorySchema>;
+export type CreateProjectBudgetCategory = z.infer<
+  typeof CreateProjectBudgetCategorySchema
+>;
+export type UpdateProjectBudgetCategory = z.infer<
+  typeof UpdateProjectBudgetCategorySchema
+>;
 export type CreateProjectCost = z.infer<typeof CreateProjectCostSchema>;
 export type UpdateProjectCost = z.infer<typeof UpdateProjectCostSchema>;
 export type CreateProjectRevenue = z.infer<typeof CreateProjectRevenueSchema>;
@@ -559,13 +588,17 @@ export type CreateProjectInvoice = z.infer<typeof CreateProjectInvoiceSchema>;
 export type UpdateProjectInvoice = z.infer<typeof UpdateProjectInvoiceSchema>;
 
 // Project Accounting specific types
-export type BudgetStatus = "Draft" | "Submitted" | "Approved" | "Rejected";
-export type CostType = "Labor" | "Material" | "Overhead" | "Travel" | "Other";
-export type CostStatus = "Pending" | "Approved" | "Invoiced" | "Paid";
-export type RevenueType = "Fixed" | "TimeAndMaterial" | "Milestone" | "Recurring";
-export type RevenueStatus = "Planned" | "Recognized" | "Invoiced" | "Collected";
-export type InvoiceStatus = "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
-export type RecognitionMethod = "Percentage" | "Milestone" | "Completed";
+export type BudgetStatus = 'Draft' | 'Submitted' | 'Approved' | 'Rejected';
+export type CostType = 'Labor' | 'Material' | 'Overhead' | 'Travel' | 'Other';
+export type CostStatus = 'Pending' | 'Approved' | 'Invoiced' | 'Paid';
+export type RevenueType =
+  | 'Fixed'
+  | 'TimeAndMaterial'
+  | 'Milestone'
+  | 'Recurring';
+export type RevenueStatus = 'Planned' | 'Recognized' | 'Invoiced' | 'Collected';
+export type InvoiceStatus = 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled';
+export type RecognitionMethod = 'Percentage' | 'Milestone' | 'Completed';
 
 // Project Financial Summary
 export type ProjectFinancialSummary = {

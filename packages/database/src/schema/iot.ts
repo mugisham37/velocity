@@ -65,7 +65,7 @@ export const alertStatusEnum = pgEnum('alert_status', [
 ]);
 
 // IoT Devices table
-export const iotDevi = pgTable(
+export const iotDevices = pgTable(
   'iot_devices',
   {
     id: uuid('id').defaultRandom().primaryKey(),

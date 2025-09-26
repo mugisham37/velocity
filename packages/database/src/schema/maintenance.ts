@@ -1,16 +1,16 @@
 import { relations } from 'drizzle-orm';
 import {
-    boolean,
-    decimal,
-    index,
-    integer,
-    jsonb,
-    pgTable,
-    text,
-    timestamp,
-    unique,
-    uuid,
-    varchar,
+  boolean,
+  decimal,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uuid,
+  varchar,
 } from 'drizzle-orm/pg-core';
 import { assets } from './assets';
 import { companies } from './companies';
@@ -24,7 +24,9 @@ export const maintenanceSchedules = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     scheduleCode: varchar('schedule_code', { length: 50 }).notNull(),
     scheduleName: varchar('schedule_name', { length: 255 }).notNull(),
-    assetId: uuid('asset_id').references(() => assets.id).notNull(),
+    assetId: uuid('asset_id')
+      .references(() => assets.id)
+      .notNull(),
 
     // Schedule Type and Configuration
     maintenanceType: varchar('maintenance_type', { length: 50 }).notNull(), // Preventive, Predictive, Condition-based
@@ -36,7 +38,7 @@ export const maintenanceSchedules = pgTable(
 
     // Usage-based Scheduling
     usageThreshold: integer('usage_threshold'), // Operating hours, cycles, etc.
-    usageUnit: varchar('usage_unh: 50 }), // Hours, Cycles, Miles, etc.
+    usageUnit: varchar('usage_unit', { length: 50 }), // Hours, Cycles, Miles, etc.
 
     // Schedule Dates
     startDate: timestamp('start_date').notNull(),
@@ -63,13 +65,15 @@ export const maintenanceSchedules = pgTable(
     notifyUsers: jsonb('notify_users'), // Array of user IDs
 
     // Audit Fields
-    companyId: uuid('company_id').references(() => companies.id).notNull(),
+    companyId: uuid('company_id')
+      .references(() => companies.id)
+      .notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdBy: uuid('created_by').references(() => users.id),
     updatedBy: uuid('updated_by').references(() => users.id),
   },
-  (table) => ({
+  table => ({
     scheduleCodeCompanyIdx: unique().on(table.scheduleCode, table.companyId),
     assetIdx: index().on(table.assetId),
     statusIdx: index().on(table.status),
@@ -84,7 +88,9 @@ export const maintenanceWorkOrders = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     workOrderNumber: varchar('work_order_number', { length: 50 }).notNull(),
-    assetId: uuid('asset_id').references(() => assets.id).notNull(),
+    assetId: uuid('asset_id')
+      .references(() => assets.id)
+      .notNull(),
     scheduleId: uuid('schedule_id').references(() => maintenanceSchedules.id),
 
     // Work Order Details
@@ -114,7 +120,10 @@ export const maintenanceWorkOrders = pgTable(
     actualCost: decimal('actual_cost', { precision: 15, scale: 2 }),
     laborCost: decimal('labor_cost', { precision: 15, scale: 2 }),
     materialCost: decimal('material_cost', { precision: 15, scale: 2 }),
-    externalServiceCost: decimal('external_service_cost', { precision: 15, scale: 2 }),
+    externalServiceCost: decimal('external_service_cost', {
+      precision: 15,
+      scale: 2,
+    }),
 
     // Failure Information (for corrective maintenance)
     failureDescription: text('failure_description'),
@@ -140,14 +149,19 @@ export const maintenanceWorkOrders = pgTable(
     approvedAt: timestamp('approved_at'),
 
     // Audit Fields
-    companyId: uuid('company_id').references(() => companies.id).notNull(),
+    companyId: uuid('company_id')
+      .references(() => companies.id)
+      .notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdBy: uuid('created_by').references(() => users.id),
     updatedBy: uuid('updated_by').references(() => users.id),
   },
-  (table) => ({
-    workOrderNumberCompanyIdx: unique().on(table.workOrderNumber, table.companyId),
+  table => ({
+    workOrderNumberCompanyIdx: unique().on(
+      table.workOrderNumber,
+      table.companyId
+    ),
     assetIdx: index().on(table.assetId),
     scheduleIdx: index().on(table.scheduleId),
     statusIdx: index().on(table.status),
@@ -162,8 +176,12 @@ export const maintenanceHistory = pgTable(
   'maintenance_history',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    assetId: uuid('asset_id').references(() => assets.id).notNull(),
-    workOrderId: uuid('work_order_id').references(() => maintenanceWorkOrders.id),
+    assetId: uuid('asset_id')
+      .references(() => assets.id)
+      .notNull(),
+    workOrderId: uuid('work_order_id').references(
+      () => maintenanceWorkOrders.id
+    ),
 
     // Maintenance Event Details
     maintenanceDate: timestamp('maintenance_date').notNull(),
@@ -198,13 +216,15 @@ export const maintenanceHistory = pgTable(
     followUpNotes: text('follow_up_notes'),
 
     // Audit Fields
-    companyId: uuid('company_id').references(() => companies.id).notNull(),
+    companyId: uuid('company_id')
+      .references(() => companies.id)
+      .notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdBy: uuid('created_by').references(() => users.id),
     updatedBy: uuid('updated_by').references(() => users.id),
   },
-  (table) => ({
+  table => ({
     assetIdx: index().on(table.assetId),
     workOrderIdx: index().on(table.workOrderId),
     maintenanceDateIdx: index().on(table.maintenanceDate),
@@ -224,7 +244,9 @@ export const spareParts = pgTable(
     // Part Details
     description: text('description'),
     manufacturer: varchar('manufacturer', { length: 255 }),
-    manufacturerPartNumber: varchar('manufacturer_part_number', { length: 100 }),
+    manufacturerPartNumber: varchar('manufacturer_part_number', {
+      length: 100,
+    }),
     supplierPartNumber: varchar('supplier_part_number', { length: 100 }),
 
     // Inventory Information
@@ -235,7 +257,10 @@ export const spareParts = pgTable(
 
     // Cost Information
     unitCost: decimal('unit_cost', { precision: 15, scale: 2 }),
-    lastPurchasePrice: decimal('last_purchase_price', { precision: 15, scale: 2 }),
+    lastPurchasePrice: decimal('last_purchase_price', {
+      precision: 15,
+      scale: 2,
+    }),
     averageCost: decimal('average_cost', { precision: 15, scale: 2 }),
 
     // Part Specifications
@@ -251,13 +276,15 @@ export const spareParts = pgTable(
     isActive: boolean('is_active').default(true).notNull(),
 
     // Audit Fields
-    companyId: uuid('company_id').references(() => companies.id).notNull(),
+    companyId: uuid('company_id')
+      .references(() => companies.id)
+      .notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdBy: uuid('created_by').references(() => users.id),
     updatedBy: uuid('updated_by').references(() => users.id),
   },
-  (table) => ({
+  table => ({
     partCodeCompanyIdx: unique().on(table.partCode, table.companyId),
     itemIdx: index().on(table.itemId),
     statusIdx: index().on(table.status),
@@ -270,7 +297,9 @@ export const maintenanceCosts = pgTable(
   'maintenance_costs',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    workOrderId: uuid('work_order_id').references(() => maintenanceWorkOrders.id).notNull(),
+    workOrderId: uuid('work_order_id')
+      .references(() => maintenanceWorkOrders.id)
+      .notNull(),
 
     // Cost Details
     costType: varchar('cost_type', { length: 50 }).notNull(), // Labor, Material, External Service, Equipment
@@ -303,13 +332,15 @@ export const maintenanceCosts = pgTable(
     approvedAt: timestamp('approved_at'),
 
     // Audit Fields
-    companyId: uuid('company_id').references(() => companies.id).notNull(),
+    companyId: uuid('company_id')
+      .references(() => companies.id)
+      .notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdBy: uuid('created_by').references(() => users.id),
     updatedBy: uuid('updated_by').references(() => users.id),
   },
-  (table) => ({
+  table => ({
     workOrderIdx: index().on(table.workOrderId),
     costTypeIdx: index().on(table.costType),
     costDateIdx: index().on(table.costDate),
@@ -320,89 +351,98 @@ export const maintenanceCosts = pgTable(
 );
 
 // Relations
-export const maintenanceSchedulesRelations = relations(maintenanceSchedules, ({ one, many }) => ({
-  company: one(companies, {
-    fields: [maintenanceSchedules.companyId],
-    references: [companies.id],
-  }),
-  asset: one(assets, {
-    fields: [maintenanceSchedules.assetId],
-    references: [assets.id],
-  }),
-  createdByUser: one(users, {
-    fields: [maintenanceSchedules.createdBy],
-    references: [users.id],
-  }),
-  updatedByUser: one(users, {
-    fields: [maintenanceSchedules.updatedBy],
-    references: [users.id],
-  }),
-  workOrders: many(maintenanceWorkOrders),
-}));
+export const maintenanceSchedulesRelations = relations(
+  maintenanceSchedules,
+  ({ one, many }) => ({
+    company: one(companies, {
+      fields: [maintenanceSchedules.companyId],
+      references: [companies.id],
+    }),
+    asset: one(assets, {
+      fields: [maintenanceSchedules.assetId],
+      references: [assets.id],
+    }),
+    createdByUser: one(users, {
+      fields: [maintenanceSchedules.createdBy],
+      references: [users.id],
+    }),
+    updatedByUser: one(users, {
+      fields: [maintenanceSchedules.updatedBy],
+      references: [users.id],
+    }),
+    workOrders: many(maintenanceWorkOrders),
+  })
+);
 
-export const maintenanceWorkOrdersRelations = relations(maintenanceWorkOrders, ({ one, many }) => ({
-  company: one(companies, {
-    fields: [maintenanceWorkOrders.companyId],
-    references: [companies.id],
-  }),
-  asset: one(assets, {
-    fields: [maintenanceWorkOrders.assetId],
-    references: [assets.id],
-  }),
-  schedule: one(maintenanceSchedules, {
-    fields: [maintenanceWorkOrders.scheduleId],
-    references: [maintenanceSchedules.id],
-  }),
-  assignedTo: one(users, {
-    fields: [maintenanceWorkOrders.assignedToId],
-    references: [users.id],
-  }),
-  completedByUser: one(users, {
-    fields: [maintenanceWorkOrders.completedBy],
-    references: [users.id],
-  }),
-  approvedByUser: one(users, {
-    fields: [maintenanceWorkOrders.approvedBy],
-    references: [users.id],
-  }),
-  createdByUser: one(users, {
-    fields: [maintenanceWorkOrders.createdBy],
-    references: [users.id],
-  }),
-  updatedByUser: one(users, {
-    fields: [maintenanceWorkOrders.updatedBy],
-    references: [users.id],
-  }),
-  history: many(maintenanceHistory),
-  costs: many(maintenanceCosts),
-}));
+export const maintenanceWorkOrdersRelations = relations(
+  maintenanceWorkOrders,
+  ({ one, many }) => ({
+    company: one(companies, {
+      fields: [maintenanceWorkOrders.companyId],
+      references: [companies.id],
+    }),
+    asset: one(assets, {
+      fields: [maintenanceWorkOrders.assetId],
+      references: [assets.id],
+    }),
+    schedule: one(maintenanceSchedules, {
+      fields: [maintenanceWorkOrders.scheduleId],
+      references: [maintenanceSchedules.id],
+    }),
+    assignedTo: one(users, {
+      fields: [maintenanceWorkOrders.assignedToId],
+      references: [users.id],
+    }),
+    completedByUser: one(users, {
+      fields: [maintenanceWorkOrders.completedBy],
+      references: [users.id],
+    }),
+    approvedByUser: one(users, {
+      fields: [maintenanceWorkOrders.approvedBy],
+      references: [users.id],
+    }),
+    createdByUser: one(users, {
+      fields: [maintenanceWorkOrders.createdBy],
+      references: [users.id],
+    }),
+    updatedByUser: one(users, {
+      fields: [maintenanceWorkOrders.updatedBy],
+      references: [users.id],
+    }),
+    history: many(maintenanceHistory),
+    costs: many(maintenanceCosts),
+  })
+);
 
-export const maintenanceHistoryRelations = relations(maintenanceHistory, ({ one }) => ({
-  company: one(companies, {
-    fields: [maintenanceHistory.companyId],
-    references: [companies.id],
-  }),
-  asset: one(assets, {
-    fields: [maintenanceHistory.assetId],
-    references: [assets.id],
-  }),
-  workOrder: one(maintenanceWorkOrders, {
-    fields: [maintenanceHistory.workOrderId],
-    references: [maintenanceWorkOrders.id],
-  }),
-  performedByUser: one(users, {
-    fields: [maintenanceHistory.performedBy],
-    references: [users.id],
-  }),
-  createdByUser: one(users, {
-    fields: [maintenanceHistory.createdBy],
-    references: [users.id],
-  }),
-  updatedByUser: one(users, {
-    fields: [maintenanceHistory.updatedBy],
-    references: [users.id],
-  }),
-}));
+export const maintenanceHistoryRelations = relations(
+  maintenanceHistory,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [maintenanceHistory.companyId],
+      references: [companies.id],
+    }),
+    asset: one(assets, {
+      fields: [maintenanceHistory.assetId],
+      references: [assets.id],
+    }),
+    workOrder: one(maintenanceWorkOrders, {
+      fields: [maintenanceHistory.workOrderId],
+      references: [maintenanceWorkOrders.id],
+    }),
+    performedByUser: one(users, {
+      fields: [maintenanceHistory.performedBy],
+      references: [users.id],
+    }),
+    createdByUser: one(users, {
+      fields: [maintenanceHistory.createdBy],
+      references: [users.id],
+    }),
+    updatedByUser: one(users, {
+      fields: [maintenanceHistory.updatedBy],
+      references: [users.id],
+    }),
+  })
+);
 
 export const sparePartsRelations = relations(spareParts, ({ one, many }) => ({
   company: one(companies, {
@@ -424,36 +464,39 @@ export const sparePartsRelations = relations(spareParts, ({ one, many }) => ({
   costs: many(maintenanceCosts),
 }));
 
-export const maintenanceCostsRelations = relations(maintenanceCosts, ({ one }) => ({
-  company: one(companies, {
-    fields: [maintenanceCosts.companyId],
-    references: [companies.id],
-  }),
-  workOrder: one(maintenanceWorkOrders, {
-    fields: [maintenanceCosts.workOrderId],
-    references: [maintenanceWorkOrders.id],
-  }),
-  technician: one(users, {
-    fields: [maintenanceCosts.technicianId],
-    references: [users.id],
-  }),
-  sparePart: one(spareParts, {
-    fields: [maintenanceCosts.sparePartId],
-    references: [spareParts.id],
-  }),
-  approvedByUser: one(users, {
-    fields: [maintenanceCosts.approvedBy],
-    references: [users.id],
-  }),
-  createdByUser: one(users, {
-    fields: [maintenanceCosts.createdBy],
-    references: [users.id],
-  }),
-  updatedByUser: one(users, {
-    fields: [maintenanceCosts.updatedBy],
-    references: [users.id],
-  }),
-}));
+export const maintenanceCostsRelations = relations(
+  maintenanceCosts,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [maintenanceCosts.companyId],
+      references: [companies.id],
+    }),
+    workOrder: one(maintenanceWorkOrders, {
+      fields: [maintenanceCosts.workOrderId],
+      references: [maintenanceWorkOrders.id],
+    }),
+    technician: one(users, {
+      fields: [maintenanceCosts.technicianId],
+      references: [users.id],
+    }),
+    sparePart: one(spareParts, {
+      fields: [maintenanceCosts.sparePartId],
+      references: [spareParts.id],
+    }),
+    approvedByUser: one(users, {
+      fields: [maintenanceCosts.approvedBy],
+      references: [users.id],
+    }),
+    createdByUser: one(users, {
+      fields: [maintenanceCosts.createdBy],
+      references: [users.id],
+    }),
+    updatedByUser: one(users, {
+      fields: [maintenanceCosts.updatedBy],
+      references: [users.id],
+    }),
+  })
+);
 
 // Export types
 export type MaintenanceSchedule = typeof maintenanceSchedules.$inferSelect;

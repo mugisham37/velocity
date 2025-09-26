@@ -28,8 +28,12 @@ export const formatDate = (
 ): string => {
   const d = new Date(date);
 
+  if (isNaN(d.getTime())) {
+    throw new Error('Invalid date provided');
+  }
+
   if (format === 'YYYY-MM-DD') {
-    return d.toISOString().split('T')[0];
+    return d.toISOString().split('T')[0] || d.toISOString();
   }
 
   if (format === 'YYYY-MM-DD HH:mm:ss') {

@@ -25,7 +25,7 @@ export const billStatusEnum = pgEnum('bill_status', [
   'cancelled',
 ]);
 
-export const paymentStatusEnum = pgEnum('vendor_payment_status', [
+export const vendorPaymentStatusEnum = pgEnum('vendor_payment_status', [
   'pending',
   'scheduled',
   'processing',
@@ -183,7 +183,7 @@ export const vendorPayments = pgTable('vendor_payments', {
   reference: varchar('reference', { length: 255 }),
   bankAccountId: uuid('bank_account_id'), // Reference to bank account
   checkNumber: varchar('check_number', { length: 50 }),
-  status: paymentStatusEnum('status').default('pending').notNull(),
+  status: vendorPaymentStatusEnum('status').default('pending').notNull(),
   scheduledDate: timestamp('scheduled_date'),
   processedDate: timestamp('processed_date'),
   notes: text('notes'),
