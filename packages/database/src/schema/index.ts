@@ -9,6 +9,7 @@ export * from './customers';
 export * from './items';
 export * from './notifications';
 export * from './sales-crm';
+export * from './serial-batch-tracking';
 export * from './stock-transactions';
 export * from './users';
 export * from './vendors';
@@ -222,3 +223,37 @@ export type StockReconciliationItem = InferSelectModel<
 export type NewStockReconciliationItem = InferInsertModel<
   typeof stockReconciliationItems
 >;
+
+// Serial and Batch Tracking types
+import {
+  batchHistory,
+  batchLocations,
+  batchNumbers,
+  complianceReports,
+  productRecalls,
+  qualityInspections,
+  recallItems,
+  serialNumberHistory,
+  serialNumbers,
+} from './serial-batch-tracking';
+
+export type SerialNumber = InferSelectModel<typeof serialNumbers>;
+export type NewSerialNumber = InferInsertModel<typeof serialNumbers>;
+export type BatchNumber = InferSelectModel<typeof batchNumbers>;
+export type NewBatchNumber = InferInsertModel<typeof batchNumbers>;
+export type BatchLocation = InferSelectModel<typeof batchLocations>;
+export type NewBatchLocation = InferInsertModel<typeof batchLocations>;
+export type SerialNumberHistory = InferSelectModel<typeof serialNumberHistory>;
+export type NewSerialNumberHistory = InferInsertModel<
+  typeof serialNumberHistory
+>;
+export type BatchHistory = InferSelectModel<typeof batchHistory>;
+export type NewBatchHistory = InferInsertModel<typeof batchHistory>;
+export type ProductRecall = InferSelectModel<typeof productRecalls>;
+export type NewProductRecall = InferInsertModel<typeof productRecalls>;
+export type RecallItem = InferSelectModel<typeof recallItems>;
+export type NewRecallItem = InferInsertModel<typeof recallItems>;
+export type QualityInspection = InferSelectModel<typeof qualityInspections>;
+export type NewQualityInspection = InferInsertModel<typeof qualityInspections>;
+export type ComplianceReport = InferSelectModel<typeof complianceReports>;
+export type NewComplianceReport = InferInsertModel<typeof complianceReports>;

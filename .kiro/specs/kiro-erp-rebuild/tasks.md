@@ -164,7 +164,7 @@ The implementation follows a layered approach, starting with foundational infras
   - Add customer loyalty program integration with points and rewards
   - _Requirements: REQ-POS-001, REQ-POS-002, REQ-POS-003, REQ-POS-004, REQ-POS-005, REQ-POS-007_
 
-- [-] 5. Inventory Management System
+- [x] 5. Inventory Management System
   - Build comprehensive item master with variants and attributes
   - Implement multi-warehouse management with location tracking
   - Create stock transaction processing with real-time updates
@@ -201,7 +201,7 @@ The implementation follows a layered approach, starting with foundational infras
   - Add inventory reservation system for sales orders and production
   - _Requirements: REQ-INV-001, REQ-INV-002, REQ-INV-003, REQ-INV-004, REQ-INV-005, REQ-INV-006_
 
-- [ ] 5.4 Serial & Batch Tracking
+- [x] 5.4 Serial & Batch Tracking
   - Implement serial number tracking throughout the supply chain
   - Create batch/lot tracking with expiry date management
   - Build traceability system for forward and backward tracking

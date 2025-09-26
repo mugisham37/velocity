@@ -1,0 +1,631 @@
+# Serial and Batch Tracking GraphQL Schema
+
+# Enums
+enum SerialNumberStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+  DAMAGED
+  LOST
+  RETURNED
+}
+
+enum SerialNumberCondition {
+  GOOD
+  DAMAGED
+  REFURBISHED
+  NEW
+}
+
+enum BatchQualityStatus {
+  APPROVED
+  REJECTED
+  PENDING
+  QUARANTINE
+}
+
+enum RecallType {
+  VOLUNTARY
+  MANDATORY
+  PRECAUTIONARY
+}
+
+enum SeverityLevel {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum RecallStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum RecoveryStatus {
+  PENDING
+  RECOVERED
+  DESTROYED
+  CUSTOMER_NOTIFIED
+}
+
+enum InspectionType {
+  INCOMING
+  IN_PROCESS
+  FINAL
+  RANDOM
+}
+
+enum InspectionStatus {
+  PENDING
+  PASSED
+  FAILED
+  CONDITIONAL
+}
+
+enum ComplianceReportType {
+  FDA
+  EU_MDR
+  ISO
+  CUSTOM
+}
+
+enum ComplianceReportStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+# Types
+type SerialNumber {
+  id: ID!
+  serialNumber: String!
+  itemId: ID!
+  warehouseId: ID!
+  locationId: ID
+  status: SerialNumberStatus!
+  condition: SerialNumberCondition!
+  purchaseDate: DateTime
+  purchaseRate: F
+  supplierId: ID
+  purchaseDocumentType: String
+  purchaseDocumentNumber: String
+  warrantyExpiryDate: DateTime
+  maintenanceDueDate: DateTime
+  lastMaintenanceDate: DateTime
+  deliveryDate: DateTime
+  deliveryDocumentType: String
+  deliveryDocumentNumber: String
+  customerId: ID
+  notes: String
+  companyId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type BatchNumber {
+  id: ID!
+  batchNumber: String!
+  itemId: ID!
+  manufacturingDate: DateTime
+  expiryDate: DateTime
+  supplierBatchId: String
+  supplierId: ID
+  purchaseDocumentType: String
+  purchaseDocumentNumber: String
+  manufacturingLocation: String
+  qualityStatus: BatchQualityStatus!
+  qualityInspectionDate: DateTime
+  qualityInspector: ID
+  qualityNotes: String
+  totalQty: Float!
+  availableQty: Float!
+  reservedQty: Float!
+  consumedQty: Float!
+  uom: String!
+  batchAttributes: JSON
+  isActive: Boolean!
+  companyId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type BatchLocation {
+  id: ID!
+  batchId: ID!
+  warehouseId: ID!
+  locationId: ID
+  qty: Float!
+  reservedQty: Float!
+  lastTransactionDate: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type SerialNumberHistory {
+  id: ID!
+  serialNumberId: ID!
+  transactionType: String!
+  transactionDate: DateTime!
+  fromWarehouseId: ID
+  toWarehouseId: ID
+  fromLocationId: ID
+  toLocationId: ID
+  fromCustomerId: ID
+  toCustomerId: ID
+  documentType: String
+  documentNumber: String
+  documentId: ID
+  previousStatus: String
+  newStatus: String
+  previousCondition: String
+  newCondition: String
+  notes: String
+  createdBy: ID!
+  companyId: ID!
+  createdAt: DateTime!
+}
+
+type BatchHistory {
+  id: ID!
+  batchId: ID!
+  transactionType: String!
+  transactionDate: DateTime!
+  warehouseId: ID
+  locationId: ID
+  qtyChange: Float!
+  qtyBefore: Float!
+  qtyAfter: Float!
+  documentType: String
+  documentNumber: String
+  documentId: ID
+  reason: String
+  notes: String
+  createdBy: ID!
+  companyId: ID!
+  createdAt: DateTime!
+}
+
+type ProductRecall {
+  id: ID!
+  recallNumber: String!
+  recallTitle: String!
+  recallType: RecallType!
+  severityLevel: SeverityLevel!
+  recallReason: String!
+  recallDate: DateTime!
+  effectiveDate: DateTime!
+  expiryDate: DateTime
+  status: RecallStatus!
+  regulatoryBody: String
+  regulatoryReference: String
+  affectedItems: [ID!]!
+  affectedBatches: [String!]
+  affectedSerials: [String!]
+  dateRangeFrom: DateTime
+  dateRangeTo: DateTime
+  customerNotificationRequired: Boolean!
+  supplierNotificationRequired: Boolean!
+  recallInstructions: String
+  contactInformation: JSON
+  totalAffectedQty: Float!
+  recoveredQty: Float!
+  destroyedQty: Float!
+  returnedQty: Float!
+  createdBy: ID!
+  updatedBy: ID
+  companyId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type RecallItem {
+  id: ID!
+  recallId: ID!
+  itemId: ID!
+  batchId: ID
+  serialNumberId: ID
+  customerId: ID
+  warehouseId: ID
+  locationId: ID
+  qtyAffected: Float!
+  qtyRecovered: Float!
+  recoveryStatus: RecoveryStatus!
+  recoveryDate: DateTime
+  recoveryMethod: String
+  customerNotified: Boolean!
+  notificationDate: DateTime
+  notificationMethod: String
+  notes: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type QualityInspection {
+  id: ID!
+  inspectionNumber: String!
+  inspectionType: InspectionType!
+  itemId: ID!
+  batchId: ID
+  serialNumberId: ID
+  inspectionDate: DateTime!
+  inspectorId: ID!
+  inspectionTemplate: String
+  sampleSize: Float
+  totalQtyInspected: Float
+  passedQty: Float!
+  failedQty: Float!
+  overallStatus: InspectionStatus!
+  inspectionResults: JSON
+  defectsFound: JSON
+  correctiveActions: String
+  inspectorNotes: String
+  approvedBy: ID
+  approvedAt: DateTime
+  warehouseId: ID
+  locationId: ID
+  companyId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ComplianceReport {
+  id: ID!
+  reportNumber: String!
+  reportType: ComplianceReportType!
+  reportTitle: String!
+  reportingPeriodFrom: DateTime!
+  reportingPeriodTo: DateTime!
+  regulatoryBody: String
+  regulationReference: String
+  reportData: JSON!
+  affectedItems: [ID!]
+  affectedBatches: [ID!]
+  affectedSerials: [ID!]
+  status: ComplianceReportStatus!
+  submissionDate: DateTime
+  submissionReference: String
+  responseDate: DateTime
+  responseStatus: String
+  responseNotes: String
+  generatedBy: ID!
+  approvedBy: ID
+  approvedAt: DateTime
+  companyId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type TraceabilityEntry {
+  transactionDate: DateTime!
+  transactionType: String!
+  fromLocation: String
+  toLocation: String
+  documentType: String
+  documentNumber: String
+  quantity: Float
+  notes: String
+}
+
+type TraceabilityReport {
+  itemId: ID!
+  serialNumber: String
+  batchNumber: String
+  forwardTrace: [TraceabilityEntry!]!
+  backwardTrace: [TraceabilityEntry!]!
+  affectedCustomers: [ID!]!
+  affectedSuppliers: [ID!]!
+  relatedDocuments: [String!]!
+}
+
+type RecallSummary {
+  category: String!
+  count: Int!
+  percentage: Float!
+}
+
+type RecallAnalytics {
+  totalRecalls: Int!
+  activeRecalls: Int!
+  completedRecalls: Int!
+  totalAffectedItems: Int!
+  totalRecoveredQty: Float!
+  recoveryRate: Float!
+  recallsBySeverity: [RecallSummary!]!
+  recallsByType: [RecallSummary!]!
+}
+
+type ExpiryAlert {
+  batchId: ID!
+  batchNumber: String!
+  itemId: ID!
+  itemName: String!
+  expiryDate: DateTime!
+  daysToExpiry: Int!
+  availableQty: Float!
+  warehouseLocations: [String!]!
+}
+
+# Input Types
+input CreateSerialNumberInput {
+  serialNumber: String!
+  itemId: ID!
+  warehouseId: ID!
+  locationId: ID
+  status: SerialNumberStatus = AVAILABLE
+  condition: SerialNumberCondition = GOOD
+  purchaseDate: DateTime
+  purchaseRate: Float
+  supplierId: ID
+  purchaseDocumentType: String
+  purchaseDocumentNumber: String
+  warrantyExpiryDate: DateTime
+  notes: String
+}
+
+input UpdateSerialNumberInput {
+  warehouseId: ID
+  locationId: ID
+  status: SerialNumberStatus
+  condition: SerialNumberCondition
+  customerId: ID
+  deliveryDate: DateTime
+  deliveryDocumentType: String
+  deliveryDocumentNumber: String
+  maintenanceDueDate: DateTime
+  lastMaintenanceDate: DateTime
+  notes: String
+}
+
+input CreateBatchNumberInput {
+  batchNumber: String!
+  itemId: ID!
+  manufacturingDate: DateTime
+  expiryDate: DateTime
+  supplierBatchId: String
+  supplierId: ID
+  purchaseDocumentType: String
+  purchaseDocumentNumber: String
+  manufacturingLocation: String
+  qualityStatus: BatchQualityStatus = APPROVED
+  totalQty: Float!
+  uom: String!
+  batchAttributes: JSON
+  qualityNotes: String
+}
+
+input UpdateBatchNumberInput {
+  qualityStatus: BatchQualityStatus
+  availableQty: Float
+  reservedQty: Float
+  consumedQty: Float
+  qualityInspectionDate: DateTime
+  qualityInspector: ID
+  qualityNotes: String
+  batchAttributes: JSON
+  isActive: Boolean
+}
+
+input CreateBatchLocationInput {
+  batchId: ID!
+  warehouseId: ID!
+  locationId: ID
+  qty: Float!
+  reservedQty: Float
+}
+
+input CreateProductRecallInput {
+  recallNumber: String!
+  recallTitle: String!
+  recallType: RecallType!
+  severityLevel: SeverityLevel!
+  recallReason: String!
+  recallDate: DateTime!
+  effectiveDate: DateTime!
+  expiryDate: DateTime
+  regulatoryBody: String
+  regulatoryReference: String
+  affectedItems: [ID!]!
+  affectedBatches: [String!]
+  affectedSerials: [String!]
+  dateRangeFrom: DateTime
+  dateRangeTo: DateTime
+  customerNotificationRequired: Boolean = true
+  supplierNotificationRequired: Boolean = false
+  recallInstructions: String
+  contactInformation: JSON
+}
+
+input UpdateProductRecallInput {
+  status: RecallStatus
+  recoveredQty: Float
+  destroyedQty: Float
+  returnedQty: Float
+  recallInstructions: String
+  contactInformation: JSON
+}
+
+input CreateQualityInspectionInput {
+  inspectionNumber: String!
+  inspectionType: InspectionType!
+  itemId: ID!
+  batchId: ID
+  serialNumberId: ID
+  inspectionDate: DateTime!
+  inspectorId: ID!
+  inspectionTemplate: String
+  sampleSize: Float
+  totalQtyInspected: Float
+  warehouseId: ID
+  locationId: ID
+}
+
+input UpdateQualityInspectionInput {
+  passedQty: Float
+  failedQty: Float
+  overallStatus: InspectionStatus
+  inspectionResults: JSON
+  defectsFound: JSON
+  correctiveActions: String
+  inspectorNotes: String
+  approvedBy: ID
+  approvedAt: DateTime
+}
+
+input CreateComplianceReportInput {
+  reportNumber: String!
+  reportType: ComplianceReportType!
+  reportTitle: String!
+  reportingPeriodFrom: DateTime!
+  reportingPeriodTo: DateTime!
+  regulatoryBody: String
+  regulationReference: String
+  reportData: JSON!
+  affectedItems: [ID!]
+  affectedBatches: [ID!]
+  affectedSerials: [ID!]
+}
+
+input UpdateComplianceReportInput {
+  status: ComplianceReportStatus
+  submissionDate: DateTime
+  submissionReference: String
+  responseDate: DateTime
+  responseStatus: String
+  responseNotes: String
+  approvedBy: ID
+  approvedAt: DateTime
+  reportData: JSON
+}
+
+input TraceabilityQueryInput {
+  itemId: ID!
+  serialNumber: String
+  batchNumber: String
+  fromDate: DateTime
+  toDate: DateTime
+  includeForwardTrace: Boolean = false
+  includeBackwardTrace: Boolean = false
+}
+
+input SerialNumberFilterInput {
+  itemId: ID
+  warehouseId: ID
+  customerId: ID
+  status: SerialNumberStatus
+  condition: SerialNumberCondition
+  warrantyExpiringBefore: DateTime
+  maintenanceDueBefore: DateTime
+}
+
+input BatchNumberFilterInput {
+  itemId: ID
+  qualityStatus: BatchQualityStatus
+  expiringBefore: DateTime
+  manufacturedAfter: DateTime
+  manufacturedBefore: DateTime
+  isActive: Boolean
+  supplierId: ID
+}
+
+input ProductRecallFilterInput {
+  recallType: RecallType
+  severityLevel: SeverityLevel
+  status: RecallStatus
+  recallDateFrom: DateTime
+  recallDateTo: DateTime
+  affectedItemId: ID
+}
+
+input QualityInspectionFilterInput {
+  itemId: ID
+  batchId: ID
+  inspectionType: InspectionType
+  overallStatus: InspectionStatus
+  inspectorId: ID
+  inspectionDateFrom: DateTime
+  inspectionDateTo: DateTime
+}
+
+# Queries
+type Query {
+  # Serial Number Queries
+  serialNumbers(
+    filter: SerialNumberFilterInput
+    limit: Int = 50
+    offset: Int = 0
+  ): [SerialNumber!]!
+
+  serialNumber(serialNumber: String!): SerialNumber
+
+  # Batch Number Queries
+  batchNumbers(
+    filter: BatchNumberFilterInput
+    limit: Int = 50
+    offset: Int = 0
+  ): [BatchNumber!]!
+
+  batchNumber(batchNumber: String!, itemId: ID!): BatchNumber
+
+  # Product Recall Queries
+  productRecalls(
+    filter: ProductRecallFilterInput
+    limit: Int = 50
+    offset: Int = 0
+  ): [ProductRecall!]!
+
+  # Quality Inspection Queries
+  qualityInspections(
+    filter: QualityInspectionFilterInput
+    limit: Int = 50
+    offset: Int = 0
+  ): [QualityInspection!]!
+
+  # Traceability Queries
+  traceabilityReport(query: TraceabilityQueryInput!): TraceabilityReport!
+
+  # Analytics Queries
+  recallAnalytics: RecallAnalytics!
+  expiryAlerts(daysAhead: Int = 30): [ExpiryAlert!]!
+
+  # Alert Queries
+  expiringBatches(daysAhead: Int = 30): [BatchNumber!]!
+  maintenanceDueSerials(daysAhead: Int = 7): [SerialNumber!]!
+  warrantyExpiringSerials(daysAhead: Int = 30): [SerialNumber!]!
+}
+
+# Mutations
+type Mutation {
+  # Serial Number Mutations
+  createSerialNumber(input: CreateSerialNumberInput!): SerialNumber!
+  updateSerialNumber(id: ID!, input: UpdateSerialNumberInput!): SerialNumber!
+
+  # Batch Number Mutations
+  createBatchNumber(input: CreateBatchNumberInput!): BatchNumber!
+  updateBatchNumber(id: ID!, input: UpdateBatchNumberInput!): BatchNumber!
+
+  # Batch Location Mutations
+  createBatchLocation(input: CreateBatchLocationInput!): BatchLocation!
+
+  # Product Recall Mutations
+  createProductRecall(input: CreateProductRecallInput!): ProductRecall!
+  updateProductRecall(id: ID!, input: UpdateProductRecallInput!): ProductRecall!
+
+  # Quality Inspection Mutations
+  createQualityInspection(
+    input: CreateQualityInspectionInput!
+  ): QualityInspection!
+  updateQualityInspection(
+    id: ID!
+    input: UpdateQualityInspectionInput!
+  ): QualityInspection!
+
+  # Compliance Report Mutations
+  createComplianceReport(input: CreateComplianceReportInput!): ComplianceReport!
+  updateComplianceReport(
+    id: ID!
+    input: UpdateComplianceReportInput!
+  ): ComplianceReport!
+}
