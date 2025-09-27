@@ -16,6 +16,8 @@ type ToasterToast = ToastProps & {
   title?: string;
   description?: string;
   action?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 const actionTypes = {
@@ -45,11 +47,11 @@ type Action =
     }
   | {
       type: ActionType['DISMISS_TOAST'];
-      toastId?: ToasterToast['id'];
+      toastId?: string;
     }
   | {
       type: ActionType['REMOVE_TOAST'];
-      toastId?: ToasterToast['id'];
+      toastId?: string;
     };
 
 interface State {
@@ -156,7 +158,7 @@ function toast({ ...props }: Toast) {
       ...props,
       id,
       open: true,
-      onOpenChange: open => {
+      onOpenChange: (open: boolean) => {
         if (!open) dismiss();
       },
     },
@@ -185,7 +187,13 @@ function useToast() {
   return {
     ...state,
     toast,
-    dismiss: (toastId?: string) => dispatch({ type: 'DISMISS_TOAST', toastId }),
+    dismiss: (toastId?: string) => {
+      if (toastId) {
+        dispatch({ type: 'DISMISS_TOAST', toastId });
+      } else {
+        dispatch({ type: 'DISMISS_TOAST' });
+      }
+    },
   };
 }
 

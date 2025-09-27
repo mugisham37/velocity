@@ -41,6 +41,7 @@
     "clsx": "^2.0.0",
     "tailwind-merge": "^1.14.0",
     "lucide-react": "^0.288.0",
+    "react-hook-form": "^7.48.2",
     "@kiro/shared": "*"
   },
   "devDependencies": {

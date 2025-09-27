@@ -1,67 +1,86 @@
-import { db } from './index';
-import { 
-  companies, 
-  users, 
-  roles, 
-  userRoles, 
-  accounts, 
-  warehouses,
-  type NewCompany,
-  type NewUser,
-  type NewRole,
-  type NewUserRole,
-  type NewAccount,
-  type NewWarehouse
-} from './schema';
 import bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
+import { db } from './index';
+import {
+  accounts,
+  companies,
+  roles,
+  userRoles,
+  users,
+  warehouses,
+  type NewAccount,
+  type NewCompany,
+  type NewRole,
+  type NewUser,
+  type NewUserRole,
+  type NewWarehouse,
+} from './schema';
 
 async function seedDatabase() {
   console.log('🌱 Seeding database...');
 
   try {
     // Create default company
-    const [company] = await db.insert(companies).values({
-      name: 'KIRO Technologies',
-      abbreviation: 'KIRO',
-      defaultCurrency: 'USD',
-      settings: {
-        fiscalYear: '2024-04-01',
-        dateFormat: 'dd-mm-yyyy',
-        timeZone: 'UTC',
-      },
-    } satisfies NewCompany).returning();
+    const [company] = await db
+      .insert(companies)
+      .values({
+        name: 'KIRO Technologies',
+        abbreviation: 'KIRO',
+        defaultCurrency: 'USD',
+        settings: {
+          fiscalYear: '2024-04-01',
+          dateFormat: 'dd-mm-yyyy',
+          timeZone: 'UTC',
+        },
+      } satisfies NewCompany)
+      .returning();
+
+    if (!company) {
+      throw new Error('Failed to create default company');
+    }
 
     console.log('✅ Created default company:', company.name);
 
     // Create default roles
-    const adminRole = await db.insert(roles).values({
-      name: 'System Administrator',
-      description: 'Full system access with all permissions',
-      permissions: ['*'], // Wildcard for all permissions
-      companyId: company.id,
-    } satisfies NewRole).returning();
+    const adminRole = await db
+      .insert(roles)
+      .values({
+        name: 'System Administrator',
+        description: 'Full system access with all permissions',
+        permissions: ['*'], // Wildcard for all permissions
+        companyId: company.id,
+      } satisfies NewRole)
+      .returning();
 
-    const userRole = await db.insert(roles).values({
-      name: 'Standard User',
-      description: 'Standard user with limited permissions',
-      permissions: ['read:own', 'write:own'],
-      companyId: company.id,
-    } satisfies NewRole).returning();
+    await db
+      .insert(roles)
+      .values({
+        name: 'Standard User',
+        description: 'Standard user with limited permissions',
+        permissions: ['read:own', 'write:own'],
+        companyId: company.id,
+      } satisfies NewRole)
+      .returning();
 
     console.log('✅ Created default roles');
 
     // Create admin user
     const hashedPassword = await bcrypt.hash('admin123', 12);
-    const [adminUser] = await db.insert(users).values({
-      email: 'admin@kiro.com',
-      passwordHash: hashedPassword,
-      firstName: 'System',
-      lastName: 'Administrator',
-      isActive: true,
-      isEmailVerified: true,
-      companyId: company.id,
-    } satisfies NewUser).returning();
+    const [adminUser] = await db
+      .insert(users)
+      .values({
+        email: 'admin@kiro.com',
+        passwordHash: hashedPassword,
+        firstName: 'System',
+        lastName: 'Administrator',
+        isActive: true,
+        isEmailVerified: true,
+        companyId: company.id,
+      } satisfies NewUser)
+      .returning();
+
+    if (!adminUser) {
+      throw new Error('Failed to create admin user');
+    }
 
     // Assign admin role to admin user
     await db.insert(userRoles).values({
@@ -106,7 +125,7 @@ async function seedDatabase() {
         accountType: 'Asset',
         companyId: company.id,
       },
-      
+
       // Liabilities
       {
         accountCode: '2000',
@@ -128,7 +147,7 @@ async function seedDatabase() {
         accountType: 'Liability',
         companyId: company.id,
       },
-      
+
       // Equity
       {
         accountCode: '3000',
@@ -143,7 +162,7 @@ async function seedDatabase() {
         accountType: 'Equity',
         companyId: company.id,
       },
-      
+
       // Income
       {
         accountCode: '4000',
@@ -158,7 +177,7 @@ async function seedDatabase() {
         accountType: 'Income',
         companyId: company.id,
       },
-      
+
       // Expenses
       {
         accountCode: '5000',
@@ -208,7 +227,6 @@ async function seedDatabase() {
     console.log('Password: admin123');
     console.log('');
     console.log('⚠️  Please change the default password after first login!');
-
   } catch (error) {
     console.error('❌ Database seeding failed:', error);
     process.exit(1);
