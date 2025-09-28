@@ -1,8 +1,8 @@
 import { store } from '@store/index';
 import { addNotification, setPushToken } from '@store/notifications';
-import { NotificationData } from '@types/index';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import { NotificationData } from '../types';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -23,9 +23,13 @@ class NotificationService {
     await this.requestPermissions();
 
     // Get push token
-    const token = await thisshToken();
-    if (token) {
-      store.dispatch(setPushToken(token));
+    try {
+      const token = await this.getPushToken();
+      if (token) {
+        store.dispatch(setPushToken(token));
+      }
+    } catch (error) {
+      console.error('Failed to get push token:', error);
     }
 
     // Set up notification listeners
@@ -81,7 +85,14 @@ class NotificationService {
         isRead: false,
       };
 
-      store.dispatch(addNotification(notificationData));
+      store.dispatch(
+        addNotification({
+          ...notificationData,
+          timestamp: new Date(),
+          message: notificationData.body || '',
+          isRead: false,
+        })
+      );
     });
 
     // Handle notification taps

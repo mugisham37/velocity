@@ -1,5 +1,10 @@
-import { Customer, Product, SalesOrder } from '@types/index';
 import * as SQLite from 'expo-sqlite';
+import type {
+  Customer,
+  Product,
+  SalesOrder,
+  SalesOrderItem,
+} from '../types/database';
 
 class DatabaseService {
   private db: SQLite.WebSQLDatabase | null = null;
@@ -393,7 +398,7 @@ class DatabaseService {
             );
 
             // Insert items
-            order.items.forEach(item => {
+            order.items.forEach((item: SalesOrderItem) => {
               tx.executeSql(
                 `INSERT INTO sales_order_items
                  (id, sales_order_id, product_id, product_name, product_sku,
@@ -488,6 +493,13 @@ class DatabaseService {
                   ? {
                       id: row.customer_id,
                       name: row.customer_name,
+                      balance: 0,
+                      status: 'active',
+                      lastModified: new Date(),
+                      isDeleted: false,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                      isActive: true,
                     }
                   : undefined,
                 items,

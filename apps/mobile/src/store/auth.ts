@@ -1,12 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '@services/auth';
-import { AuthState, User } from '@types/index';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { AuthState, User } from '../types/auth';
 
-interface AuthStore extends AuthState {
+interface AuthStore extends Omit<AuthState, 'refreshToken'> {
+  refreshTokenPromise: (() => Promise<void>) | null;
   // Actions
   login: (email: string, password: string) => Promise<void>;
   loginWithBiometric: () => Promise<void>;
@@ -24,8 +25,8 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       // Initial state
       user: null,
-      token: null,
-      refreshToken: null,
+      accessToken: null,
+      refreshTokenPromise: null,
       isAuthenticated: false,
       isLoading: false,
       biometricEnabled: false,

@@ -1,9 +1,12 @@
 import '@testing-library/jest-dom';
 
 // Mock Expo modules
-jest.mock('expo-font');
-jest.mock('expo-asset');
-jest.mock('expo-constants', () => ({
+import { jest } from '@jest/globals';
+
+beforeAll(() => {
+  jest.mock('expo-font');
+  jest.mock('expo-asset');
+  jest.mock('expo-constants', () => ({
   default: {
     expoConfig: {
       name: 'KIRO ERP Mobile',

@@ -6,7 +6,6 @@ import DashboardScreen from '@screens/main/DashboardScreen';
 import FinanceScreen from '@screens/main/FinanceScreen';
 import InventoryScreen from '@screens/main/InventoryScreen';
 import ProfileScreen from '@screens/main/ProfileScreen';
-import { MainTabParamList } from '@types/index';
 import SalesNavigator from './SalesNavigator';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();

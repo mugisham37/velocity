@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '@store/auth';
-import { RootStackParamList } from '@types/index';
+import { RootStackParamList } from '../types';
 
 import LoadingScreen from '@screens/LoadingScreen';
 import AuthNavigator from './AuthNavigator';

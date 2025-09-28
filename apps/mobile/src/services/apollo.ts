@@ -46,8 +46,8 @@ const errorLink = onError(
       // Handle 401 errors (unauthorized)
       if ('statusCode' in networkError && networkError.statusCode === 401) {
         // Try to refresh token
-        const { refreshToken } = useAuthStore.getState();
-        if (refreshToken) {
+        const { refreshTokenPromise } = useAuthStore.getState();
+        if (typeof refreshTokenPromise === 'function') {
           useAuthStore
             .getState()
             .refreshToken()

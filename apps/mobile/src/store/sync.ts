@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { SyncState } from '@types/index';
+import { SyncState } from '../types';
 
 const initialState: SyncState = {
   isOnline: true,

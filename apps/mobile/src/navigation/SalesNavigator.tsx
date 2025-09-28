@@ -7,7 +7,7 @@ import CustomerDetailScreen from '@screens/sales/CustomerDetailScreen';
 import CustomerListScreen from '@screens/sales/CustomerListScreen';
 import SalesDetailScreen from '@screens/sales/SalesDetailScreen';
 import SalesListScreen from '@screens/sales/SalesListScreen';
-import { SalesStackParamList } from '@types/index';
+import { SalesStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<SalesStackParamList>();
 

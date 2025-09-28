@@ -26,6 +26,8 @@ export type SalesStackParamList = {
 };
 
 // Auth types
+export * from './navigation';
+
 export interface User {
   id: string;
   email: string;

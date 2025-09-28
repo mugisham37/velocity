@@ -1,5 +1,16 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { NotificationData } from '@types/index';
+interface NotificationData {
+  id: string;
+  title: string;
+  message: string;
+  type: 'success' | 'error' | 'info' | 'warning';
+  timestamp: Date;
+  isRead: boolean;
+}
+
+interface NotificationState {
+  notifications: NotificationData[];
+}
 
 interface NotificationState {
   notifications: NotificationData[];
