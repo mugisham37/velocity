@@ -146,10 +146,10 @@ export class Invoice {
   @Field(() => InvoiceStatus)
   status!: InvoiceStatus;
 
-  @Field({ nullable: t
+  @Field(() => String, { nullable: true })
   terms?: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   notes?: string;
 
   @Field(() => ID, { nullable: true })

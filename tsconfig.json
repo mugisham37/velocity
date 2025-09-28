@@ -50,7 +50,6 @@
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "noFallthroughCasesInSwitch": true,
-    "noImplicitReturns": true,
 
     // Advanced
     "jsx": "preserve",

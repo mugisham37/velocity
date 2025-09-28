@@ -1,12 +1,15 @@
 import type { Config } from 'drizzle-kit';
-import { config } from '@kiro/config';
 
 export default {
   schema: './src/schema/index.ts',
   out: './migrations',
   driver: 'pg',
   dbCredentials: {
-    connectionString: config.DATABASE_URL,
+    host: 'localhost',
+    port: 5432,
+    user: 'postgres',
+    password: 'moses',
+    database: 'velocity',
   },
   verbose: true,
   strict: true,
