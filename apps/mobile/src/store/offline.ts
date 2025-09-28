@@ -1,4 +1,18 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+iminterface PendingAction {
+  id: string;
+  type: 'create' | 'update' | 'delete';
+  entity: string;
+  data: any;
+  timestamp: Date;
+}
+
+interface PendingAction {
+  id: string;
+  type: 'create' | 'update' | 'delete';
+  entity: string;
+  data: any;
+  timestamp: Date;
+}
 
 interface OfflineState {
   entities: {
@@ -7,7 +21,19 @@ interface OfflineState {
     salesOrders: Record<string, any>;
     [key: string]: Record<string, any>;
   };
-  pendingActions: Array<{
+  pendingActions: PendingAction[];reateSlice, PayloadAction } from '@reduxjs/toolkit';
+
+interface OfflineState {
+  entities: {
+    customers: Record<string, any>;
+    products: Record<string, any>;
+    salesOrders: Record<string, any>;
+    [key: string]: Record<string, any>;
+  };
+  pendingActions: Array<PendingAction>;
+}
+
+interface PendingAction {
     id: string;
     type: 'create' | 'update' | 'delete';
     entity: string;
@@ -112,9 +138,9 @@ const offlineSlice = createSlice({
       });
     },
 
-    removePendingAction: (state, action: PayloadAction<string>) => {
+    removePendingAction: (state: OfflineState, action: PayloadAction<string>) => {
       state.pendingActions = state.pendingActions.filter(
-        action => action.id !== action.payload
+        action => action.id !== action.payload.id
       );
     },
 

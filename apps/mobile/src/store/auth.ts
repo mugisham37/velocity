@@ -32,7 +32,7 @@ export const useAuthStore = create<AuthStore>()(
       biometricEnabled: false,
 
       // Actions
-      login: async (email: string, password: string) => {
+      login: async (email: string, password: string): Promise<void> => {
         set({ isLoading: true });
         try {
           const response = await authService.login(email, password);

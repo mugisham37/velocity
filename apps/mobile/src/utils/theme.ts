@@ -6,59 +6,110 @@ import {
 } from 'react-native-paper';
 
 const fontConfig = {
-  web: {
-    regular: {
-      fontFamily: 'System',
-      fontWeight: 'normal' as const,
-    },
-    medium: {
-      fontFamily: 'System',
-      fontWeight: '500' as const,
-    },
-    light: {
-      fontFamily: 'System',
-      fontWeight: '300' as const,
-    },
-    thin: {
-      fontFamily: 'System',
-      fontWeight: '100' as const,
-    },
+  labelLarge: {
+    fontFamily: 'System',
+    fontWeight: '500',
+    letterSpacing: 0.1,
+    lineHeight: 20,
+    fontSize: 14,
   },
-  ios: {
-    regular: {
-      fontFamily: 'System',
-      fontWeight: 'normal' as const,
-    },
-    medium: {
-      fontFamily: 'System',
-      fontWeight: '500' as const,
-    },
-    light: {
-      fontFamily: 'System',
-      fontWeight: '300' as const,
-    },
-    thin: {
-      fontFamily: 'System',
-      fontWeight: '100' as const,
-    },
+  labelMedium: {
+    fontFamily: 'System',
+    fontWeight: '500',
+    letterSpacing: 0.5,
+    lineHeight: 16,
+    fontSize: 12,
   },
-  android: {
-    regular: {
-      fontFamily: 'sans-serif',
-      fontWeight: 'normal' as const,
-    },
-    medium: {
-      fontFamily: 'sans-serif-medium',
-      fontWeight: 'normal' as const,
-    },
-    light: {
-      fontFamily: 'sans-serif-light',
-      fontWeight: 'normal' as const,
-    },
-    thin: {
-      fontFamily: 'sans-serif-thin',
-      fontWeight: 'normal' as const,
-    },
+  labelSmall: {
+    fontFamily: 'System',
+    fontWeight: '500',
+    letterSpacing: 0.5,
+    lineHeight: 14,
+    fontSize: 11,
+  },
+  bodyLarge: {
+    fontFamily: 'System',
+    fontWeight: '400',
+    letterSpacing: 0.15,
+    lineHeight: 24,
+    fontSize: 16,
+  },
+  bodyMedium: {
+    fontFamily: 'System',
+    fontWeight: '400',
+    letterSpacing: 0.25,
+    lineHeight: 20,
+    fontSize: 14,
+  },
+  bodySmall: {
+    fontFamily: 'System',
+    fontWeight: '400',
+    letterSpacing: 0.4,
+    lineHeight: 16,
+    fontSize: 12,
+  },
+  titleLarge: {
+    fontFamily: 'System',
+    fontWeight: '400',
+    letterSpacing: 0,
+    lineHeight: 28,
+    fontSize: 22,
+  },
+  titleMedium: {
+    fontFamily: 'System',
+    fontWeight: '500',
+    letterSpacing: 0.15,
+    lineHeight: 24,
+    fontSize: 16,
+  },
+  titleSmall: {
+    fontFamily: 'System',
+    fontWeight: '500',
+    letterSpacing: 0.1,
+    lineHeight: 20,
+    fontSize: 14,
+  },
+  displayLarge: {
+    fontFamily: 'System',
+    fontWeight: '400',
+    letterSpacing: -0.25,
+    lineHeight: 64,
+    fontSize: 57,
+  },
+  displayMedium: {
+    fontFamily: 'System',
+    fontWeight: '400',
+    letterSpacing: 0,
+    lineHeight: 52,
+    fontSize: 45,
+  },
+  displaySmall: {
+    fontFamily: 'System',
+    fontWeight: '400',
+    letterSpacing: 0,
+    lineHeight: 44,
+    fontSize: 36,
+  },
+  headlineLarge: {
+    fontFamily: 'System',
+    fontWeight: '400',
+    letterSpacing: 0,
+    lineHeight: 40,
+    fontSize: 32,
+  },
+  headlineMedium: {
+    fontFamily: 'System',
+    fontWeight: '400',
+    letterSpacing: 0,
+    lineHeight: 36,
+    fontSize: 28,
+  },
+  headlineSmall: {
+    fontFamily: 'System',
+    fontWeight: '400',
+    letterSpacing: 0,
+    lineHeight: 32,
+    fontSize: 24,
   },
 };
 

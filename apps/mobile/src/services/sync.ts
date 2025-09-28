@@ -1,22 +1,22 @@
 import NetInfo from '@react-native-community/netinfo';
 import { store } from '@store/index';
 import {
-    clearPendingActions,
-    setEntities,
-    updateSyncStatus
+  clearPendingActions,
+  setEntities,
+  updateSyncStatus,
 } from '@store/offline';
 import {
-    setLastSyncAt,
-    setOnlineStatus,
-    setPendingChanges,
-    setSyncProgress,
-    setSyncStatus
+  setLastSyncAt,
+  setOnlineStatus,
+  setPendingChanges,
+  setSyncProgress,
+  setSyncStatus,
 } from '@store/sync';
 import { apolloClient } from './apollo';
 import { databaseService } from './database';
 
 class SyncService {
-  private syncInterval: NodeJS.Timeout | null = null;
+  private syncInterval: ReturnType<typeof setInterval> | null = null;
   private isInitialized = false;
 
   async initialize() {
@@ -33,12 +33,15 @@ class SyncService {
     });
 
     // Set up periodic sync (every 5 minutes when online)
-    this.syncInterval = setInterval(() => {
-      const state = store.getState();
-      if (state.sync.isOnline && !state.sync.isSyncing) {
-        this.syncData();
-      }
-    }, 5 * 60 * 1000);
+    this.syncInterval = setInterval(
+      () => {
+        const state = store.getState();
+        if (state.sync.isOnline && !state.sync.isSyncing) {
+          this.syncData();
+        }
+      },
+      5 * 60 * 1000
+    );
 
     // Initial sync
     const netInfo = await NetInfo.fetch();
@@ -59,7 +62,7 @@ class SyncService {
     }
 
     store.dispatch(setSyncStatus(true));
-    store.dispatchtSyncProgress(0));
+    store.dispatch(setSyncProgress(0));
 
     try {
       // Step 1: Push pending changes (25% progress)
@@ -83,7 +86,6 @@ class SyncService {
 
       // Clear pending changes count
       store.dispatch(setPendingChanges(0));
-
     } catch (error) {
       console.error('Sync failed:', error);
       throw error;
@@ -100,18 +102,22 @@ class SyncService {
     for (const action of pendingActions) {
       try {
         await this.executePendingAction(action);
-        store.dispatch(updateSyncStatus({
-          entityType: action.entity,
-          id: action.data.id,
-          status: 'synced'
-        }));
+        store.dispatch(
+          updateSyncStatus({
+            entityType: action.entity,
+            id: action.data.id,
+            status: 'synced',
+          })
+        );
       } catch (error) {
         console.error(`Failed to sync ${action.type} ${action.entity}:`, error);
-        store.dispatch(updateSyncStatus({
-          entityType: action.entity,
-          id: action.data.id,
-          status: 'error'
-        }));
+        store.dispatch(
+          updateSyncStatus({
+            entityType: action.entity,
+            id: action.data.id,
+            status: 'error',
+          })
+        );
       }
     }
 
@@ -178,20 +184,24 @@ class SyncService {
         fetchPolicy: 'network-only',
       });
 
-      const customers = result.data.customers.reduce((acc: any, customer: any) => {
-        acc[customer.id] = {
-          ...customer,
-          needsSync: false,
-          syncStatus: 'synced',
-        };
-        return acc;
-      }, {});
+      const customers = result.data.customers.reduce(
+        (acc: any, customer: any) => {
+          acc[customer.id] = {
+            ...customer,
+            needsSync: false,
+            syncStatus: 'synced',
+          };
+          return acc;
+        },
+        {}
+      );
 
-      store.dispatch(setEntities({ entityType: 'customers', entities: customers }));
+      store.dispatch(
+        setEntities({ entityType: 'customers', entities: customers })
+      );
 
       // Also store in local database
       await databaseService.storeCustomers(result.data.customers);
-
     } catch (error) {
       console.error('Failed to pull customers:', error);
       throw error;
@@ -232,11 +242,12 @@ class SyncService {
         return acc;
       }, {});
 
-      store.dispatch(setEntities({ entityType: 'products', entities: products }));
+      store.dispatch(
+        setEntities({ entityType: 'products', entities: products })
+      );
 
       // Also store in local database
       await databaseService.storeProducts(result.data.products);
-
     } catch (error) {
       console.error('Failed to pull products:', error);
       throw error;
@@ -285,20 +296,24 @@ class SyncService {
         fetchPolicy: 'network-only',
       });
 
-      const salesOrders = result.data.salesOrders.reduce((acc: any, order: any) => {
-        acc[order.id] = {
-          ...order,
-          needsSync: false,
-          syncStatus: 'synced',
-        };
-        return acc;
-      }, {});
+      const salesOrders = result.data.salesOrders.reduce(
+        (acc: any, order: any) => {
+          acc[order.id] = {
+            ...order,
+            needsSync: false,
+            syncStatus: 'synced',
+          };
+          return acc;
+        },
+        {}
+      );
 
-      store.dispatch(setEntities({ entityType: 'salesOrders', entities: salesOrders }));
+      store.dispatch(
+        setEntities({ entityType: 'salesOrders', entities: salesOrders })
+      );
 
       // Also store in local database
       await databaseService.storeSalesOrders(result.data.salesOrders);
-
     } catch (error) {
       console.error('Failed to pull sales orders:', error);
       throw error;
@@ -306,16 +321,22 @@ class SyncService {
   }
 
   async forceSyncEntity(entityType: string, entityId: string) {
-    store.dispatch(updateSyncStatus({ entityType, id: entityId, status: 'syncing' }));
+    store.dispatch(
+      updateSyncStatus({ entityType, id: entityId, status: 'syncing' })
+    );
 
     try {
       // Implementation would depend on the entity type
       // This is a placeholder
       console.log(`Force syncing ${entityType} ${entityId}`);
 
-      store.dispatch(updateSyncStatus({ entityType, id: entityId, status: 'synced' }));
+      store.dispatch(
+        updateSyncStatus({ entityType, id: entityId, status: 'synced' })
+      );
     } catch (error) {
-      store.dispatch(updateSyncStatus({ entityType, id: entityId, status: 'error' }));
+      store.dispatch(
+        updateSyncStatus({ entityType, id: entityId, status: 'error' })
+      );
       throw error;
     }
   }

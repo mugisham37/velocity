@@ -50,7 +50,7 @@ class DatabaseService {
           tx.executeSql(`
             CREATE TABLE IF NOT EXISTS products (
               id TEXT PRIMARY KEY,
-              name TEXULL,
+              name TEXT NOT NULL,
               sku TEXT UNIQUE,
               barcode TEXT,
               description TEXT,
@@ -192,8 +192,8 @@ class DatabaseService {
               customers.push({
                 id: row.id,
                 name: row.name,
-                email: row.email,
-                phone: row.phone,
+                email: row.email || null,
+                phone: row.phone || null,
                 address: row.address_street
                   ? {
                       street: row.address_street,
@@ -203,13 +203,16 @@ class DatabaseService {
                       country: row.address_country,
                     }
                   : undefined,
-                creditLimit: row.credit_limit,
-                balance: row.balance,
-                status: row.status,
+                creditLimit: row.credit_limit || null,
+                balance: row.balance || 0,
+                status: row.status || 'active',
                 lastModified: new Date(row.last_modified),
                 needsSync: row.needs_sync === 1,
-                syncStatus: row.sync_status,
+                syncStatus: row.sync_status || 'pending',
                 isDeleted: row.is_deleted === 1,
+                isActive: true,
+                createdAt: new Date(row.last_modified),
+                updatedAt: new Date(row.last_modified),
               });
             }
             resolve(customers);
@@ -253,7 +256,7 @@ class DatabaseService {
                 product.isActive ? 1 : 0,
                 product.lastModified.toISOString(),
                 product.needsSync ? 1 : 0,
-                product.syncStatus,
+                product.syncStatus || 'pending',
                 product.isDeleted ? 1 : 0,
               ]
             );
@@ -327,18 +330,20 @@ class DatabaseService {
                 id: row.id,
                 name: row.name,
                 sku: row.sku,
-                barcode: row.barcode,
-                description: row.description,
+                barcode: row.barcode || null,
+                description: row.description || '',
                 price: row.price,
-                cost: row.cost,
-                stockQuantity: row.stock_quantity,
-                category: row.category,
+                cost: row.cost || 0,
+                stockQuantity: row.stock_quantity || 0,
+                category: row.category || 'uncategorized',
                 images: JSON.parse(row.images || '[]'),
                 isActive: row.is_active === 1,
                 lastModified: new Date(row.last_modified),
                 needsSync: row.needs_sync === 1,
-                syncStatus: row.sync_status,
+                syncStatus: row.sync_status || 'pending',
                 isDeleted: row.is_deleted === 1,
+                createdAt: new Date(row.last_modified),
+                updatedAt: new Date(row.last_modified),
               });
             } else {
               resolve(null);
@@ -386,7 +391,7 @@ class DatabaseService {
                 order.signature || null,
                 order.lastModified.toISOString(),
                 order.needsSync ? 1 : 0,
-                order.syncStatus,
+                order.syncStatus || 'pending',
                 order.isDeleted ? 1 : 0,
               ]
             );
@@ -489,19 +494,19 @@ class DatabaseService {
                 id: row.id,
                 orderNumber: row.order_number,
                 customerId: row.customer_id,
-                customer: row.customer_name
-                  ? {
-                      id: row.customer_id,
-                      name: row.customer_name,
-                      balance: 0,
-                      status: 'active',
-                      lastModified: new Date(),
-                      isDeleted: false,
-                      createdAt: new Date(),
-                      updatedAt: new Date(),
-                      isActive: true,
-                    }
-                  : undefined,
+                customer: {
+                  id: row.customer_id,
+                  name: row.customer_name,
+                  balance: 0,
+                  status: 'active',
+                  lastModified: new Date(),
+                  isDeleted: false,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  isActive: true,
+                  email: undefined,
+                  phone: undefined,
+                },
                 items,
                 subtotal: row.subtotal,
                 tax: row.tax,
