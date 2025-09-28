@@ -16,8 +16,7 @@ export interface AuthState {
   refreshToken: string | null;
   user: User | null;
   biometricEnabled: boolean;
+  refreshTokenPromise: (() => Promise<void>) | null;
 }
 
-export type AuthStoreState = Omit<AuthState, 'refreshToken'> & {
-  refreshTokenPromise: (() => Promise<void>) | null;
-};
+export type AuthStoreState = AuthState;

@@ -4,21 +4,27 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { AuthState, User } from '../types/auth';
+import { User } from '../types/auth';
 
-interface AuthStore extends Omit<AuthState, 'refreshToken'> {
-  refreshTokenPromise: (() => Promise<void>) | null;
-  // Actions
+interface AuthStoreState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isBiometricEnabled: boolean;
+  isLoading: boolean;
+  accessToken: string | null;
+  refreshToken: string | null;
+}
+
+type AuthStore = AuthStoreState & {
   login: (email: string, password: string) => Promise<void>;
   loginWithBiometric: () => Promise<void>;
   logout: () => Promise<void>;
-  refreshToken: () => Promise<void>;
   initializeAuth: () => Promise<void>;
   enableBiometric: () => Promise<void>;
   disableBiometric: () => Promise<void>;
   updateUser: (user: Partial<User>) => void;
   setLoading: (loading: boolean) => void;
-}
+};
 
 export const useAuthStore = create<AuthStore>()(
   persist(
@@ -26,10 +32,11 @@ export const useAuthStore = create<AuthStore>()(
       // Initial state
       user: null,
       accessToken: null,
+      refreshToken: null,
       refreshTokenPromise: null,
       isAuthenticated: false,
       isLoading: false,
-      biometricEnabled: false,
+      isBiometricEnabled: false,
 
       // Actions
       login: async (email: string, password: string): Promise<void> => {
@@ -43,7 +50,7 @@ export const useAuthStore = create<AuthStore>()(
 
           set({
             user: response.user,
-            token: response.accessToken,
+            accessToken: response.accessToken,
             refreshToken: response.refreshToken,
             isAuthenticated: true,
             isLoading: false,
@@ -55,8 +62,8 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       loginWithBiometric: async () => {
-        const { biometricEnabled } = get();
-        if (!biometricEnabled) {
+        const { isBiometricEnabled } = get();
+        if (!isBiometricEnabled) {
           throw new Error('Biometric authentication is not enabled');
         }
 
@@ -75,8 +82,7 @@ export const useAuthStore = create<AuthStore>()(
             const user = await authService.verifyToken(accessToken);
             set({
               user,
-              token: accessToken,
-              refreshToken,
+              accessToken,
               isAuthenticated: true,
             });
           } else {
@@ -95,14 +101,13 @@ export const useAuthStore = create<AuthStore>()(
         // Clear state
         set({
           user: null,
-          token: null,
-          refreshToken: null,
+          accessToken: null,
           isAuthenticated: false,
-          biometricEnabled: false,
+          isBiometricEnabled: false,
         });
       },
 
-      refreshToken: async () => {
+      refreshAuthToken: async () => {
         const { refreshToken } = get();
         if (!refreshToken) {
           throw new Error('No refresh token available');
@@ -116,7 +121,7 @@ export const useAuthStore = create<AuthStore>()(
           await SecureStore.setItemAsync('refreshToken', response.refreshToken);
 
           set({
-            token: response.accessToken,
+            accessToken: response.accessToken,
             refreshToken: response.refreshToken,
           });
         } catch (error) {
@@ -144,10 +149,10 @@ export const useAuthStore = create<AuthStore>()(
               const user = await authService.verifyToken(accessToken);
               set({
                 user,
-                token: accessToken,
+                accessToken: accessToken,
                 refreshToken,
                 isAuthenticated: true,
-                biometricEnabled: hasBiometric,
+                isBiometricEnabled: hasBiometric,
                 isLoading: false,
               });
             } catch (error) {
@@ -165,10 +170,10 @@ export const useAuthStore = create<AuthStore>()(
 
                 set({
                   user: response.user,
-                  token: response.accessToken,
+                  accessToken: response.accessToken,
                   refreshToken: response.refreshToken,
                   isAuthenticated: true,
-                  biometricEnabled: hasBiometric,
+                  isBiometricEnabled: hasBiometric,
                   isLoading: false,
                 });
               } catch (refreshError) {
@@ -200,14 +205,14 @@ export const useAuthStore = create<AuthStore>()(
         });
 
         if (result.success) {
-          set({ biometricEnabled: true });
+          set({ isBiometricEnabled: true });
         } else {
           throw new Error('Biometric authentication setup failed');
         }
       },
 
       disableBiometric: async () => {
-        set({ biometricEnabled: false });
+        set({ isBiometricEnabled: false });
       },
 
       updateUser: (userData: Partial<User>) => {
@@ -225,7 +230,7 @@ export const useAuthStore = create<AuthStore>()(
       name: 'auth-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: state => ({
-        biometricEnabled: state.biometricEnabled,
+        isBiometricEnabled: state.isBiometricEnabled,
         // Don't persist sensitive data like tokens in AsyncStorage
       }),
     }

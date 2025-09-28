@@ -1,26 +1,11 @@
-import '@testing-library/jest-dom';
-
-// Mock Expo modules
 import { jest } from '@jest/globals';
-
-beforeAll(() => {
-  jest.mock('expo-font');
-  jest.mock('expo-asset');
-  jest.mock('expo-constants', () => ({
-  default: {
-    expoConfig: {
-      name: 'KIRO ERP Mobile',
-      slug: 'kiro-erp-mobile',
-    },
-  },
-}));
-
+import '@testing-library/jest-dom';
 // Mock React Native modules
 jest.mock('react-native', () => {
   const RN = jest.requireActual('react-native');
   const Platform = {
     OS: 'ios',
-    select: jest.fn((obj: {ios?: any; android?: any}) => obj.ios),
+    select: jest.fn((obj: { ios?: any; android?: any }) => obj.ios),
   };
   return Object.assign({}, RN, { Platform });
 });

@@ -1,11 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
-import { persistReducer, persistStore } from 'redux-persist';
+const persistReducer = require('redux-persist/lib/persistReducer').default;
+const persistStore = require('redux-persist/lib/persistStore').default;
 
-import authReducer from './auth';
+import { createReducer } from '@reduxjs/toolkit';
+import { useAuthStore } from './auth';
 import notificationReducer from './notifications';
 import offlineReducer from './offline';
 import syncReducer from './sync';
+
+// Convert Zustand store to reducer
+const authReducer = createReducer(useAuthStore.getState(), {});
 
 const persistConfig = {
   key: 'root',

@@ -162,7 +162,7 @@ class DatabaseService {
                 customer.status,
                 customer.lastModified.toISOString(),
                 customer.needsSync ? 1 : 0,
-                customer.syncStatus,
+                customer.syncStatus || 'pending',
                 customer.isDeleted ? 1 : 0,
               ]
             );
@@ -287,18 +287,20 @@ class DatabaseService {
                 id: row.id,
                 name: row.name,
                 sku: row.sku,
-                barcode: row.barcode,
-                description: row.description,
+                barcode: row.barcode || null,
+                description: row.description || '',
                 price: row.price,
-                cost: row.cost,
-                stockQuantity: row.stock_quantity,
-                category: row.category,
+                cost: row.cost || 0,
+                stockQuantity: row.stock_quantity || 0,
+                category: row.category || 'uncategorized',
                 images: JSON.parse(row.images || '[]'),
                 isActive: row.is_active === 1,
                 lastModified: new Date(row.last_modified),
                 needsSync: row.needs_sync === 1,
-                syncStatus: row.sync_status,
+                syncStatus: row.sync_status || 'pending',
                 isDeleted: row.is_deleted === 1,
+                createdAt: new Date(row.last_modified),
+                updatedAt: new Date(row.last_modified),
               });
             }
             resolve(products);
@@ -472,21 +474,34 @@ class DatabaseService {
                 const itemTotals = row.item_totals.split(',');
 
                 for (let j = 0; j < itemIds.length; j++) {
-                  items.push({
-                    id: itemIds[j],
-                    productId: productIds[j],
-                    product: productNames[j]
-                      ? {
-                          id: productIds[j],
-                          name: productNames[j],
-                          sku: productSkus[j],
-                        }
-                      : undefined,
-                    quantity: parseInt(quantities[j]),
-                    unitPrice: parseFloat(unitPrices[j]),
-                    discount: parseFloat(discounts[j]),
-                    total: parseFloat(itemTotals[j]),
-                  });
+                  if (productNames[j]) {
+                    items.push({
+                      id: itemIds[j],
+                      productId: productIds[j],
+                      product: {
+                        id: productIds[j],
+                        name: productNames[j],
+                        sku: productSkus[j],
+                        description: '',
+                        price: 0,
+                        cost: 0,
+                        stockQuantity: 0,
+                        category: 'uncategorized',
+                        images: [],
+                        isActive: true,
+                        isDeleted: false,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        lastModified: new Date(),
+                        needsSync: false,
+                        syncStatus: 'synced',
+                      },
+                      quantity: parseInt(quantities[j]),
+                      unitPrice: parseFloat(unitPrices[j]),
+                      discount: parseFloat(discounts[j]),
+                      total: parseFloat(itemTotals[j]),
+                    });
+                  }
                 }
               }
 
@@ -522,6 +537,8 @@ class DatabaseService {
                 needsSync: row.needs_sync === 1,
                 syncStatus: row.sync_status,
                 isDeleted: row.is_deleted === 1,
+                createdAt: new Date(row.last_modified),
+                updatedAt: new Date(row.last_modified),
               });
             }
             resolve(salesOrders);

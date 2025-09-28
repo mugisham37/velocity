@@ -16,25 +16,6 @@ interface OfflineState {
     [key: string]: Record<string, any>;
   };
   pendingActions: PendingAction[];
-
-interface OfflineState {
-  entities: {
-    customers: Record<string, any>;
-    products: Record<string, any>;
-    salesOrders: Record<string, any>;
-    [key: string]: Record<string, any>;
-  };
-  pendingActions: PendingAction[];
-}
-
-const initialState
-
-interface PendingAction {
-    id: string;
-    type: 'create' | 'update' | 'delete';
-    entity: string;
-    data: any;
-    timestamp: Date;
 }
 
 const initialState: OfflineState = {
@@ -133,7 +114,10 @@ const offlineSlice = createSlice({
       });
     },
 
-    removePendingAction: (state: OfflineState, action: PayloadAction<string>) => {
+    removePendingAction: (
+      state: OfflineState,
+      action: PayloadAction<string>
+    ) => {
       state.pendingActions = state.pendingActions.filter(
         pendingAction => pendingAction.id !== action.payload
       );

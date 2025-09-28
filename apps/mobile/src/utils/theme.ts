@@ -4,6 +4,7 @@ import {
   MD3LightTheme,
   configureFonts,
 } from 'react-native-paper';
+import type { MD3Type } from 'react-native-paper/lib/typescript/types';
 
 const fontConfig = {
   labelLarge: {
@@ -71,7 +72,7 @@ const fontConfig = {
   },
   displayLarge: {
     fontFamily: 'System',
-    fontWeight: '400',
+    fontWeight: '400' as const,
     letterSpacing: -0.25,
     lineHeight: 64,
     fontSize: 57,
@@ -111,7 +112,7 @@ const fontConfig = {
     lineHeight: 32,
     fontSize: 24,
   },
-};
+} satisfies Record<string, MD3Type>;
 
 const lightTheme = {
   ...MD3LightTheme,

@@ -12,6 +12,11 @@ import {
   setSyncProgress,
   setSyncStatus,
 } from '@store/sync';
+import {
+  GET_CUSTOMERS,
+  GET_PRODUCTS,
+  GET_SALES_ORDERS,
+} from '../graphql/queries';
 import { apolloClient } from './apollo';
 import { databaseService } from './database';
 
@@ -160,27 +165,7 @@ class SyncService {
     try {
       // This would be your actual GraphQL query
       const result = await apolloClient.query({
-        query: `
-          query: GET_CUSTOMERS {
-            customers {
-              id
-              name
-              email
-              phone
-              address {
-                street
-                city
-                state
-                zipCode
-                country
-              }
-              creditLimit
-              balance
-              status
-              lastModified
-            }
-          }
-        `,
+        query: GET_CUSTOMERS,
         fetchPolicy: 'network-only',
       });
 
@@ -212,24 +197,7 @@ class SyncService {
     try {
       // This would be your actual GraphQL query
       const result = await apolloClient.query({
-        query: `
-          query: GET_PRODUCTS
-            products {
-              id
-              name
-              sku
-              barcode
-              description
-              price
-              cost
-              stockQuantity
-              category
-              images
-              isActive
-              lastModified
-            }
-          }
-        `,
+        query: GET_PRODUCTS,
         fetchPolicy: 'network-only',
       });
 
@@ -258,41 +226,7 @@ class SyncService {
     try {
       // This would be your actual GraphQL query
       const result = await apolloClient.query({
-        query: `
-          query GetSalesOrders {
-            salesOrders {
-              id
-              orderNumber
-              customerId
-              customer {
-                id
-                name
-              }
-              items {
-                id
-                productId
-                product {
-                  id
-                  name
-                  sku
-                }
-                quantity
-                unitPrice
-                discount
-                total
-              }
-              subtotal
-              tax
-              total
-              status
-              orderDate
-              deliveryDate
-              notes
-              signature
-              lastModified
-            }
-          }
-        `,
+        query: GET_SALES_ORDERS,
         fetchPolicy: 'network-only',
       });
 
