@@ -46,21 +46,14 @@ const errorLink = onError(
       // Handle 401 errors (unauthorized)
       if ('statusCode' in networkError && networkError.statusCode === 401) {
         // Try to refresh token
-        const { refreshTokenPromise } = useAuthStore.getState();
-        if (typeof refreshTokenPromise === 'function') {
-          useAuthStore
-            .getState()
-            .refreshToken()
-            .catch(() => {
-              // If refresh fails, logout user
-              useAuthStore.getState().logout();
-            });
-        } else {
-          // No refresh token, logout user
-          useAuthStore.getState().logout();
-        }
+        const auth = useAuthStore.getState();
+        auth.refreshToken().catch(() => {
+          // If refresh fails, logout user
+          auth.logout();
+        });
       }
     }
+    return forward(operation);
   }
 );
 
@@ -83,17 +76,17 @@ const cache = new InMemoryCache({
     Query: {
       fields: {
         customers: {
-          merge(existing = [], incoming) {
+          merge(existing = [], incoming: any[]) {
             return incoming;
           },
         },
         products: {
-          merge(existing = [], incoming) {
+          merge(existing = [], incoming: any[]) {
             return incoming;
           },
         },
         salesOrders: {
-          merge(existing = [], incoming) {
+          merge(existing = [], incoming: any[]) {
             return incoming;
           },
         },

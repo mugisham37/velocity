@@ -18,7 +18,7 @@ import { LoginFormData, loginSchema } from '@utils/validation';
 
 export default function LoginScreen({ navigation }: any) {
   const theme = useTheme();
-  const { login, loginWithBiometric, biometricEnabled } = useAuthStore();
+  const { login, loginWithBiometric, isBiometricEnabled } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -143,7 +143,7 @@ export default function LoginScreen({ navigation }: any) {
             Sign In
           </Button>
 
-          {biometricEnabled && (
+          {isBiometricEnabled && (
             <>
               <Divider style={styles.divider} />
               <Button

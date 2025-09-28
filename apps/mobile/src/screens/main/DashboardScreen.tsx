@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import {
-    Card,
-    Chip,
-    IconButton,
-    ProgressBar,
-    Text,
-    useTheme,
+  Card,
+  Chip,
+  IconButton,
+  ProgressBar,
+  Text,
+  useTheme,
 } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSelector } from 'react-redux';
@@ -44,7 +44,7 @@ export default function DashboardScreen() {
       // This would typically fetch from your API or local database
       // For now, using mock data
       setStats({
-        totalSales: 125430.50,
+        totalSales: 125430.5,
         pendingOrders: 23,
         lowStockItems: 8,
         overdueInvoices: 5,
@@ -69,7 +69,7 @@ export default function DashboardScreen() {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
-    ihour < 18) return 'Good afternoon';
+    if (hour < 18) return 'Good afternoon';
     return 'Good evening';
   };
 
@@ -83,25 +83,38 @@ export default function DashboardScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text variant="headlineSmall" style={[styles.greeting, { color: theme.colors.onSurface }]}>
+          <Text
+            variant='headlineSmall'
+            style={[styles.greeting, { color: theme.colors.onSurface }]}
+          >
             {getGreeting()}, {user?.firstName}!
           </Text>
-          <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+          <Text
+            variant='bodyMedium'
+            style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}
+          >
             Here's what's happening with your business
           </Text>
         </View>
         <IconButton
-          icon="bell"
+          icon='bell'
           size={24}
-          onPress={() => {/* Navigate to notifications */}}
+          onPress={() => {
+            /* Navigate to notifications */
+          }}
         />
       </View>
 
       {/* Sync Status */}
       {syncState.isSyncing && (
-        <Card style={[styles.syncCard, { backgroundColor: theme.colors.primaryContainer }]}>
+        <Card
+          style={[
+            styles.syncCard,
+            { backgroundColor: theme.colors.primaryContainer },
+          ]}
+        >
           <Card.Content style={styles.syncContent}>
-            <Icon name="sync" size={20} color={theme.colors.primary} />
+            <Icon name='sync' size={20} color={theme.colors.primary} />
             <Text style={[styles.syncText, { color: theme.colors.primary }]}>
               Syncing data... {Math.round(syncState.syncProgress)}%
             </Text>
@@ -120,14 +133,24 @@ export default function DashboardScreen() {
           icon={syncState.isOnline ? 'wifi' : 'wifi-off'}
           style={[
             styles.connectionChip,
-            { backgroundColor: syncState.isOnline ? theme.colors.tertiaryContainer : theme.colors.errorContainer }
+            {
+              backgroundColor: syncState.isOnline
+                ? theme.colors.tertiaryContainer
+                : theme.colors.errorContainer,
+            },
           ]}
-          textStyle={{ color: syncState.isOnline ? theme.colors.onTertiaryContainer : theme.colors.onErrorContainer }}
+          textStyle={{
+            color: syncState.isOnline
+              ? theme.colors.onTertiaryContainer
+              : theme.colors.onErrorContainer,
+          }}
         >
           {syncState.isOnline ? 'Online' : 'Offline'}
         </Chip>
         {syncState.lastSyncAt && (
-          <Text style={[styles.lastSync, { color: theme.colors.onSurfaceVariant }]}>
+          <Text
+            style={[styles.lastSync, { color: theme.colors.onSurfaceVariant }]}
+          >
             Last sync: {formatRelativeTime(syncState.lastSyncAt)}
           </Text>
         )}
@@ -137,11 +160,20 @@ export default function DashboardScreen() {
       <View style={styles.statsGrid}>
         <Card style={[styles.statCard, styles.statCardLeft]}>
           <Card.Content style={styles.statContent}>
-            <Icon name="currency-usd" size={32} color={theme.colors.primary} />
-            <Text variant="headlineSmall" style={[styles.statValue, { color: theme.colors.onSurface }]}>
+            <Icon name='currency-usd' size={32} color={theme.colors.primary} />
+            <Text
+              variant='headlineSmall'
+              style={[styles.statValue, { color: theme.colors.onSurface }]}
+            >
               {formatCurrency(stats.totalSales)}
             </Text>
-            <Text variant="bodySmall" style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>
+            <Text
+              variant='bodySmall'
+              style={[
+                styles.statLabel,
+                { color: theme.colors.onSurfaceVariant },
+              ]}
+            >
               Total Sales
             </Text>
           </Card.Content>
@@ -149,11 +181,24 @@ export default function DashboardScreen() {
 
         <Card style={[styles.statCard, styles.statCardRight]}>
           <Card.Content style={styles.statContent}>
-            <Icon name="cart-outline" size={32} color={theme.colors.secondary} />
-            <Text variant="headlineSmall" style={[styles.statValue, { color: theme.colors.onSurface }]}>
+            <Icon
+              name='cart-outline'
+              size={32}
+              color={theme.colors.secondary}
+            />
+            <Text
+              variant='headlineSmall'
+              style={[styles.statValue, { color: theme.colors.onSurface }]}
+            >
               {stats.pendingOrders}
             </Text>
-            <Text variant="bodySmall" style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>
+            <Text
+              variant='bodySmall'
+              style={[
+                styles.statLabel,
+                { color: theme.colors.onSurfaceVariant },
+              ]}
+            >
               Pending Orders
             </Text>
           </Card.Content>
@@ -161,11 +206,24 @@ export default function DashboardScreen() {
 
         <Card style={[styles.statCard, styles.statCardLeft]}>
           <Card.Content style={styles.statContent}>
-            <Icon name="package-variant" size={32} color={theme.colors.tertiary} />
-            <Text variant="headlineSmall" style={[styles.statValue, { color: theme.colors.onSurface }]}>
+            <Icon
+              name='package-variant'
+              size={32}
+              color={theme.colors.tertiary}
+            />
+            <Text
+              variant='headlineSmall'
+              style={[styles.statValue, { color: theme.colors.onSurface }]}
+            >
               {stats.lowStockItems}
             </Text>
-            <Text variant="bodySmall" style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>
+            <Text
+              variant='bodySmall'
+              style={[
+                styles.statLabel,
+                { color: theme.colors.onSurfaceVariant },
+              ]}
+            >
               Low Stock Items
             </Text>
           </Card.Content>
@@ -173,11 +231,20 @@ export default function DashboardScreen() {
 
         <Card style={[styles.statCard, styles.statCardRight]}>
           <Card.Content style={styles.statContent}>
-            <Icon name="alert-circle" size={32} color={theme.colors.error} />
-            <Text variant="headlineSmall" style={[styles.statValue, { color: theme.colors.onSurface }]}>
+            <Icon name='alert-circle' size={32} color={theme.colors.error} />
+            <Text
+              variant='headlineSmall'
+              style={[styles.statValue, { color: theme.colors.onSurface }]}
+            >
               {stats.overdueInvoices}
             </Text>
-            <Text variant="bodySmall" style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>
+            <Text
+              variant='bodySmall'
+              style={[
+                styles.statLabel,
+                { color: theme.colors.onSurfaceVariant },
+              ]}
+            >
               Overdue Invoices
             </Text>
           </Card.Content>
@@ -186,53 +253,85 @@ export default function DashboardScreen() {
 
       {/* Quick Actions */}
       <Card style={styles.quickActionsCard}>
-        <Card.Title title="Quick Actions" />
+        <Card.Title title='Quick Actions' />
         <Card.Content>
           <View style={styles.quickActions}>
             <View style={styles.quickAction}>
               <IconButton
-                icon="plus-circle"
+                icon='plus-circle'
                 size={40}
                 iconColor={theme.colors.primary}
-                onPress={() => {/* Navigate to create sale */}}
+                onPress={() => {
+                  /* Navigate to create sale */
+                }}
               />
-              <Text variant="bodySmall" style={[styles.quickActionLabel, { color: theme.colors.onSurfaceVariant }]}>
+              <Text
+                variant='bodySmall'
+                style={[
+                  styles.quickActionLabel,
+                  { color: theme.colors.onSurfaceVariant },
+                ]}
+              >
                 New Sale
               </Text>
             </View>
 
             <View style={styles.quickAction}>
               <IconButton
-                icon="barcode-scan"
+                icon='barcode-scan'
                 size={40}
                 iconColor={theme.colors.secondary}
-                onPress={() => {/* Navigate to barcode scanner */}}
+                onPress={() => {
+                  /* Navigate to barcode scanner */
+                }}
               />
-              <Text variant="bodySmall" style={[styles.quickActionLabel, { color: theme.colors.onSurfaceVariant }]}>
+              <Text
+                variant='bodySmall'
+                style={[
+                  styles.quickActionLabel,
+                  { color: theme.colors.onSurfaceVariant },
+                ]}
+              >
                 Scan Item
               </Text>
             </View>
 
             <View style={styles.quickAction}>
               <IconButton
-                icon="account-plus"
+                icon='account-plus'
                 size={40}
                 iconColor={theme.colors.tertiary}
-                onPress={() => {/* Navigate to add customer */}}
+                onPress={() => {
+                  /* Navigate to add customer */
+                }}
               />
-              <Text variant="bodySmall" style={[styles.quickActionLabel, { color: theme.colors.onSurfaceVariant }]}>
+              <Text
+                variant='bodySmall'
+                style={[
+                  styles.quickActionLabel,
+                  { color: theme.colors.onSurfaceVariant },
+                ]}
+              >
                 Add Customer
               </Text>
             </View>
 
             <View style={styles.quickAction}>
               <IconButton
-                icon="file-document"
+                icon='file-document'
                 size={40}
                 iconColor={theme.colors.outline}
-                onPress={() => {/* Navigate to reports */}}
+                onPress={() => {
+                  /* Navigate to reports */
+                }}
               />
-              <Text variant="bodySmall" style={[styles.quickActionLabel, { color: theme.colors.onSurfaceVariant }]}>
+              <Text
+                variant='bodySmall'
+                style={[
+                  styles.quickActionLabel,
+                  { color: theme.colors.onSurfaceVariant },
+                ]}
+              >
                 Reports
               </Text>
             </View>
@@ -242,9 +341,15 @@ export default function DashboardScreen() {
 
       {/* Recent Activity */}
       <Card style={styles.recentActivityCard}>
-        <Card.Title title="Recent Activity" />
+        <Card.Title title='Recent Activity' />
         <Card.Content>
-          <Text variant="bodyMedium" style={[styles.emptyState, { color: theme.colors.onSurfaceVariant }]}>
+          <Text
+            variant='bodyMedium'
+            style={[
+              styles.emptyState,
+              { color: theme.colors.onSurfaceVariant },
+            ]}
+          >
             No recent activity to show
           </Text>
         </Card.Content>

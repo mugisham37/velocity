@@ -12,7 +12,7 @@ interface AuthStoreState {
   isBiometricEnabled: boolean;
   isLoading: boolean;
   accessToken: string | null;
-  refreshToken: string | null;
+  refreshTokenValue: string | null;
 }
 
 type AuthStore = AuthStoreState & {
@@ -24,6 +24,7 @@ type AuthStore = AuthStoreState & {
   disableBiometric: () => Promise<void>;
   updateUser: (user: Partial<User>) => void;
   setLoading: (loading: boolean) => void;
+  refreshToken: () => Promise<void>;
 };
 
 export const useAuthStore = create<AuthStore>()(
@@ -32,7 +33,7 @@ export const useAuthStore = create<AuthStore>()(
       // Initial state
       user: null,
       accessToken: null,
-      refreshToken: null,
+      refreshTokenValue: null,
       refreshTokenPromise: null,
       isAuthenticated: false,
       isLoading: false,
@@ -51,7 +52,7 @@ export const useAuthStore = create<AuthStore>()(
           set({
             user: response.user,
             accessToken: response.accessToken,
-            refreshToken: response.refreshToken,
+            refreshTokenValue: response.refreshToken,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -107,14 +108,14 @@ export const useAuthStore = create<AuthStore>()(
         });
       },
 
-      refreshAuthToken: async () => {
-        const { refreshToken } = get();
-        if (!refreshToken) {
+      refreshToken: async () => {
+        const { refreshTokenValue } = get();
+        if (!refreshTokenValue) {
           throw new Error('No refresh token available');
         }
 
         try {
-          const response = await authService.refreshToken(refreshToken);
+          const response = await authService.refreshToken(refreshTokenValue);
 
           // Update stored tokens
           await SecureStore.setItemAsync('accessToken', response.accessToken);
@@ -122,7 +123,7 @@ export const useAuthStore = create<AuthStore>()(
 
           set({
             accessToken: response.accessToken,
-            refreshToken: response.refreshToken,
+            refreshTokenValue: response.refreshToken,
           });
         } catch (error) {
           // If refresh fails, logout user
@@ -141,16 +142,17 @@ export const useAuthStore = create<AuthStore>()(
 
           // Try to get stored tokens
           const accessToken = await SecureStore.getItemAsync('accessToken');
-          const refreshToken = await SecureStore.getItemAsync('refreshToken');
+          const storedRefreshToken =
+            await SecureStore.getItemAsync('refreshToken');
 
-          if (accessToken && refreshToken) {
+          if (accessToken && storedRefreshToken) {
             try {
               // Verify token is still valid
               const user = await authService.verifyToken(accessToken);
               set({
                 user,
                 accessToken: accessToken,
-                refreshToken,
+                refreshTokenValue: storedRefreshToken,
                 isAuthenticated: true,
                 isBiometricEnabled: hasBiometric,
                 isLoading: false,
@@ -158,7 +160,8 @@ export const useAuthStore = create<AuthStore>()(
             } catch (error) {
               // Token is invalid, try to refresh
               try {
-                const response = await authService.refreshToken(refreshToken);
+                const response =
+                  await authService.refreshToken(storedRefreshToken);
                 await SecureStore.setItemAsync(
                   'accessToken',
                   response.accessToken
@@ -171,7 +174,7 @@ export const useAuthStore = create<AuthStore>()(
                 set({
                   user: response.user,
                   accessToken: response.accessToken,
-                  refreshToken: response.refreshToken,
+                  refreshTokenValue: response.refreshToken,
                   isAuthenticated: true,
                   isBiometricEnabled: hasBiometric,
                   isLoading: false,

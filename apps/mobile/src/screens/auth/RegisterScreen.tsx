@@ -2,19 +2,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
-import {
-    Button,
-    Card,
-    Text,
-    TextInput,
-    useTheme,
-} from 'react-native-paper';
+import { Button, Card, Text, TextInput, useTheme } from 'react-native-paper';
 
 import { authService } from '@services/auth';
 import { getErrorMessage } from '@utils/helpers';
 import { RegisterFormData, registerSchema } from '@utils/validation';
 
-export default fRegisterScreen({ navigation }: any) {
+export default function RegisterScreen({ navigation }: any) {
   const theme = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -65,10 +59,16 @@ export default fRegisterScreen({ navigation }: any) {
       contentContainerStyle={styles.contentContainer}
     >
       <View style={styles.header}>
-        <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
+        <Text
+          variant='headlineMedium'
+          style={[styles.title, { color: theme.colors.primary }]}
+        >
           Create Account
         </Text>
-        <Text variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+        <Text
+          variant='bodyLarge'
+          style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}
+        >
           Join KIRO ERP today
         </Text>
       </View>
@@ -78,32 +78,32 @@ export default fRegisterScreen({ navigation }: any) {
           <View style={styles.nameRow}>
             <Controller
               control={control}
-              name="firstName"
+              name='firstName'
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
-                  label="First Name"
+                  label='First Name'
                   value={value}
                   onBlur={onBlur}
                   onChangeText={onChange}
                   error={!!errors.firstName}
-                  autoCapitalize="words"
+                  autoCapitalize='words'
                   style={[styles.input, styles.nameInput]}
-                  left={<TextInput.Icon icon="account" />}
+                  left={<TextInput.Icon icon='account' />}
                 />
               )}
             />
 
             <Controller
               control={control}
-              name="lastName"
+              name='lastName'
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
-                  label="Last Name"
+                  label='Last Name'
                   value={value}
                   onBlur={onBlur}
                   onChangeText={onChange}
                   error={!!errors.lastName}
-                  autoCapitalize="words"
+                  autoCapitalize='words'
                   style={[styles.input, styles.nameInput]}
                 />
               )}
@@ -118,19 +118,19 @@ export default fRegisterScreen({ navigation }: any) {
 
           <Controller
             control={control}
-            name="email"
+            name='email'
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                label="Email"
+                label='Email'
                 value={value}
                 onBlur={onBlur}
                 onChangeText={onChange}
                 error={!!errors.email}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
+                keyboardType='email-address'
+                autoCapitalize='none'
+                autoComplete='email'
                 style={styles.input}
-                left={<TextInput.Icon icon="email" />}
+                left={<TextInput.Icon icon='email' />}
               />
             )}
           />
@@ -142,34 +142,34 @@ export default fRegisterScreen({ navigation }: any) {
 
           <Controller
             control={control}
-            name="companyId"
+            name='companyId'
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                label="Company ID (Optional)"
+                label='Company ID (Optional)'
                 value={value}
                 onBlur={onBlur}
                 onChangeText={onChange}
-                autoCapitalize="none"
+                autoCapitalize='none'
                 style={styles.input}
-                left={<TextInput.Icon icon="office-building" />}
+                left={<TextInput.Icon icon='office-building' />}
               />
             )}
           />
 
           <Controller
             control={control}
-            name="password"
+            name='password'
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                label="Password"
+                label='Password'
                 value={value}
                 onBlur={onBlur}
                 onChangeText={onChange}
                 error={!!errors.password}
                 secureTextEntry={!showPassword}
-                autoComplete="password-new"
+                autoComplete='password-new'
                 style={styles.input}
-                left={<TextInput.Icon icon="lock" />}
+                left={<TextInput.Icon icon='lock' />}
                 right={
                   <TextInput.Icon
                     icon={showPassword ? 'eye-off' : 'eye'}
@@ -187,18 +187,18 @@ export default fRegisterScreen({ navigation }: any) {
 
           <Controller
             control={control}
-            name="confirmPassword"
+            name='confirmPassword'
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                label="Confirm Password"
+                label='Confirm Password'
                 value={value}
                 onBlur={onBlur}
                 onChangeText={onChange}
                 error={!!errors.confirmPassword}
                 secureTextEntry={!showConfirmPassword}
-                autoComplete="password-new"
+                autoComplete='password-new'
                 style={styles.input}
-                left={<TextInput.Icon icon="lock-check" />}
+                left={<TextInput.Icon icon='lock-check' />}
                 right={
                   <TextInput.Icon
                     icon={showConfirmPassword ? 'eye-off' : 'eye'}
@@ -215,7 +215,7 @@ export default fRegisterScreen({ navigation }: any) {
           )}
 
           <Button
-            mode="contained"
+            mode='contained'
             onPress={handleSubmit(onSubmit)}
             loading={isLoading}
             disabled={isLoading}
@@ -227,11 +227,13 @@ export default fRegisterScreen({ navigation }: any) {
       </Card>
 
       <View style={styles.footer}>
-        <Text style={[styles.footerText, { color: theme.colors.onSurfaceVariant }]}>
+        <Text
+          style={[styles.footerText, { color: theme.colors.onSurfaceVariant }]}
+        >
           Already have an account?
         </Text>
         <Button
-          mode="text"
+          mode='text'
           onPress={() => navigation.navigate('Login')}
           compact
         >

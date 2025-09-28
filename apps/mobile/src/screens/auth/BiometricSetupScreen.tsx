@@ -8,10 +8,10 @@ import { getErrorMessage } from '@utils/helpers';
 
 export default function BiometricSetupScreen({ navigation }: any) {
   const theme = useTheme();
-  const { enableBiometric, disableBiometric, biometricEnabled } =
+  const { enableBiometric, disableBiometric, isBiometricEnabled } =
     useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
-  const [biometricType, setBiometr] = useState<string>('');
+  const [biometricType, setBiometricType] = useState<string>('');
   const [isSupported, setIsSupported] = useState(false);
 
   useEffect(() => {
@@ -164,12 +164,12 @@ export default function BiometricSetupScreen({ navigation }: any) {
               { color: theme.colors.onSurfaceVariant },
             ]}
           >
-            {biometricEnabled
+            {isBiometricEnabled
               ? `${biometricType} authentication is currently enabled for your account. You can use it to quickly sign in to KIRO ERP.`
               : `Enable ${biometricType} authentication for quick and secure access to your KIRO ERP account.`}
           </Text>
 
-          {biometricEnabled ? (
+          {isBiometricEnabled ? (
             <Button
               mode='outlined'
               onPress={handleDisableBiometric}

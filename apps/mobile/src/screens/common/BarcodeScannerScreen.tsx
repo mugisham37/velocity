@@ -1,5 +1,4 @@
-import { BarCodeScanner } from 'expo-barcode-scanner';
-import { Camera } from 'expo-camera';
+import { Camera, CameraType, FlashMode } from 'expo-camera';
 import { useEffect, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { Button, Card, IconButton, Text, useTheme } from 'react-native-paper';
@@ -17,14 +16,14 @@ interface Props {
 
 export default function BarcodeScannerScreen({ navigation, route }: Props) {
   const theme = useTheme();
-  const [hasPermission, setHasPission] = useState<boolean | null>(null);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const [flashOn, setFlashOn] = useState(false);
   const { onScan } = route.params;
 
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
+      const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
     };
 
@@ -149,14 +148,14 @@ export default function BarcodeScannerScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.container}>
-      <BarCodeScanner
+      <Camera
         onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
         style={StyleSheet.absoluteFillObject}
-        flashMode={
-          flashOn
-            ? Camera.Constants.FlashMode.torch
-            : Camera.Constants.FlashMode.off
-        }
+        type={CameraType.back}
+        flashMode={flashOn ? FlashMode.on : FlashMode.off}
+        barCodeScannerSettings={{
+          barCodeTypes: ['qr'],
+        }}
       />
 
       {/* Overlay */}

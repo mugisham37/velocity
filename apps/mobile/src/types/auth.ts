@@ -2,7 +2,8 @@ import { BaseModel } from './database';
 
 export interface User extends BaseModel {
   email: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   role: string;
   permissions: string[];
   settings: Record<string, any>;

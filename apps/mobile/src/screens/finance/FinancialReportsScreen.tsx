@@ -18,7 +18,7 @@ interface ReportTemplate {
   name: string;
   description: string;
   category: string;
-  icon: stri;
+  icon: string;
   tGenerated?: Date;
 }
 
@@ -35,7 +35,7 @@ export default function FinancialReportsScreen() {
       description: 'Assets, liabilities, and equity at a point in time',
       category: 'Financial Position',
       icon: 'scale-balance',
-      lastGenerated: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+      tGenerated: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
     },
     {
       id: 'profit-loss',
@@ -43,7 +43,7 @@ export default function FinancialReportsScreen() {
       description: 'Revenue, expenses, and net income for a period',
       category: 'Performance',
       icon: 'trending-up',
-      lastGenerated: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+      tGenerated: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
     },
     {
       id: 'cash-flow',
@@ -51,7 +51,7 @@ export default function FinancialReportsScreen() {
       description: 'Cash receipts and payments by activity type',
       category: 'Cash Management',
       icon: 'cash-flow',
-      lastGenerated: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+      tGenerated: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
     },
     {
       id: 'trial-balance',
@@ -59,7 +59,7 @@ export default function FinancialReportsScreen() {
       description: 'All account balances to verify books balance',
       category: 'Accounting',
       icon: 'format-list-checks',
-      lastGenerated: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+      tGenerated: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
     },
     {
       id: 'financial-ratios',
@@ -67,7 +67,7 @@ export default function FinancialReportsScreen() {
       description: 'Key performance indicators and benchmarks',
       category: 'Analysis',
       icon: 'calculator',
-      lastGenerated: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000), // 4 days ago
+      tGenerated: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000), // 4 days ago
     },
     {
       id: 'aging-receivables',
@@ -263,7 +263,7 @@ export default function FinancialReportsScreen() {
                       >
                         {report.category}
                       </Chip>
-                      {report.lastGenerated && (
+                      {report.tGenerated && (
                         <Text
                           variant='bodySmall'
                           style={[
@@ -271,7 +271,7 @@ export default function FinancialReportsScreen() {
                             { color: theme.colors.onSurfaceVariant },
                           ]}
                         >
-                          Last: {formatDate(report.lastGenerated, 'short')}
+                          Last: {formatDate(report.tGenerated, 'short')}
                         </Text>
                       )}
                     </View>
@@ -284,7 +284,7 @@ export default function FinancialReportsScreen() {
                     iconColor={theme.colors.primary}
                     onPress={() => handleGenerateReport(report.id)}
                   />
-                  {report.lastGenerated && (
+                  {report.tGenerated && (
                     <IconButton
                       icon='eye'
                       size={20}
