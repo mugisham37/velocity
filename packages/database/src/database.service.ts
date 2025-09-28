@@ -12,7 +12,7 @@ export class DatabaseService {
   constructor() {
     // Initialize PostgreSQL connection
     this.client = postgres(
-      process.env.DATABASE_URL || 'postgresql://localhost:5432/kiro_erp',
+      process.env['DATABASE_URL'] || 'postgresql://localhost:5432/velocity_erp',
       {
         max: 20,
         idle_timeout: 20,

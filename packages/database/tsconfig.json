@@ -2,12 +2,16 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDirs": ["./src", "../"],
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "moduleResolution": "node10",
-    "ignoreDeprecations": "6.0"
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@kiro/*": ["../*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["dist", "node_modules", "**/*.test.ts"]

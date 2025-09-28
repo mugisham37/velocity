@@ -1,0 +1,31 @@
+{
+  "version": "0.2",
+  "words": [
+    "Acve",
+    "adyen",
+    "boms",
+    "braintree",
+    "Gantt",
+    "hypertable",
+    "hyperparameters",
+    "ilike",
+    "kiro",
+    "Millis",
+    "mtbf",
+    "mttr",
+    "plpgsql",
+    "putaway",
+    "rfid",
+    "sqft",
+    "timesheet",
+    "Timesheet",
+    "timesheets",
+    "Timesheets",
+    "timescaledb",
+    "Turborepo",
+    "underload",
+    "Upsell"
+  ],
+  "flagWords": [],
+  "patterns": []
+}
