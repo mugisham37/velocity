@@ -8,21 +8,21 @@ import {
 const fontConfig = {
   labelLarge: {
     fontFamily: 'System',
-    fontWeight: '500',
+    fontWeight: '500' as const,
     letterSpacing: 0.1,
     lineHeight: 20,
     fontSize: 14,
   },
   labelMedium: {
     fontFamily: 'System',
-    fontWeight: '500',
+    fontWeight: '500' as const,
     letterSpacing: 0.5,
     lineHeight: 16,
     fontSize: 12,
   },
   labelSmall: {
     fontFamily: 'System',
-    fontWeight: '500',
+    fontWeight: '500' as const,
     letterSpacing: 0.5,
     lineHeight: 14,
     fontSize: 11,

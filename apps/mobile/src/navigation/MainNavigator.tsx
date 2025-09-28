@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MainTabParamList } from './types';
 
 import DashboardScreen from '@screens/main/DashboardScreen';
 import FinanceScreen from '@screens/main/FinanceScreen';

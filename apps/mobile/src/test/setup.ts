@@ -18,14 +18,11 @@ beforeAll(() => {
 // Mock React Native modules
 jest.mock('react-native', () => {
   const RN = jest.requireActual('react-native');
-  return {
-    ...RN,
-    Platform: {
-      ...RN.Platform,
-      OS: 'ios',
-      select: jest.fn(obj => obj.ios),
-    },
+  const Platform = {
+    OS: 'ios',
+    select: jest.fn((obj: {ios?: any; android?: any}) => obj.ios),
   };
+  return Object.assign({}, RN, { Platform });
 });
 
 // Mock AsyncStorage

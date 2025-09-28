@@ -161,7 +161,7 @@ class SyncService {
       // This would be your actual GraphQL query
       const result = await apolloClient.query({
         query: `
-          query GetCustomers {
+          query: GET_CUSTOMERS {
             customers {
               id
               name
@@ -213,7 +213,7 @@ class SyncService {
       // This would be your actual GraphQL query
       const result = await apolloClient.query({
         query: `
-          query GetProducts {
+          query: GET_PRODUCTS
             products {
               id
               name
