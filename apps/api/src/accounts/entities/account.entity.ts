@@ -3,43 +3,43 @@ import { Field, ID, ObjectType } from '@nestjs/graphql';
 @ObjectType()
 export class Account {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  accountCode: string;
+  accountCode!: string;
 
   @Field()
-  accountName: string;
+  accountName!: string;
 
   @Field()
-  accountType: string;
+  accountType!: string;
 
   @Field(() => ID, { nullable: true })
   parentAccountId?: string | null;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field({ nullable: true })
   currency?: string | null;
 
   @Field()
-  isGroup: boolean;
+  isGroup!: boolean;
 
   @Field()
-  isActive: boolean;
+  isActive!: boolean;
 
   @Field()
-  balance: string;
+  balance!: string;
 
   @Field({ nullable: true })
   description?: string | null;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   // Virtual fields
   @Field(() => Account, { nullable: true })
@@ -52,37 +52,37 @@ export class Account {
 @ObjectType()
 export class AccountHierarchy {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  accountCode: string;
+  accountCode!: string;
 
   @Field()
-  accountName: string;
+  accountName!: string;
 
   @Field()
-  accountType: string;
+  accountType!: string;
 
   @Field()
-  balance: string;
+  balance!: string;
 
   @Field()
-  isGroup: boolean;
+  isGroup!: boolean;
 
   @Field(() => [AccountHierarchy])
-  children: AccountHierarchy[];
+  children!: AccountHierarchy[];
 }
 
 @ObjectType()
 export class JournalEntry {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  entryNumber: string;
+  entryNumber!: string;
 
   @Field()
-  postingDate: Date;
+  postingDate!: Date;
 
   @Field({ nullable: true })
   reference?: string | null;
@@ -91,25 +91,25 @@ export class JournalEntry {
   description?: string | null;
 
   @Field()
-  totalDebit: string;
+  totalDebit!: string;
 
   @Field()
-  totalCredit: string;
+  totalCredit!: string;
 
   @Field()
-  isPosted: boolean;
+  isPosted!: boolean;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field(() => ID)
-  createdBy: string;
+  createdBy!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Field(() => [GLEntry])
   glEntries?: GLEntry[];
@@ -118,19 +118,19 @@ export class JournalEntry {
 @ObjectType()
 export class GLEntry {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field(() => ID)
-  journalEntryId: string;
+  journalEntryId!: string;
 
   @Field(() => ID)
-  accountId: string;
+  accountId!: string;
 
   @Field()
-  debit: string;
+  debit!: string;
 
   @Field()
-  credit: string;
+  credit!: string;
 
   @Field({ nullable: true })
   description?: string | null;
@@ -139,10 +139,10 @@ export class GLEntry {
   reference?: string | null;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field(() => Account)
   account?: Account;
@@ -154,28 +154,28 @@ export class GLEntry {
 @ObjectType()
 export class FiscalYear {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field()
-  startDate: Date;
+  startDate!: Date;
 
   @Field()
-  endDate: Date;
+  endDate!: Date;
 
   @Field()
-  isClosed: boolean;
+  isClosed!: boolean;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Field(() => [FiscalPeriod])
   periods?: FiscalPeriod[];
@@ -184,31 +184,31 @@ export class FiscalYear {
 @ObjectType()
 export class FiscalPeriod {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field()
-  startDate: Date;
+  startDate!: Date;
 
   @Field()
-  endDate: Date;
+  endDate!: Date;
 
   @Field(() => ID)
-  fiscalYearId: string;
+  fiscalYearId!: string;
 
   @Field()
-  isClosed: boolean;
+  isClosed!: boolean;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Field(() => FiscalYear)
   fiscalYear?: FiscalYear;
@@ -217,16 +217,16 @@ export class FiscalPeriod {
 @ObjectType()
 export class GLReportEntry {
   @Field(() => ID)
-  glEntryId: string;
+  glEntryId!: string;
 
   @Field(() => ID)
-  journalEntryId: string;
+  journalEntryId!: string;
 
   @Field()
-  entryNumber: string;
+  entryNumber!: string;
 
   @Field()
-  postingDate: Date;
+  postingDate!: Date;
 
   @Field({ nullable: true })
   reference?: string | null;
@@ -235,23 +235,23 @@ export class GLReportEntry {
   description?: string | null;
 
   @Field(() => ID)
-  accountId: string;
+  accountId!: string;
 
   @Field()
-  accountCode: string;
+  accountCode!: string;
 
   @Field()
-  accountName: string;
+  accountName!: string;
 
   @Field()
-  accountType: string;
+  accountType!: string;
 
   @Field()
-  debit: string;
+  debit!: string;
 
   @Field()
-  credit: string;
+  credit!: string;
 
   @Field()
-  runningBalance: string;
+  runningBalance!: string;
 }

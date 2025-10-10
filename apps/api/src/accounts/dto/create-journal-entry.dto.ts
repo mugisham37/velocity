@@ -13,7 +13,7 @@ import {
 export class JournalEntryLineInput {
   @Field()
   @IsString()
-  accountId: string;
+  accountId!: string;
 
   @Field(() => Float, { nullable: true })
   @IsOptional()
@@ -50,11 +50,11 @@ export class CreateJournalEntryInput {
 
   @Field()
   @IsDateString()
-  postingDate: string;
+  postingDate!: string;
 
   @Field(() => [JournalEntryLineInput])
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => JournalEntryLineInput)
-  entries: JournalEntryLineInput[];
+  entries!: JournalEntryLineInput[];
 }

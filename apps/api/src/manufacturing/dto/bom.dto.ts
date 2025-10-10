@@ -1,4 +1,4 @@
-impor{ IsString, IsUUID, IsOptional, IsNumber, IsBoolean, IsArray, ValidateNested, Min, Max } from 'class-validator';
+import { IsString, IsUUID, IsOptional, IsNumber, IsBoolean, IsArray, ValidateNested, Min, Max } from 'class-validator';
 import { Field, Float, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 

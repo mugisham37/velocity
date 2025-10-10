@@ -1,4 +1,4 @@
-imporld, InputType, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { Field, InputType, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { Transform, Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsDateString, IsDecimal, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
 

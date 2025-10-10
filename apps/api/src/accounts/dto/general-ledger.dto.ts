@@ -14,22 +14,22 @@ import {
 export class CreateFiscalYearInput {
   @Field()
   @IsString()
-  name: string;
+  name!: string;
 
   @Field()
   @IsDateString()
-  startDate: string;
+  startDate!: string;
 
   @Field()
   @IsDateString()
-  endDate: string;
+  endDate!: string;
 }
 
 @InputType()
 export class JournalTemplateLineInput {
   @Field(() => ID)
   @IsString()
-  accountId: string;
+  accountId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -56,7 +56,7 @@ export class JournalTemplateLineInput {
 export class CreateJournalTemplateInput {
   @Field()
   @IsString()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -67,26 +67,26 @@ export class CreateJournalTemplateInput {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => JournalTemplateLineInput)
-  lines: JournalTemplateLineInput[];
+  lines!: JournalTemplateLineInput[];
 }
 
 @InputType()
 export class CreateRecurringEntryInput {
   @Field()
   @IsString()
-  name: string;
+  name!: string;
 
   @Field(() => ID)
   @IsString()
-  templateId: string;
+  templateId!: string;
 
   @Field()
   @IsEnum(['MONTHLY', 'QUARTERLY', 'YEARLY'])
-  frequency: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+  frequency!: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
 
   @Field()
   @IsDateString()
-  startDate: string;
+  startDate!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -98,7 +98,7 @@ export class CreateRecurringEntryInput {
 export class ClosingEntryInput {
   @Field(() => ID)
   @IsString()
-  accountId: string;
+  accountId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -118,7 +118,7 @@ export class ClosingEntryInput {
 export class PeriodClosingInput {
   @Field(() => ID)
   @IsString()
-  periodId: string;
+  periodId!: string;
 
   @Field(() => [ClosingEntryInput], { nullable: true })
   @IsOptional()

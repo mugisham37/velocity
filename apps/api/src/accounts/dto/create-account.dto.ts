@@ -18,11 +18,11 @@ export class CreateAccountInput {
   @Field()
   @IsString()
   @MaxLength(255)
-  accountName: string;
+  accountName!: string;
 
   @Field()
   @IsEnum(['Asset', 'Liability', 'Equity', 'Income', 'Expense'])
-  accountType: 'Asset' | 'Liability' | 'Equity' | 'Income' | 'Expense';
+  accountType!: 'Asset' | 'Liability' | 'Equity' | 'Income' | 'Expense';
 
   @Field({ nullable: true })
   @IsOptional()
