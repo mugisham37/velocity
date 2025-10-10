@@ -61,12 +61,12 @@ export class CreateAssetDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  assetCode: string;
+  assetCode!: string;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  assetName: string;
+  assetName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -203,7 +203,7 @@ export class CreateAssetDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()
@@ -434,12 +434,12 @@ export class CreateAssetCategoryDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  categoryCode: string;
+  categoryCode!: string;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  categoryName: string;
+  categoryName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -488,7 +488,7 @@ export class CreateAssetCategoryDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()
@@ -550,12 +550,12 @@ export class CreateAssetLocationDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  locationCode: string;
+  locationCode!: string;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  locationName: string;
+  locationName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -615,7 +615,7 @@ export class CreateAssetLocationDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()
@@ -687,7 +687,7 @@ export class UpdateAssetLocationDto {
 export class CreateAssetTransferDto {
   @Field()
   @IsUUID()
-  assetId: string;
+  assetId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -696,7 +696,7 @@ export class CreateAssetTransferDto {
 
   @Field()
   @IsUUID()
-  toLocationId: string;
+  toLocationId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -710,7 +710,7 @@ export class CreateAssetTransferDto {
 
   @Field()
   @IsDateString()
-  transferDate: string;
+  transferDate!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -724,7 +724,7 @@ export class CreateAssetTransferDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()
@@ -765,15 +765,15 @@ export class UpdateAssetTransferDto {
 export class CreateAssetDisposalDto {
   @Field()
   @IsUUID()
-  assetId: string;
+  assetId!: string;
 
   @Field()
   @IsDateString()
-  disposalDate: string;
+  disposalDate!: string;
 
   @Field()
   @IsEnum(DisposalMethod)
-  disposalMethod: DisposalMethod;
+  disposalMethod!: DisposalMethod;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -782,7 +782,7 @@ export class CreateAssetDisposalDto {
 
   @Field()
   @IsDecimal()
-  bookValue: string;
+  bookValue!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -810,7 +810,7 @@ export class CreateAssetDisposalDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()

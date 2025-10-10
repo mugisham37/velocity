@@ -45,16 +45,16 @@ export enum RevaluationStatus {
 export class CreateDepreciationScheduleDto {
   @Field()
   @IsUUID()
-  assetId: string;
+  assetId!: string;
 
   @Field()
   @IsEnum(DepreciationMethod)
-  depreciationMethod: DepreciationMethod;
+  depreciationMethod!: DepreciationMethod;
 
   @Field()
   @IsInt()
   @Min(1)
-  usefulLife: number; // in months
+  usefulLife!: number; // in months
 
   @Field({ nullable: true })
   @IsOptional()
@@ -63,7 +63,7 @@ export class CreateDepreciationScheduleDto {
 
   @Field()
   @IsDecimal()
-  assetCost: string;
+  assetCost!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -78,7 +78,7 @@ export class CreateDepreciationScheduleDto {
 
   @Field()
   @IsDateString()
-  startDate: string;
+  startDate!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -113,7 +113,7 @@ export class CreateDepreciationScheduleDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()
@@ -202,23 +202,23 @@ export class UpdateDepreciationScheduleDto {
 export class CreateDepreciationEntryDto {
   @Field()
   @IsUUID()
-  scheduleId: string;
+  scheduleId!: string;
 
   @Field()
   @IsDateString()
-  depreciationDate: string;
+  depreciationDate!: string;
 
   @Field()
   @IsDateString()
-  periodStartDate: string;
+  periodStartDate!: string;
 
   @Field()
   @IsDateString()
-  periodEndDate: string;
+  periodEndDate!: string;
 
   @Field()
   @IsDecimal()
-  depreciationAmount: string;
+  depreciationAmount!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -233,7 +233,7 @@ export class CreateDepreciationEntryDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()
@@ -275,11 +275,11 @@ export class ReverseDepreciationEntryDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  reversalReason: string;
+  reversalReason!: string;
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 // Asset Revaluation DTOs
@@ -287,23 +287,23 @@ export class ReverseDepreciationEntryDto {
 export class CreateAssetRevaluationDto {
   @Field()
   @IsUUID()
-  assetId: string;
+  assetId!: string;
 
   @Field()
   @IsDateString()
-  revaluationDate: string;
+  revaluationDate!: string;
 
   @Field()
   @IsEnum(RevaluationMethod)
-  revaluationMethod: RevaluationMethod;
+  revaluationMethod!: RevaluationMethod;
 
   @Field()
   @IsDecimal()
-  previousBookValue: string;
+  previousBookValue!: string;
 
   @Field()
   @IsDecimal()
-  newFairValue: string;
+  newFairValue!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -340,7 +340,7 @@ export class CreateAssetRevaluationDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()
@@ -410,12 +410,12 @@ export class CreateDepreciationMethodDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  methodCode: string;
+  methodCode!: string;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  methodName: string;
+  methodName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -442,7 +442,7 @@ export class CreateDepreciationMethodDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()

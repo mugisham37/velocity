@@ -28,6 +28,7 @@ import {
   CreateAssetTransferDto,
   DisposalStatus,
   TransferStatus,
+  UpdateAssetCategoryDto,
   UpdateAssetDisposalDto,
   UpdateAssetDto,
   UpdateAssetLocationDto,
@@ -44,7 +45,7 @@ export class AssetService {
     userId: string
   ): Promise<Asset> {
     // Check if asset code already exists
-    const existingAsset = await this.db
+    const existingAsset = await this.db.db
       .select()
       .from(assets)
       .where(
@@ -75,15 +76,34 @@ export class AssetService {
       );
     }
 
-    const [newAsset] = await this.db
+    // Convert string dates to Date objects
+    const assetData = {
+      ...createAssetDto,
+      assetCode,
+      purchaseDate: createAssetDto.purchaseDate
+        ? new Date(createAssetDto.purchaseDate)
+        : null,
+      depreciationStartDate: createAssetDto.depreciationStartDate
+        ? new Date(createAssetDto.depreciationStartDate)
+        : null,
+      warrantyExpiryDate: createAssetDto.warrantyExpiryDate
+        ? new Date(createAssetDto.warrantyExpiryDate)
+        : null,
+      insuranceExpiryDate: createAssetDto.insuranceExpiryDate
+        ? new Date(createAssetDto.insuranceExpiryDate)
+        : null,
+      createdBy: userId,
+      updatedBy: userId,
+    };
+
+    const [newAsset] = await this.db.db
       .insert(assets)
-      .values({
-        ...createAssetDto,
-        assetCode,
-        createdBy: userId,
-        updatedBy: userId,
-      })
+      .values(assetData)
       .returning();
+
+    if (!newAsset) {
+      throw new BadRequestException('Failed to create asset');
+    }
 
     return newAsset;
   }
@@ -94,23 +114,50 @@ export class AssetService {
     userId: string,
     companyId: string
   ): Promise<Asset> {
-    const existingAsset = await this.findAssetById(id, companyId);
+    await this.findAssetById(id, companyId);
 
-    const [updatedAsset] = await this.db
+    // Convert string dates to Date objects, filter out undefined values
+    const updateData: any = {
+      ...updateAssetDto,
+      updatedBy: userId,
+      updatedAt: new Date(),
+    };
+
+    // Only add date fields if they are provided
+    if (updateAssetDto.purchaseDate) {
+      updateData.purchaseDate = new Date(updateAssetDto.purchaseDate);
+    }
+    if (updateAssetDto.depreciationStartDate) {
+      updateData.depreciationStartDate = new Date(
+        updateAssetDto.depreciationStartDate
+      );
+    }
+    if (updateAssetDto.warrantyExpiryDate) {
+      updateData.warrantyExpiryDate = new Date(
+        updateAssetDto.warrantyExpiryDate
+      );
+    }
+    if (updateAssetDto.insuranceExpiryDate) {
+      updateData.insuranceExpiryDate = new Date(
+        updateAssetDto.insuranceExpiryDate
+      );
+    }
+
+    const [updatedAsset] = await this.db.db
       .update(assets)
-      .set({
-        ...updateAssetDto,
-        updatedBy: userId,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(and(eq(assets.id, id), eq(assets.companyId, companyId)))
       .returning();
+
+    if (!updatedAsset) {
+      throw new NotFoundException('Asset not found or update failed');
+    }
 
     return updatedAsset;
   }
 
   async findAssetById(id: string, companyId: string): Promise<Asset> {
-    const [asset] = await this.db
+    const [asset] = await this.db.db
       .select()
       .from(assets)
       .where(and(eq(assets.id, id), eq(assets.companyId, companyId)))
@@ -128,14 +175,15 @@ export class AssetService {
 
     // Apply filters
     if (filter.search) {
-      conditions.push(
-        or(
-          ilike(assets.assetCode, `%${filter.search}%`),
-          ilike(assets.assetName, `%${filter.search}%`),
-          ilike(assets.serialNumber, `%${filter.search}%`),
-          ilike(assets.manufacturer, `%${filter.search}%`)
-        )
+      const searchCondition = or(
+        ilike(assets.assetCode, `%${filter.search}%`),
+        ilike(assets.assetName, `%${filter.search}%`),
+        ilike(assets.serialNumber, `%${filter.search}%`),
+        ilike(assets.manufacturer, `%${filter.search}%`)
       );
+      if (searchCondition) {
+        conditions.push(searchCondition);
+      }
     }
 
     if (filter.categoryId) {
@@ -182,47 +230,71 @@ export class AssetService {
       conditions.push(lte(assets.currentValue, filter.valueTo));
     }
 
-    const whereClause = and(...conditions);
+    const whereClause =
+      conditions.length > 1 ? and(...conditions) : conditions[0];
 
     // Get total count
-    const [{ total }] = await this.db
+    const countResult = await this.db.db
       .select({ total: count() })
       .from(assets)
       .where(whereClause);
 
-    // Get paginated results
-    const offset = (filter.page - 1) * filter.limit;
-    const orderBy =
-      filter.sortOrder === 'ASC'
-        ? asc(assets[filter.sortBy as keyof typeof assets] || assets.createdAt)
-        : desc(
-            assets[filter.sortBy as keyof typeof assets] || assets.createdAt
-          );
+    const total = countResult[0]?.total ?? 0;
 
-    const results = await this.db
+    // Get paginated results with proper defaults
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 20;
+    const offset = (page - 1) * limit;
+
+    // Handle sorting with proper column validation
+    const sortBy = filter.sortBy || 'createdAt';
+    const sortOrder = filter.sortOrder === 'ASC' ? asc : desc;
+
+    let orderBy;
+    switch (sortBy) {
+      case 'assetCode':
+        orderBy = sortOrder(assets.assetCode);
+        break;
+      case 'assetName':
+        orderBy = sortOrder(assets.assetName);
+        break;
+      case 'purchaseDate':
+        orderBy = sortOrder(assets.purchaseDate);
+        break;
+      case 'currentValue':
+        orderBy = sortOrder(assets.currentValue);
+        break;
+      case 'updatedAt':
+        orderBy = sortOrder(assets.updatedAt);
+        break;
+      default:
+        orderBy = sortOrder(assets.createdAt);
+    }
+
+    const results = await this.db.db
       .select()
       .from(assets)
       .where(whereClause)
       .orderBy(orderBy)
-      .limit(filter.limit)
+      .limit(limit)
       .offset(offset);
 
     return {
       data: results,
-      total,
-      page: filter.page,
-      limit: filter.limit,
-      totalPages: Math.ceil(total / filter.limit),
+      total: Number(total),
+      page,
+      limit,
+      totalPages: Math.ceil(Number(total) / limit),
     };
   }
 
   async deleteAsset(id: string, companyId: string): Promise<void> {
-    const asset = await this.findAssetById(id, companyId);
+    await this.findAssetById(id, companyId);
 
     // Check if asset has any active depreciation schedules or maintenance schedules
     // This would require checking related tables - for now, we'll allow deletion
 
-    await this.db
+    await this.db.db
       .delete(assets)
       .where(and(eq(assets.id, id), eq(assets.companyId, companyId)));
   }
@@ -233,7 +305,7 @@ export class AssetService {
     userId: string
   ): Promise<AssetCategory> {
     // Check if category code already exists
-    const existingCategory = await this.db
+    const existingCategory = await this.db.db
       .select()
       .from(assetCategories)
       .where(
@@ -248,7 +320,7 @@ export class AssetService {
       throw new ConflictException('Asset category code already exists');
     }
 
-    const [newCategory] = await this.db
+    const [newCategory] = await this.db.db
       .insert(assetCategories)
       .values({
         ...createAssetCategoryDto,
@@ -256,6 +328,10 @@ export class AssetService {
         updatedBy: userId,
       })
       .returning();
+
+    if (!newCategory) {
+      throw new BadRequestException('Failed to create asset category');
+    }
 
     return newCategory;
   }
@@ -266,9 +342,9 @@ export class AssetService {
     userId: string,
     companyId: string
   ): Promise<AssetCategory> {
-    const existingCategory = await this.findAssetCategoryById(id, companyId);
+    await this.findAssetCategoryById(id, companyId);
 
-    const [updatedCategory] = await this.db
+    const [updatedCategory] = await this.db.db
       .update(assetCategories)
       .set({
         ...updateAssetCategoryDto,
@@ -283,6 +359,10 @@ export class AssetService {
       )
       .returning();
 
+    if (!updatedCategory) {
+      throw new NotFoundException('Asset category not found or update failed');
+    }
+
     return updatedCategory;
   }
 
@@ -290,7 +370,7 @@ export class AssetService {
     id: string,
     companyId: string
   ): Promise<AssetCategory> {
-    const [category] = await this.db
+    const result = await this.db.db
       .select()
       .from(assetCategories)
       .where(
@@ -301,6 +381,7 @@ export class AssetService {
       )
       .limit(1);
 
+    const category = result[0];
     if (!category) {
       throw new NotFoundException('Asset category not found');
     }
@@ -309,7 +390,7 @@ export class AssetService {
   }
 
   async findAssetCategories(companyId: string): Promise<AssetCategory[]> {
-    return await this.db
+    return await this.db.db
       .select()
       .from(assetCategories)
       .where(eq(assetCategories.companyId, companyId))
@@ -322,7 +403,7 @@ export class AssetService {
     userId: string
   ): Promise<AssetLocation> {
     // Check if location code already exists
-    const existingLocation = await this.db
+    const existingLocation = await this.db.db
       .select()
       .from(assetLocations)
       .where(
@@ -337,7 +418,7 @@ export class AssetService {
       throw new ConflictException('Asset location code already exists');
     }
 
-    const [newLocation] = await this.db
+    const [newLocation] = await this.db.db
       .insert(assetLocations)
       .values({
         ...createAssetLocationDto,
@@ -345,6 +426,10 @@ export class AssetService {
         updatedBy: userId,
       })
       .returning();
+
+    if (!newLocation) {
+      throw new BadRequestException('Failed to create asset location');
+    }
 
     return newLocation;
   }
@@ -355,9 +440,9 @@ export class AssetService {
     userId: string,
     companyId: string
   ): Promise<AssetLocation> {
-    const existingLocation = await this.findAssetLocationById(id, companyId);
+    await this.findAssetLocationById(id, companyId);
 
-    const [updatedLocation] = await this.db
+    const [updatedLocation] = await this.db.db
       .update(assetLocations)
       .set({
         ...updateAssetLocationDto,
@@ -369,6 +454,10 @@ export class AssetService {
       )
       .returning();
 
+    if (!updatedLocation) {
+      throw new NotFoundException('Asset location not found');
+    }
+
     return updatedLocation;
   }
 
@@ -376,7 +465,7 @@ export class AssetService {
     id: string,
     companyId: string
   ): Promise<AssetLocation> {
-    const [location] = await this.db
+    const result = await this.db.db
       .select()
       .from(assetLocations)
       .where(
@@ -384,6 +473,7 @@ export class AssetService {
       )
       .limit(1);
 
+    const location = result[0];
     if (!location) {
       throw new NotFoundException('Asset location not found');
     }
@@ -392,7 +482,7 @@ export class AssetService {
   }
 
   async findAssetLocations(companyId: string): Promise<AssetLocation[]> {
-    return await this.db
+    return await this.db.db
       .select()
       .from(assetLocations)
       .where(eq(assetLocations.companyId, companyId))
@@ -415,15 +505,23 @@ export class AssetService {
       createAssetTransferDto.companyId
     );
 
-    const [newTransfer] = await this.db
+    // Convert string date to Date object
+    const transferData = {
+      ...createAssetTransferDto,
+      transferNumber,
+      transferDate: new Date(createAssetTransferDto.transferDate),
+      createdBy: userId,
+      updatedBy: userId,
+    };
+
+    const [newTransfer] = await this.db.db
       .insert(assetTransfers)
-      .values({
-        ...createAssetTransferDto,
-        transferNumber,
-        createdBy: userId,
-        updatedBy: userId,
-      })
+      .values(transferData)
       .returning();
+
+    if (!newTransfer) {
+      throw new BadRequestException('Failed to create asset transfer');
+    }
 
     return newTransfer;
   }
@@ -434,19 +532,31 @@ export class AssetService {
     userId: string,
     companyId: string
   ): Promise<AssetTransfer> {
-    const existingTransfer = await this.findAssetTransferById(id, companyId);
+    await this.findAssetTransferById(id, companyId);
 
-    const [updatedTransfer] = await this.db
+    // Convert string date to Date object if provided, filter out undefined values
+    const updateData: any = {
+      ...updateAssetTransferDto,
+      updatedBy: userId,
+      updatedAt: new Date(),
+    };
+
+    // Only add transferDate if provided
+    if (updateAssetTransferDto.transferDate) {
+      updateData.transferDate = new Date(updateAssetTransferDto.transferDate);
+    }
+
+    const [updatedTransfer] = await this.db.db
       .update(assetTransfers)
-      .set({
-        ...updateAssetTransferDto,
-        updatedBy: userId,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(
         and(eq(assetTransfers.id, id), eq(assetTransfers.companyId, companyId))
       )
       .returning();
+
+    if (!updatedTransfer) {
+      throw new NotFoundException('Asset transfer not found or update failed');
+    }
 
     return updatedTransfer;
   }
@@ -462,7 +572,7 @@ export class AssetService {
       throw new BadRequestException('Only pending transfers can be approved');
     }
 
-    const [approvedTransfer] = await this.db
+    const [approvedTransfer] = await this.db.db
       .update(assetTransfers)
       .set({
         status: TransferStatus.APPROVED,
@@ -475,6 +585,12 @@ export class AssetService {
         and(eq(assetTransfers.id, id), eq(assetTransfers.companyId, companyId))
       )
       .returning();
+
+    if (!approvedTransfer) {
+      throw new NotFoundException(
+        'Asset transfer not found or approval failed'
+      );
+    }
 
     return approvedTransfer;
   }
@@ -496,7 +612,7 @@ export class AssetService {
     }
 
     // Update asset location and custodian
-    await this.db
+    await this.db.db
       .update(assets)
       .set({
         currentLocationId: transfer.toLocationId,
@@ -508,7 +624,7 @@ export class AssetService {
         and(eq(assets.id, transfer.assetId), eq(assets.companyId, companyId))
       );
 
-    const [completedTransfer] = await this.db
+    const [completedTransfer] = await this.db.db
       .update(assetTransfers)
       .set({
         status: TransferStatus.COMPLETED,
@@ -521,6 +637,12 @@ export class AssetService {
       )
       .returning();
 
+    if (!completedTransfer) {
+      throw new NotFoundException(
+        'Asset transfer not found or completion failed'
+      );
+    }
+
     return completedTransfer;
   }
 
@@ -528,7 +650,7 @@ export class AssetService {
     id: string,
     companyId: string
   ): Promise<AssetTransfer> {
-    const [transfer] = await this.db
+    const [transfer] = await this.db.db
       .select()
       .from(assetTransfers)
       .where(
@@ -566,16 +688,24 @@ export class AssetService {
     const bookValue = parseFloat(createAssetDisposalDto.bookValue);
     const gainLoss = disposalAmount - bookValue;
 
-    const [newDisposal] = await this.db
+    // Convert string date to Date object
+    const disposalData = {
+      ...createAssetDisposalDto,
+      disposalNumber,
+      disposalDate: new Date(createAssetDisposalDto.disposalDate),
+      gainLoss: gainLoss.toString(),
+      createdBy: userId,
+      updatedBy: userId,
+    };
+
+    const [newDisposal] = await this.db.db
       .insert(assetDisposals)
-      .values({
-        ...createAssetDisposalDto,
-        disposalNumber,
-        gainLoss: gainLoss.toString(),
-        createdBy: userId,
-        updatedBy: userId,
-      })
+      .values(disposalData)
       .returning();
+
+    if (!newDisposal) {
+      throw new BadRequestException('Failed to create asset disposal');
+    }
 
     return newDisposal;
   }
@@ -605,18 +735,30 @@ export class AssetService {
       gainLoss = (disposalAmount - bookValue).toString();
     }
 
-    const [updatedDisposal] = await this.db
+    // Convert string date to Date object if provided, filter out undefined values
+    const updateData: any = {
+      ...updateAssetDisposalDto,
+      gainLoss,
+      updatedBy: userId,
+      updatedAt: new Date(),
+    };
+
+    // Only add disposalDate if provided
+    if (updateAssetDisposalDto.disposalDate) {
+      updateData.disposalDate = new Date(updateAssetDisposalDto.disposalDate);
+    }
+
+    const [updatedDisposal] = await this.db.db
       .update(assetDisposals)
-      .set({
-        ...updateAssetDisposalDto,
-        gainLoss,
-        updatedBy: userId,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(
         and(eq(assetDisposals.id, id), eq(assetDisposals.companyId, companyId))
       )
       .returning();
+
+    if (!updatedDisposal) {
+      throw new NotFoundException('Asset disposal not found or update failed');
+    }
 
     return updatedDisposal;
   }
@@ -632,7 +774,7 @@ export class AssetService {
       throw new BadRequestException('Only pending disposals can be approved');
     }
 
-    const [approvedDisposal] = await this.db
+    const [approvedDisposal] = await this.db.db
       .update(assetDisposals)
       .set({
         status: DisposalStatus.APPROVED,
@@ -645,6 +787,12 @@ export class AssetService {
         and(eq(assetDisposals.id, id), eq(assetDisposals.companyId, companyId))
       )
       .returning();
+
+    if (!approvedDisposal) {
+      throw new NotFoundException(
+        'Asset disposal not found or approval failed'
+      );
+    }
 
     return approvedDisposal;
   }
@@ -661,7 +809,7 @@ export class AssetService {
     }
 
     // Update asset status to disposed
-    await this.db
+    await this.db.db
       .update(assets)
       .set({
         status: AssetStatus.DISPOSED,
@@ -672,7 +820,7 @@ export class AssetService {
         and(eq(assets.id, disposal.assetId), eq(assets.companyId, companyId))
       );
 
-    const [completedDisposal] = await this.db
+    const [completedDisposal] = await this.db.db
       .update(assetDisposals)
       .set({
         status: DisposalStatus.COMPLETED,
@@ -684,6 +832,12 @@ export class AssetService {
       )
       .returning();
 
+    if (!completedDisposal) {
+      throw new NotFoundException(
+        'Asset disposal not found or completion failed'
+      );
+    }
+
     return completedDisposal;
   }
 
@@ -691,7 +845,7 @@ export class AssetService {
     id: string,
     companyId: string
   ): Promise<AssetDisposal> {
-    const [disposal] = await this.db
+    const [disposal] = await this.db.db
       .select()
       .from(assetDisposals)
       .where(
@@ -708,29 +862,32 @@ export class AssetService {
 
   // Helper methods
   private async generateAssetCode(companyId: string): Promise<string> {
-    const [{ count: assetCount }] = await this.db
+    const countResult = await this.db.db
       .select({ count: count() })
       .from(assets)
       .where(eq(assets.companyId, companyId));
 
-    return `AST-${String(assetCount + 1).padStart(6, '0')}`;
+    const assetCount = countResult[0]?.count ?? 0;
+    return `AST-${String(Number(assetCount) + 1).padStart(6, '0')}`;
   }
 
   private async generateTransferNumber(companyId: string): Promise<string> {
-    const [{ count: transferCount }] = await this.db
+    const countResult = await this.db.db
       .select({ count: count() })
       .from(assetTransfers)
       .where(eq(assetTransfers.companyId, companyId));
 
-    return `TRF-${String(transferCount + 1).padStart(6, '0')}`;
+    const transferCount = countResult[0]?.count ?? 0;
+    return `TRF-${String(Number(transferCount) + 1).padStart(6, '0')}`;
   }
 
   private async generateDisposalNumber(companyId: string): Promise<string> {
-    const [{ count: disposalCount }] = await this.db
+    const countResult = await this.db.db
       .select({ count: count() })
       .from(assetDisposals)
       .where(eq(assetDisposals.companyId, companyId));
 
-    return `DSP-${String(disposalCount + 1).padStart(6, '0')}`;
+    const disposalCount = countResult[0]?.count ?? 0;
+    return `DSP-${String(Number(disposalCount) + 1).padStart(6, '0')}`;
   }
 }

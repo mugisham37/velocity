@@ -34,8 +34,6 @@ import {
   MaintenanceWorkOrderFilterDto,
   SparePartFilterDto,
   WorkOrderStatus,
-  MaintenanceScheduleStatus,
-  Priority,
 } from '../dto/maintenance.dto';
 
 @Injectable()
@@ -48,7 +46,7 @@ export class MaintenanceService {
     userId: string
   ): Promise<MaintenanceSchedule> {
     // Check if schedule code already exists
-    const existingSchedule = await this.db
+    const existingSchedule = await this.db.db
       .select()
       .from(maintenanceSchedules)
       .where(
@@ -70,15 +68,24 @@ export class MaintenanceService {
       createMaintenanceScheduleDto.frequencyUnit
     );
 
-    const [newSchedule] = await this.db
+    // Convert string date to Date object
+    const scheduleData = {
+      ...createMaintenanceScheduleDto,
+      startDate: new Date(createMaintenanceScheduleDto.startDate),
+      endDate: createMaintenanceScheduleDto.endDate ? new Date(createMaintenanceScheduleDto.endDate) : null,
+      nextDueDate,
+      createdBy: userId,
+      updatedBy: userId,
+    };
+
+    const [newSchedule] = await this.db.db
       .insert(maintenanceSchedules)
-      .values({
-        ...createMaintenanceScheduleDto,
-        nextDueDate,
-        createdBy: userId,
-        updatedBy: userId,
-      })
+      .values(scheduleData)
       .returning();
+
+    if (!newSchedule) {
+      throw new BadRequestException('Failed to create maintenance schedule');
+    }
 
     return newSchedule;
   }
@@ -103,22 +110,40 @@ export class MaintenanceService {
       }
     }
 
-    const [updatedSchedule] = await this.db
+    // Convert string dates to Date objects if provided, filter out undefined values
+    const updateData: any = {
+      ...updateMaintenanceScheduleDto,
+      nextDueDate: updateMaintenanceScheduleDto.nextDueDate ? new Date(updateMaintenanceScheduleDto.nextDueDate) : nextDueDate,
+      updatedBy: userId,
+      updatedAt: new Date(),
+    };
+
+    // Only add date fields if provided
+    if (updateMaintenanceScheduleDto.startDate) {
+      updateData.startDate = new Date(updateMaintenanceScheduleDto.startDate);
+    }
+    if (updateMaintenanceScheduleDto.endDate) {
+      updateData.endDate = new Date(updateMaintenanceScheduleDto.endDate);
+    }
+    if (updateMaintenanceScheduleDto.lastMaintenanceDate) {
+      updateData.lastMaintenanceDate = new Date(updateMaintenanceScheduleDto.lastMaintenanceDate);
+    }
+
+    const [updatedSchedule] = await this.db.db
       .update(maintenanceSchedules)
-      .set({
-        ...updateMaintenanceScheduleDto,
-        nextDueDate,
-        updatedBy: userId,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(and(eq(maintenanceSchedules.id, id), eq(maintenanceSchedules.companyId, companyId)))
       .returning();
+
+    if (!updatedSchedule) {
+      throw new NotFoundException('Maintenance schedule not found or update failed');
+    }
 
     return updatedSchedule;
   }
 
   async findMaintenanceScheduleById(id: string, companyId: string): Promise<MaintenanceSchedule> {
-    const [schedule] = await this.db
+    const [schedule] = await this.db.db
       .select()
       .from(maintenanceSchedules)
       .where(and(eq(maintenanceSchedules.id, id), eq(maintenanceSchedules.companyId, companyId)))
@@ -136,13 +161,14 @@ export class MaintenanceService {
 
     // Apply filters
     if (filter.search) {
-      conditions.push(
-        or(
-          ilike(maintenanceSchedules.scheduleCode, `%${filter.search}%`),
-          ilike(maintenanceSchedules.scheduleName, `%${filter.search}%`),
-          ilike(maintenanceSchedules.description, `%${filter.search}%`)
-        )
+      const searchCondition = or(
+        ilike(maintenanceSchedules.scheduleCode, `%${filter.search}%`),
+        ilike(maintenanceSchedules.scheduleName, `%${filter.search}%`),
+        ilike(maintenanceSchedules.description, `%${filter.search}%`)
       );
+      if (searchCondition) {
+        conditions.push(searchCondition);
+      }
     }
 
     if (filter.assetId) {
@@ -177,34 +203,57 @@ export class MaintenanceService {
       conditions.push(lte(maintenanceSchedules.nextDueDate, new Date(filter.nextDueDateTo)));
     }
 
-    const whereClause = and(...conditions);
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
 
     // Get total count
-    const [{ total }] = await this.db
+    const countResult = await this.db.db
       .select({ total: count() })
       .from(maintenanceSchedules)
       .where(whereClause);
 
-    // Get paginated results
-    const offset = (filter.page - 1) * filter.limit;
-    const orderBy = filter.sortOrder === 'ASC'
-      ? asc(maintenanceSchedules[filter.sortBy as keyof typeof maintenanceSchedules] || maintenanceSchedules.nextDueDate)
-      : desc(maintenanceSchedules[filter.sortBy as keyof typeof maintenanceSchedules] || maintenanceSchedules.nextDueDate);
+    const total = countResult[0]?.total ?? 0;
 
-    const results = await this.db
+    // Get paginated results with proper defaults
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 20;
+    const offset = (page - 1) * limit;
+    
+    // Handle sorting with proper column validation
+    const sortBy = filter.sortBy || 'nextDueDate';
+    const sortOrder = filter.sortOrder === 'ASC' ? asc : desc;
+    
+    let orderBy;
+    switch (sortBy) {
+      case 'scheduleCode':
+        orderBy = sortOrder(maintenanceSchedules.scheduleCode);
+        break;
+      case 'scheduleName':
+        orderBy = sortOrder(maintenanceSchedules.scheduleName);
+        break;
+      case 'createdAt':
+        orderBy = sortOrder(maintenanceSchedules.createdAt);
+        break;
+      case 'updatedAt':
+        orderBy = sortOrder(maintenanceSchedules.updatedAt);
+        break;
+      default:
+        orderBy = sortOrder(maintenanceSchedules.nextDueDate);
+    }
+
+    const results = await this.db.db
       .select()
       .from(maintenanceSchedules)
       .where(whereClause)
       .orderBy(orderBy)
-      .limit(filter.limit)
+      .limit(limit)
       .offset(offset);
 
     return {
       data: results,
-      total,
-      page: filter.page,
-      limit: filter.limit,
-      totalPages: Math.ceil(total / filter.limit),
+      total: Number(total),
+      page,
+      limit,
+      totalPages: Math.ceil(Number(total) / limit),
     };
   }
 
@@ -216,15 +265,24 @@ export class MaintenanceService {
     // Generate work order number
     const workOrderNumber = await this.generateWorkOrderNumber(createMaintenanceWorkOrderDto.companyId);
 
-    const [newWorkOrder] = await this.db
+    // Convert string dates to Date objects
+    const workOrderData = {
+      ...createMaintenanceWorkOrderDto,
+      workOrderNumber,
+      scheduledStartDate: createMaintenanceWorkOrderDto.scheduledStartDate ? new Date(createMaintenanceWorkOrderDto.scheduledStartDate) : null,
+      scheduledEndDate: createMaintenanceWorkOrderDto.scheduledEndDate ? new Date(createMaintenanceWorkOrderDto.scheduledEndDate) : null,
+      createdBy: userId,
+      updatedBy: userId,
+    };
+
+    const [newWorkOrder] = await this.db.db
       .insert(maintenanceWorkOrders)
-      .values({
-        ...createMaintenanceWorkOrderDto,
-        workOrderNumber,
-        createdBy: userId,
-        updatedBy: userId,
-      })
+      .values(workOrderData)
       .returning();
+
+    if (!newWorkOrder) {
+      throw new BadRequestException('Failed to create maintenance work order');
+    }
 
     return newWorkOrder;
   }
@@ -235,17 +293,38 @@ export class MaintenanceService {
     userId: string,
     companyId: string
   ): Promise<MaintenanceWorkOrder> {
-    const existingWorkOrder = await this.findMaintenanceWorkOrderById(id, companyId);
+    await this.findMaintenanceWorkOrderById(id, companyId);
 
-    const [updatedWorkOrder] = await this.db
+    // Convert string dates to Date objects if provided, filter out undefined values
+    const updateData: any = {
+      ...updateMaintenanceWorkOrderDto,
+      updatedBy: userId,
+      updatedAt: new Date(),
+    };
+
+    // Only add date fields if provided
+    if (updateMaintenanceWorkOrderDto.scheduledStartDate) {
+      updateData.scheduledStartDate = new Date(updateMaintenanceWorkOrderDto.scheduledStartDate);
+    }
+    if (updateMaintenanceWorkOrderDto.scheduledEndDate) {
+      updateData.scheduledEndDate = new Date(updateMaintenanceWorkOrderDto.scheduledEndDate);
+    }
+    if (updateMaintenanceWorkOrderDto.actualStartDate) {
+      updateData.actualStartDate = new Date(updateMaintenanceWorkOrderDto.actualStartDate);
+    }
+    if (updateMaintenanceWorkOrderDto.actualEndDate) {
+      updateData.actualEndDate = new Date(updateMaintenanceWorkOrderDto.actualEndDate);
+    }
+
+    const [updatedWorkOrder] = await this.db.db
       .update(maintenanceWorkOrders)
-      .set({
-        ...updateMaintenanceWorkOrderDto,
-        updatedBy: userId,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(and(eq(maintenanceWorkOrders.id, id), eq(maintenanceWorkOrders.companyId, companyId)))
       .returning();
+
+    if (!updatedWorkOrder) {
+      throw new NotFoundException('Maintenance work order not found or update failed');
+    }
 
     return updatedWorkOrder;
   }
@@ -261,7 +340,7 @@ export class MaintenanceService {
       throw new BadRequestException('Only open work orders can be started');
     }
 
-    const [startedWorkOrder] = await this.db
+    const [startedWorkOrder] = await this.db.db
       .update(maintenanceWorkOrders)
       .set({
         status: WorkOrderStatus.IN_PROGRESS,
@@ -271,6 +350,10 @@ export class MaintenanceService {
       })
       .where(and(eq(maintenanceWorkOrders.id, id), eq(maintenanceWorkOrders.companyId, companyId)))
       .returning();
+
+    if (!startedWorkOrder) {
+      throw new NotFoundException('Maintenance work order not found or start failed');
+    }
 
     return startedWorkOrder;
   }
@@ -286,28 +369,53 @@ export class MaintenanceService {
       throw new BadRequestException('Only in-progress work orders can be completed');
     }
 
-    const [completedWorkOrder] = await this.db
+    // Prepare completion data, filtering out undefined values
+    const completionData: any = {
+      status: WorkOrderStatus.COMPLETED,
+      actualEndDate: new Date(),
+      completionPercentage: 100,
+      workPerformed: completeMaintenanceWorkOrderDto.workPerformed,
+      completedBy: userId,
+      completedAt: new Date(),
+      updatedBy: userId,
+      updatedAt: new Date(),
+    };
+
+    // Only add optional fields if they have values
+    if (completeMaintenanceWorkOrderDto.partsUsed !== undefined) {
+      completionData.partsUsed = completeMaintenanceWorkOrderDto.partsUsed;
+    }
+    if (completeMaintenanceWorkOrderDto.completionNotes !== undefined) {
+      completionData.completionNotes = completeMaintenanceWorkOrderDto.completionNotes;
+    }
+    if (completeMaintenanceWorkOrderDto.actualCost !== undefined) {
+      completionData.actualCost = completeMaintenanceWorkOrderDto.actualCost;
+    }
+    if (completeMaintenanceWorkOrderDto.laborCost !== undefined) {
+      completionData.laborCost = completeMaintenanceWorkOrderDto.laborCost;
+    }
+    if (completeMaintenanceWorkOrderDto.materialCost !== undefined) {
+      completionData.materialCost = completeMaintenanceWorkOrderDto.materialCost;
+    }
+    if (completeMaintenanceWorkOrderDto.externalServiceCost !== undefined) {
+      completionData.externalServiceCost = completeMaintenanceWorkOrderDto.externalServiceCost;
+    }
+    if (completeMaintenanceWorkOrderDto.actualDuration !== undefined) {
+      completionData.actualDuration = completeMaintenanceWorkOrderDto.actualDuration;
+    }
+    if (completeMaintenanceWorkOrderDto.qualityChecks !== undefined) {
+      completionData.qualityChecks = completeMaintenanceWorkOrderDto.qualityChecks;
+    }
+
+    const [completedWorkOrder] = await this.db.db
       .update(maintenanceWorkOrders)
-      .set({
-        status: WorkOrderStatus.COMPLETED,
-        actualEndDate: new Date(),
-        completionPercentage: 100,
-        workPerformed: completeMaintenanceWorkOrderDto.workPerformed,
-        partsUsed: completeMaintenanceWorkOrderDto.partsUsed,
-        completionNotes: completeMaintenanceWorkOrderDto.completionNotes,
-        actualCost: completeMaintenanceWorkOrderDto.actualCost,
-        laborCost: completeMaintenanceWorkOrderDto.laborCost,
-        materialCost: completeMaintenanceWorkOrderDto.materialCost,
-        externalServiceCost: completeMaintenanceWorkOrderDto.externalServiceCost,
-        actualDuration: completeMaintenanceWorkOrderDto.actualDuration,
-        qualityChecks: completeMaintenanceWorkOrderDto.qualityChecks,
-        completedBy: userId,
-        completedAt: new Date(),
-        updatedBy: userId,
-        updatedAt: new Date(),
-      })
+      .set(completionData)
       .where(and(eq(maintenanceWorkOrders.id, id), eq(maintenanceWorkOrders.companyId, completeMaintenanceWorkOrderDto.companyId)))
       .returning();
+
+    if (!completedWorkOrder) {
+      throw new NotFoundException('Maintenance work order not found or completion failed');
+    }
 
     // Create maintenance history entry
     await this.createMaintenanceHistoryFromWorkOrder(completedWorkOrder, userId);
@@ -321,7 +429,7 @@ export class MaintenanceService {
   }
 
   async findMaintenanceWorkOrderById(id: string, companyId: string): Promise<MaintenanceWorkOrder> {
-    const [workOrder] = await this.db
+    const [workOrder] = await this.db.db
       .select()
       .from(maintenanceWorkOrders)
       .where(and(eq(maintenanceWorkOrders.id, id), eq(maintenanceWorkOrders.companyId, companyId)))
@@ -339,13 +447,14 @@ export class MaintenanceService {
 
     // Apply filters
     if (filter.search) {
-      conditions.push(
-        or(
-          ilike(maintenanceWorkOrders.workOrderNumber, `%${filter.search}%`),
-          ilike(maintenanceWorkOrders.title, `%${filter.search}%`),
-          ilike(maintenanceWorkOrders.description, `%${filter.search}%`)
-        )
+      const searchCondition = or(
+        ilike(maintenanceWorkOrders.workOrderNumber, `%${filter.search}%`),
+        ilike(maintenanceWorkOrders.title, `%${filter.search}%`),
+        ilike(maintenanceWorkOrders.description, `%${filter.search}%`)
       );
+      if (searchCondition) {
+        conditions.push(searchCondition);
+      }
     }
 
     if (filter.assetId) {
@@ -380,34 +489,57 @@ export class MaintenanceService {
       conditions.push(lte(maintenanceWorkOrders.scheduledStartDate, new Date(filter.scheduledStartDateTo)));
     }
 
-    const whereClause = and(...conditions);
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
 
     // Get total count
-    const [{ total }] = await this.db
+    const countResult = await this.db.db
       .select({ total: count() })
       .from(maintenanceWorkOrders)
       .where(whereClause);
 
-    // Get paginated results
-    const offset = (filter.page - 1) * filter.limit;
-    const orderBy = filter.sortOrder === 'ASC'
-      ? asc(maintenanceWorkOrders[filter.sortBy as keyof typeof maintenanceWorkOrders] || maintenanceWorkOrders.scheduledStartDate)
-      : desc(maintenanceWorkOrders[filter.sortBy as keyof typeof maintenanceWorkOrders] || maintenanceWorkOrders.scheduledStartDate);
+    const total = countResult[0]?.total ?? 0;
 
-    const results = await this.db
+    // Get paginated results with proper defaults
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 20;
+    const offset = (page - 1) * limit;
+    
+    // Handle sorting with proper column validation
+    const sortBy = filter.sortBy || 'scheduledStartDate';
+    const sortOrder = filter.sortOrder === 'ASC' ? asc : desc;
+    
+    let orderBy;
+    switch (sortBy) {
+      case 'workOrderNumber':
+        orderBy = sortOrder(maintenanceWorkOrders.workOrderNumber);
+        break;
+      case 'title':
+        orderBy = sortOrder(maintenanceWorkOrders.title);
+        break;
+      case 'createdAt':
+        orderBy = sortOrder(maintenanceWorkOrders.createdAt);
+        break;
+      case 'updatedAt':
+        orderBy = sortOrder(maintenanceWorkOrders.updatedAt);
+        break;
+      default:
+        orderBy = sortOrder(maintenanceWorkOrders.scheduledStartDate);
+    }
+
+    const results = await this.db.db
       .select()
       .from(maintenanceWorkOrders)
       .where(whereClause)
       .orderBy(orderBy)
-      .limit(filter.limit)
+      .limit(limit)
       .offset(offset);
 
     return {
       data: results,
-      total,
-      page: filter.page,
-      limit: filter.limit,
-      totalPages: Math.ceil(total / filter.limit),
+      total: Number(total),
+      page,
+      limit,
+      totalPages: Math.ceil(Number(total) / limit),
     };
   }
 
@@ -416,14 +548,23 @@ export class MaintenanceService {
     createMaintenanceHistoryDto: CreateMaintenanceHistoryDto,
     userId: string
   ): Promise<MaintenanceHistory> {
-    const [newHistory] = await this.db
+    // Convert string dates to Date objects
+    const historyData = {
+      ...createMaintenanceHistoryDto,
+      maintenanceDate: new Date(createMaintenanceHistoryDto.maintenanceDate),
+      followUpDate: createMaintenanceHistoryDto.followUpDate ? new Date(createMaintenanceHistoryDto.followUpDate) : null,
+      createdBy: userId,
+      updatedBy: userId,
+    };
+
+    const [newHistory] = await this.db.db
       .insert(maintenanceHistory)
-      .values({
-        ...createMaintenanceHistoryDto,
-        createdBy: userId,
-        updatedBy: userId,
-      })
+      .values(historyData)
       .returning();
+
+    if (!newHistory) {
+      throw new BadRequestException('Failed to create maintenance history');
+    }
 
     return newHistory;
   }
@@ -434,23 +575,38 @@ export class MaintenanceService {
     userId: string,
     companyId: string
   ): Promise<MaintenanceHistory> {
-    const existingHistory = await this.findMaintenanceHistoryById(id, companyId);
+    await this.findMaintenanceHistoryById(id, companyId);
 
-    const [updatedHistory] = await this.db
+    // Convert string dates to Date objects if provided, filter out undefined values
+    const updateData: any = {
+      ...updateMaintenanceHistoryDto,
+      updatedBy: userId,
+      updatedAt: new Date(),
+    };
+
+    // Only add date fields if provided
+    if (updateMaintenanceHistoryDto.maintenanceDate) {
+      updateData.maintenanceDate = new Date(updateMaintenanceHistoryDto.maintenanceDate);
+    }
+    if (updateMaintenanceHistoryDto.followUpDate) {
+      updateData.followUpDate = new Date(updateMaintenanceHistoryDto.followUpDate);
+    }
+
+    const [updatedHistory] = await this.db.db
       .update(maintenanceHistory)
-      .set({
-        ...updateMaintenanceHistoryDto,
-        updatedBy: userId,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(and(eq(maintenanceHistory.id, id), eq(maintenanceHistory.companyId, companyId)))
       .returning();
+
+    if (!updatedHistory) {
+      throw new NotFoundException('Maintenance history not found or update failed');
+    }
 
     return updatedHistory;
   }
 
   async findMaintenanceHistoryById(id: string, companyId: string): Promise<MaintenanceHistory> {
-    const [history] = await this.db
+    const [history] = await this.db.db
       .select()
       .from(maintenanceHistory)
       .where(and(eq(maintenanceHistory.id, id), eq(maintenanceHistory.companyId, companyId)))
@@ -464,7 +620,7 @@ export class MaintenanceService {
   }
 
   async findMaintenanceHistoryByAsset(assetId: string, companyId: string): Promise<MaintenanceHistory[]> {
-    return await this.db
+    return await this.db.db
       .select()
       .from(maintenanceHistory)
       .where(and(eq(maintenanceHistory.assetId, assetId), eq(maintenanceHistory.companyId, companyId)))
@@ -477,7 +633,7 @@ export class MaintenanceService {
     userId: string
   ): Promise<SparePart> {
     // Check if part code already exists
-    const existingPart = await this.db
+    const existingPart = await this.db.db
       .select()
       .from(spareParts)
       .where(
@@ -492,7 +648,7 @@ export class MaintenanceService {
       throw new ConflictException('Spare part code already exists');
     }
 
-    const [newPart] = await this.db
+    const [newPart] = await this.db.db
       .insert(spareParts)
       .values({
         ...createSparePartDto,
@@ -500,6 +656,10 @@ export class MaintenanceService {
         updatedBy: userId,
       })
       .returning();
+
+    if (!newPart) {
+      throw new BadRequestException('Failed to create spare part');
+    }
 
     return newPart;
   }
@@ -510,9 +670,9 @@ export class MaintenanceService {
     userId: string,
     companyId: string
   ): Promise<SparePart> {
-    const existingPart = await this.findSparePartById(id, companyId);
+    await this.findSparePartById(id, companyId);
 
-    const [updatedPart] = await this.db
+    const [updatedPart] = await this.db.db
       .update(spareParts)
       .set({
         ...updateSparePartDto,
@@ -522,16 +682,21 @@ export class MaintenanceService {
       .where(and(eq(spareParts.id, id), eq(spareParts.companyId, companyId)))
       .returning();
 
+    if (!updatedPart) {
+      throw new NotFoundException('Spare part not found or update failed');
+    }
+
     return updatedPart;
   }
 
   async findSparePartById(id: string, companyId: string): Promise<SparePart> {
-    const [part] = await this.db
+    const result = await this.db.db
       .select()
       .from(spareParts)
       .where(and(eq(spareParts.id, id), eq(spareParts.companyId, companyId)))
       .limit(1);
 
+    const part = result[0];
     if (!part) {
       throw new NotFoundException('Spare part not found');
     }
@@ -544,14 +709,15 @@ export class MaintenanceService {
 
     // Apply filters
     if (filter.search) {
-      conditions.push(
-        or(
-          ilike(spareParts.partCode, `%${filter.search}%`),
-          ilike(spareParts.partName, `%${filter.search}%`),
-          ilike(spareParts.description, `%${filter.search}%`),
-          ilike(spareParts.manufacturerPartNumber, `%${filter.search}%`)
-        )
+      const searchCondition = or(
+        ilike(spareParts.partCode, `%${filter.search}%`),
+        ilike(spareParts.partName, `%${filter.search}%`),
+        ilike(spareParts.description, `%${filter.search}%`),
+        ilike(spareParts.manufacturerPartNumber, `%${filter.search}%`)
       );
+      if (searchCondition) {
+        conditions.push(searchCondition);
+      }
     }
 
     if (filter.itemId) {
@@ -574,34 +740,57 @@ export class MaintenanceService {
       conditions.push(sql`${spareParts.currentStock} <= ${spareParts.minimumStock}`);
     }
 
-    const whereClause = and(...conditions);
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
 
     // Get total count
-    const [{ total }] = await this.db
+    const countResult = await this.db.db
       .select({ total: count() })
       .from(spareParts)
       .where(whereClause);
 
-    // Get paginated results
-    const offset = (filter.page - 1) * filter.limit;
-    const orderBy = filter.sortOrder === 'ASC'
-      ? asc(spareParts[filter.sortBy as keyof typeof spareParts] || spareParts.partName)
-      : desc(spareParts[filter.sortBy as keyof typeof spareParts] || spareParts.partName);
+    const total = countResult[0]?.total ?? 0;
 
-    const results = await this.db
+    // Get paginated results with proper defaults
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 20;
+    const offset = (page - 1) * limit;
+    
+    // Handle sorting with proper column validation
+    const sortBy = filter.sortBy || 'partName';
+    const sortOrder = filter.sortOrder === 'ASC' ? asc : desc;
+    
+    let orderBy;
+    switch (sortBy) {
+      case 'partCode':
+        orderBy = sortOrder(spareParts.partCode);
+        break;
+      case 'manufacturer':
+        orderBy = sortOrder(spareParts.manufacturer);
+        break;
+      case 'createdAt':
+        orderBy = sortOrder(spareParts.createdAt);
+        break;
+      case 'updatedAt':
+        orderBy = sortOrder(spareParts.updatedAt);
+        break;
+      default:
+        orderBy = sortOrder(spareParts.partName);
+    }
+
+    const results = await this.db.db
       .select()
       .from(spareParts)
       .where(whereClause)
       .orderBy(orderBy)
-      .limit(filter.limit)
+      .limit(limit)
       .offset(offset);
 
     return {
       data: results,
-      total,
-      page: filter.page,
-      limit: filter.limit,
-      totalPages: Math.ceil(total / filter.limit),
+      total: Number(total),
+      page,
+      limit,
+      totalPages: Math.ceil(Number(total) / limit),
     };
   }
 
@@ -610,14 +799,22 @@ export class MaintenanceService {
     createMaintenanceCostDto: CreateMaintenanceCostDto,
     userId: string
   ): Promise<MaintenanceCost> {
-    const [newCost] = await this.db
+    // Convert string date to Date object
+    const costData = {
+      ...createMaintenanceCostDto,
+      costDate: new Date(createMaintenanceCostDto.costDate),
+      createdBy: userId,
+      updatedBy: userId,
+    };
+
+    const [newCost] = await this.db.db
       .insert(maintenanceCosts)
-      .values({
-        ...createMaintenanceCostDto,
-        createdBy: userId,
-        updatedBy: userId,
-      })
+      .values(costData)
       .returning();
+
+    if (!newCost) {
+      throw new BadRequestException('Failed to create maintenance cost');
+    }
 
     return newCost;
   }
@@ -628,23 +825,35 @@ export class MaintenanceService {
     userId: string,
     companyId: string
   ): Promise<MaintenanceCost> {
-    const existingCost = await this.findMaintenanceCostById(id, companyId);
+    await this.findMaintenanceCostById(id, companyId);
 
-    const [updatedCost] = await this.db
+    // Convert string date to Date object if provided, filter out undefined values
+    const updateData: any = {
+      ...updateMaintenanceCostDto,
+      updatedBy: userId,
+      updatedAt: new Date(),
+    };
+
+    // Only add costDate if provided
+    if (updateMaintenanceCostDto.costDate) {
+      updateData.costDate = new Date(updateMaintenanceCostDto.costDate);
+    }
+
+    const [updatedCost] = await this.db.db
       .update(maintenanceCosts)
-      .set({
-        ...updateMaintenanceCostDto,
-        updatedBy: userId,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(and(eq(maintenanceCosts.id, id), eq(maintenanceCosts.companyId, companyId)))
       .returning();
+
+    if (!updatedCost) {
+      throw new NotFoundException('Maintenance cost not found or update failed');
+    }
 
     return updatedCost;
   }
 
   async findMaintenanceCostById(id: string, companyId: string): Promise<MaintenanceCost> {
-    const [cost] = await this.db
+    const [cost] = await this.db.db
       .select()
       .from(maintenanceCosts)
       .where(and(eq(maintenanceCosts.id, id), eq(maintenanceCosts.companyId, companyId)))
@@ -658,7 +867,7 @@ export class MaintenanceService {
   }
 
   async findMaintenanceCostsByWorkOrder(workOrderId: string, companyId: string): Promise<MaintenanceCost[]> {
-    return await this.db
+    return await this.db.db
       .select()
       .from(maintenanceCosts)
       .where(and(eq(maintenanceCosts.workOrderId, workOrderId), eq(maintenanceCosts.companyId, companyId)))
@@ -694,19 +903,20 @@ export class MaintenanceService {
   }
 
   private async generateWorkOrderNumber(companyId: string): Promise<string> {
-    const [{ count: workOrderCount }] = await this.db
+    const countResult = await this.db.db
       .select({ count: count() })
       .from(maintenanceWorkOrders)
       .where(eq(maintenanceWorkOrders.companyId, companyId));
 
-    return `WO-${String(workOrderCount + 1).padStart(6, '0')}`;
+    const workOrderCount = countResult[0]?.count ?? 0;
+    return `WO-${String(Number(workOrderCount) + 1).padStart(6, '0')}`;
   }
 
   private async createMaintenanceHistoryFromWorkOrder(
     workOrder: MaintenanceWorkOrder,
     userId: string
   ): Promise<void> {
-    await this.db
+    await this.db.db
       .insert(maintenanceHistory)
       .values({
         assetId: workOrder.assetId,
@@ -738,7 +948,7 @@ export class MaintenanceService {
       );
 
       if (nextDueDate) {
-        await this.db
+        await this.db.db
           .update(maintenanceSchedules)
           .set({
             nextDueDate,

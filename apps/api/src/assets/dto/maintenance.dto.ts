@@ -81,24 +81,24 @@ export class CreateMaintenanceScheduleDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  scheduleCode: string;
+  scheduleCode!: string;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  scheduleName: string;
+  scheduleName!: string;
 
   @Field()
   @IsUUID()
-  assetId: string;
+  assetId!: string;
 
   @Field()
   @IsEnum(MaintenanceType)
-  maintenanceType: MaintenanceType;
+  maintenanceType!: MaintenanceType;
 
   @Field()
   @IsEnum(ScheduleType)
-  scheduleType: ScheduleType;
+  scheduleType!: ScheduleType;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -124,7 +124,7 @@ export class CreateMaintenanceScheduleDto {
 
   @Field()
   @IsDateString()
-  startDate: string;
+  startDate!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -173,7 +173,7 @@ export class CreateMaintenanceScheduleDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()
@@ -291,7 +291,7 @@ export class UpdateMaintenanceScheduleDto {
 export class CreateMaintenanceWorkOrderDto {
   @Field()
   @IsUUID()
-  assetId: string;
+  assetId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -301,7 +301,7 @@ export class CreateMaintenanceWorkOrderDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  title: string;
+  title!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -310,7 +310,7 @@ export class CreateMaintenanceWorkOrderDto {
 
   @Field()
   @IsEnum(WorkOrderType)
-  workOrderType: WorkOrderType;
+  workOrderType!: WorkOrderType;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -377,7 +377,7 @@ export class CreateMaintenanceWorkOrderDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()
@@ -528,7 +528,7 @@ export class CompleteMaintenanceWorkOrderDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  workPerformed: string;
+  workPerformed!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -571,7 +571,7 @@ export class CompleteMaintenanceWorkOrderDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 // Maintenance History DTOs
@@ -579,7 +579,7 @@ export class CompleteMaintenanceWorkOrderDto {
 export class CreateMaintenanceHistoryDto {
   @Field()
   @IsUUID()
-  assetId: string;
+  assetId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -588,16 +588,16 @@ export class CreateMaintenanceHistoryDto {
 
   @Field()
   @IsDateString()
-  maintenanceDate: string;
+  maintenanceDate!: string;
 
   @Field()
   @IsEnum(MaintenanceType)
-  maintenanceType: MaintenanceType;
+  maintenanceType!: MaintenanceType;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  description: string;
+  description!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -682,7 +682,7 @@ export class CreateMaintenanceHistoryDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()
@@ -790,12 +790,12 @@ export class CreateSparePartDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  partCode: string;
+  partCode!: string;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  partName: string;
+  partName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -882,7 +882,7 @@ export class CreateSparePartDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()
@@ -991,11 +991,11 @@ export class UpdateSparePartDto {
 export class CreateMaintenanceCostDto {
   @Field()
   @IsUUID()
-  workOrderId: string;
+  workOrderId!: string;
 
   @Field()
   @IsEnum(CostType)
-  costType: CostType;
+  costType!: CostType;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -1014,7 +1014,7 @@ export class CreateMaintenanceCostDto {
 
   @Field()
   @IsDecimal()
-  totalCost: string;
+  totalCost!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -1054,11 +1054,11 @@ export class CreateMaintenanceCostDto {
 
   @Field()
   @IsDateString()
-  costDate: string;
+  costDate!: string;
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()

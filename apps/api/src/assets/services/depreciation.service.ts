@@ -19,6 +19,7 @@ import {
 import { and, asc, count, desc, eq, gte, lte } from '@kiro/database';
 import {
   AssetRevaluationFilterDto,
+  CreateAssetRevaluationDto,
   CreateDepreciationEntryDto,
   CreateDepreciationMethodDto,
   CreateDepreciationScheduleDto,
@@ -26,6 +27,7 @@ import {
   DepreciationScheduleFilterDto,
   RevaluationStatus,
   ReverseDepreciationEntryDto,
+  UpdateAssetRevaluationDto,
   UpdateDepreciationEntryDto,
   UpdateDepreciationMethodDto,
   UpdateDepreciationScheduleDto,
@@ -41,7 +43,7 @@ export class DepreciationService {
     userId: string
   ): Promise<DepreciationSchedule> {
     // Check if asset already has an active depreciation schedule
-    const existingSchedule = await this.db
+    const existingSchedule = await this.db.db
       .select()
       .from(depreciationSchedules)
       .where(
@@ -84,17 +86,25 @@ export class DepreciationService {
       endDate.getMonth() + createDepreciationScheduleDto.usefulLife
     );
 
-    const [newSchedule] = await this.db
+    // Convert string date to Date object
+    const scheduleData = {
+      ...createDepreciationScheduleDto,
+      scheduleNumber,
+      startDate: new Date(createDepreciationScheduleDto.startDate),
+      depreciableAmount: depreciableAmount.toString(),
+      endDate,
+      createdBy: userId,
+      updatedBy: userId,
+    };
+
+    const [newSchedule] = await this.db.db
       .insert(depreciationSchedules)
-      .values({
-        ...createDepreciationScheduleDto,
-        scheduleNumber,
-        depreciableAmount: depreciableAmount.toString(),
-        endDate,
-        createdBy: userId,
-        updatedBy: userId,
-      })
+      .values(scheduleData)
       .returning();
+
+    if (!newSchedule) {
+      throw new BadRequestException('Failed to create depreciation schedule');
+    }
 
     return newSchedule;
   }
@@ -142,15 +152,23 @@ export class DepreciationService {
       endDate.setMonth(endDate.getMonth() + usefulLife);
     }
 
-    const [updatedSchedule] = await this.db
+    // Convert string date to Date object if provided, filter out undefined values
+    const updateData: any = {
+      ...updateDepreciationScheduleDto,
+      depreciableAmount,
+      endDate,
+      updatedBy: userId,
+      updatedAt: new Date(),
+    };
+
+    // Only add startDate if provided
+    if (updateDepreciationScheduleDto.startDate) {
+      updateData.startDate = new Date(updateDepreciationScheduleDto.startDate);
+    }
+
+    const [updatedSchedule] = await this.db.db
       .update(depreciationSchedules)
-      .set({
-        ...updateDepreciationScheduleDto,
-        depreciableAmount,
-        endDate,
-        updatedBy: userId,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(
         and(
           eq(depreciationSchedules.id, id),
@@ -159,6 +177,10 @@ export class DepreciationService {
       )
       .returning();
 
+    if (!updatedSchedule) {
+      throw new NotFoundException('Depreciation schedule not found or update failed');
+    }
+
     return updatedSchedule;
   }
 
@@ -166,7 +188,7 @@ export class DepreciationService {
     id: string,
     companyId: string
   ): Promise<DepreciationSchedule> {
-    const [schedule] = await this.db
+    const [schedule] = await this.db.db
       .select()
       .from(depreciationSchedules)
       .where(
@@ -221,43 +243,57 @@ export class DepreciationService {
       );
     }
 
-    const whereClause = and(...conditions);
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
 
     // Get total count
-    const [{ total }] = await this.db
+    const countResult = await this.db.db
       .select({ total: count() })
       .from(depreciationSchedules)
       .where(whereClause);
 
-    // Get paginated results
-    const offset = (filter.page - 1) * filter.limit;
-    const orderBy =
-      filter.sortOrder === 'ASC'
-        ? asc(
-            depreciationSchedules[
-              filter.sortBy as keyof typeof depreciationSchedules
-            ] || depreciationSchedules.createdAt
-          )
-        : desc(
-            depreciationSchedules[
-              filter.sortBy as keyof typeof depreciationSchedules
-            ] || depreciationSchedules.createdAt
-          );
+    const total = countResult[0]?.total ?? 0;
 
-    const results = await this.db
+    // Get paginated results with proper defaults
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 20;
+    const offset = (page - 1) * limit;
+    
+    // Handle sorting with proper column validation
+    const sortBy = filter.sortBy || 'createdAt';
+    const sortOrder = filter.sortOrder === 'ASC' ? asc : desc;
+    
+    let orderBy;
+    switch (sortBy) {
+      case 'scheduleNumber':
+        orderBy = sortOrder(depreciationSchedules.scheduleNumber);
+        break;
+      case 'startDate':
+        orderBy = sortOrder(depreciationSchedules.startDate);
+        break;
+      case 'endDate':
+        orderBy = sortOrder(depreciationSchedules.endDate);
+        break;
+      case 'updatedAt':
+        orderBy = sortOrder(depreciationSchedules.updatedAt);
+        break;
+      default:
+        orderBy = sortOrder(depreciationSchedules.createdAt);
+    }
+
+    const results = await this.db.db
       .select()
       .from(depreciationSchedules)
       .where(whereClause)
       .orderBy(orderBy)
-      .limit(filter.limit)
+      .limit(limit)
       .offset(offset);
 
     return {
       data: results,
-      total,
-      page: filter.page,
-      limit: filter.limit,
-      totalPages: Math.ceil(total / filter.limit),
+      total: Number(total),
+      page,
+      limit,
+      totalPages: Math.ceil(Number(total) / limit),
     };
   }
 
@@ -283,7 +319,7 @@ export class DepreciationService {
     );
 
     // Get previous accumulated depreciation
-    const [previousEntry] = await this.db
+    const [previousEntry] = await this.db.db
       .select()
       .from(depreciationEntries)
       .where(
@@ -326,19 +362,35 @@ export class DepreciationService {
       ).toString();
     }
 
-    const [newEntry] = await this.db
+    // Convert string dates to Date objects
+    const entryData: any = {
+      ...createDepreciationEntryDto,
+      entryNumber,
+      depreciationDate: new Date(createDepreciationEntryDto.depreciationDate),
+      periodStartDate: new Date(createDepreciationEntryDto.periodStartDate),
+      periodEndDate: new Date(createDepreciationEntryDto.periodEndDate),
+      accumulatedDepreciation: accumulatedDepreciation.toString(),
+      bookValue: bookValue.toString(),
+      createdBy: userId,
+      updatedBy: userId,
+    };
+
+    // Only add tax fields if they have values
+    if (taxAccumulatedDepreciation !== undefined) {
+      entryData.taxAccumulatedDepreciation = taxAccumulatedDepreciation;
+    }
+    if (taxBookValue !== undefined) {
+      entryData.taxBookValue = taxBookValue;
+    }
+
+    const [newEntry] = await this.db.db
       .insert(depreciationEntries)
-      .values({
-        ...createDepreciationEntryDto,
-        entryNumber,
-        accumulatedDepreciation: accumulatedDepreciation.toString(),
-        bookValue: bookValue.toString(),
-        taxAccumulatedDepreciation,
-        taxBookValue,
-        createdBy: userId,
-        updatedBy: userId,
-      })
+      .values(entryData)
       .returning();
+
+    if (!newEntry) {
+      throw new BadRequestException('Failed to create depreciation entry');
+    }
 
     return newEntry;
   }
@@ -355,13 +407,27 @@ export class DepreciationService {
       throw new BadRequestException('Cannot update posted depreciation entry');
     }
 
-    const [updatedEntry] = await this.db
+    // Convert string dates to Date objects if provided, filter out undefined values
+    const updateData: any = {
+      ...updateDepreciationEntryDto,
+      updatedBy: userId,
+      updatedAt: new Date(),
+    };
+
+    // Only add date fields if provided
+    if (updateDepreciationEntryDto.depreciationDate) {
+      updateData.depreciationDate = new Date(updateDepreciationEntryDto.depreciationDate);
+    }
+    if (updateDepreciationEntryDto.periodStartDate) {
+      updateData.periodStartDate = new Date(updateDepreciationEntryDto.periodStartDate);
+    }
+    if (updateDepreciationEntryDto.periodEndDate) {
+      updateData.periodEndDate = new Date(updateDepreciationEntryDto.periodEndDate);
+    }
+
+    const [updatedEntry] = await this.db.db
       .update(depreciationEntries)
-      .set({
-        ...updateDepreciationEntryDto,
-        updatedBy: userId,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(
         and(
           eq(depreciationEntries.id, id),
@@ -369,6 +435,10 @@ export class DepreciationService {
         )
       )
       .returning();
+
+    if (!updatedEntry) {
+      throw new NotFoundException('Depreciation entry not found or update failed');
+    }
 
     return updatedEntry;
   }
@@ -386,7 +456,7 @@ export class DepreciationService {
 
     // Here you would create the GL entry
     // For now, we'll just mark it as posted
-    const [postedEntry] = await this.db
+    const [postedEntry] = await this.db.db
       .update(depreciationEntries)
       .set({
         isPosted: true,
@@ -402,6 +472,10 @@ export class DepreciationService {
         )
       )
       .returning();
+
+    if (!postedEntry) {
+      throw new NotFoundException('Depreciation entry not found or posting failed');
+    }
 
     return postedEntry;
   }
@@ -424,7 +498,7 @@ export class DepreciationService {
       throw new BadRequestException('Entry is already reversed');
     }
 
-    const [reversedEntry] = await this.db
+    const [reversedEntry] = await this.db.db
       .update(depreciationEntries)
       .set({
         isReversed: true,
@@ -445,6 +519,10 @@ export class DepreciationService {
       )
       .returning();
 
+    if (!reversedEntry) {
+      throw new NotFoundException('Depreciation entry not found or reversal failed');
+    }
+
     return reversedEntry;
   }
 
@@ -452,7 +530,7 @@ export class DepreciationService {
     id: string,
     companyId: string
   ): Promise<DepreciationEntry> {
-    const [entry] = await this.db
+    const [entry] = await this.db.db
       .select()
       .from(depreciationEntries)
       .where(
@@ -507,43 +585,54 @@ export class DepreciationService {
       );
     }
 
-    const whereClause = and(...conditions);
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
 
     // Get total count
-    const [{ total }] = await this.db
+    const countResult = await this.db.db
       .select({ total: count() })
       .from(depreciationEntries)
       .where(whereClause);
 
-    // Get paginated results
-    const offset = (filter.page - 1) * filter.limit;
-    const orderBy =
-      filter.sortOrder === 'ASC'
-        ? asc(
-            depreciationEntries[
-              filter.sortBy as keyof typeof depreciationEntries
-            ] || depreciationEntries.depreciationDate
-          )
-        : desc(
-            depreciationEntries[
-              filter.sortBy as keyof typeof depreciationEntries
-            ] || depreciationEntries.depreciationDate
-          );
+    const total = countResult[0]?.total ?? 0;
 
-    const results = await this.db
+    // Get paginated results with proper defaults
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 20;
+    const offset = (page - 1) * limit;
+    
+    // Handle sorting with proper column validation
+    const sortBy = filter.sortBy || 'depreciationDate';
+    const sortOrder = filter.sortOrder === 'ASC' ? asc : desc;
+    
+    let orderBy;
+    switch (sortBy) {
+      case 'entryNumber':
+        orderBy = sortOrder(depreciationEntries.entryNumber);
+        break;
+      case 'createdAt':
+        orderBy = sortOrder(depreciationEntries.createdAt);
+        break;
+      case 'updatedAt':
+        orderBy = sortOrder(depreciationEntries.updatedAt);
+        break;
+      default:
+        orderBy = sortOrder(depreciationEntries.depreciationDate);
+    }
+
+    const results = await this.db.db
       .select()
       .from(depreciationEntries)
       .where(whereClause)
       .orderBy(orderBy)
-      .limit(filter.limit)
+      .limit(limit)
       .offset(offset);
 
     return {
       data: results,
-      total,
-      page: filter.page,
-      limit: filter.limit,
-      totalPages: Math.ceil(total / filter.limit),
+      total: Number(total),
+      page,
+      limit,
+      totalPages: Math.ceil(Number(total) / limit),
     };
   }
 
@@ -564,16 +653,24 @@ export class DepreciationService {
     );
     const revaluationSurplus = newFairValue - previousBookValue;
 
-    const [newRevaluation] = await this.db
+    // Convert string date to Date object
+    const revaluationData = {
+      ...createAssetRevaluationDto,
+      revaluationNumber,
+      revaluationDate: new Date(createAssetRevaluationDto.revaluationDate),
+      revaluationSurplus: revaluationSurplus.toString(),
+      createdBy: userId,
+      updatedBy: userId,
+    };
+
+    const [newRevaluation] = await this.db.db
       .insert(assetRevaluations)
-      .values({
-        ...createAssetRevaluationDto,
-        revaluationNumber,
-        revaluationSurplus: revaluationSurplus.toString(),
-        createdBy: userId,
-        updatedBy: userId,
-      })
+      .values(revaluationData)
       .returning();
+
+    if (!newRevaluation) {
+      throw new BadRequestException('Failed to create asset revaluation');
+    }
 
     return newRevaluation;
   }
@@ -610,14 +707,22 @@ export class DepreciationService {
       revaluationSurplus = (newFairValue - previousBookValue).toString();
     }
 
-    const [updatedRevaluation] = await this.db
+    // Convert string date to Date object if provided, filter out undefined values
+    const updateData: any = {
+      ...updateAssetRevaluationDto,
+      revaluationSurplus,
+      updatedBy: userId,
+      updatedAt: new Date(),
+    };
+
+    // Only add revaluationDate if provided
+    if (updateAssetRevaluationDto.revaluationDate) {
+      updateData.revaluationDate = new Date(updateAssetRevaluationDto.revaluationDate);
+    }
+
+    const [updatedRevaluation] = await this.db.db
       .update(assetRevaluations)
-      .set({
-        ...updateAssetRevaluationDto,
-        revaluationSurplus,
-        updatedBy: userId,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(
         and(
           eq(assetRevaluations.id, id),
@@ -625,6 +730,10 @@ export class DepreciationService {
         )
       )
       .returning();
+
+    if (!updatedRevaluation) {
+      throw new NotFoundException('Asset revaluation not found or update failed');
+    }
 
     return updatedRevaluation;
   }
@@ -642,7 +751,7 @@ export class DepreciationService {
       );
     }
 
-    const [approvedRevaluation] = await this.db
+    const [approvedRevaluation] = await this.db.db
       .update(assetRevaluations)
       .set({
         status: RevaluationStatus.APPROVED,
@@ -658,6 +767,10 @@ export class DepreciationService {
         )
       )
       .returning();
+
+    if (!approvedRevaluation) {
+      throw new NotFoundException('Asset revaluation not found or approval failed');
+    }
 
     return approvedRevaluation;
   }
@@ -675,7 +788,7 @@ export class DepreciationService {
 
     // Here you would create the GL entry and update asset value
     // For now, we'll just mark it as posted
-    const [postedRevaluation] = await this.db
+    const [postedRevaluation] = await this.db.db
       .update(assetRevaluations)
       .set({
         status: RevaluationStatus.POSTED,
@@ -693,8 +806,12 @@ export class DepreciationService {
       )
       .returning();
 
+    if (!postedRevaluation) {
+      throw new NotFoundException('Asset revaluation not found or posting failed');
+    }
+
     // Update asset current value
-    await this.db
+    await this.db.db
       .update(assets)
       .set({
         currentValue: revaluation.newFairValue,
@@ -712,7 +829,7 @@ export class DepreciationService {
     id: string,
     companyId: string
   ): Promise<AssetRevaluation> {
-    const [revaluation] = await this.db
+    const [revaluation] = await this.db.db
       .select()
       .from(assetRevaluations)
       .where(
@@ -773,43 +890,54 @@ export class DepreciationService {
       );
     }
 
-    const whereClause = and(...conditions);
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
 
     // Get total count
-    const [{ total }] = await this.db
+    const countResult = await this.db.db
       .select({ total: count() })
       .from(assetRevaluations)
       .where(whereClause);
 
-    // Get paginated results
-    const offset = (filter.page - 1) * filter.limit;
-    const orderBy =
-      filter.sortOrder === 'ASC'
-        ? asc(
-            assetRevaluations[
-              filter.sortBy as keyof typeof assetRevaluations
-            ] || assetRevaluations.revaluationDate
-          )
-        : desc(
-            assetRevaluations[
-              filter.sortBy as keyof typeof assetRevaluations
-            ] || assetRevaluations.revaluationDate
-          );
+    const total = countResult[0]?.total ?? 0;
 
-    const results = await this.db
+    // Get paginated results with proper defaults
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 20;
+    const offset = (page - 1) * limit;
+    
+    // Handle sorting with proper column validation
+    const sortBy = filter.sortBy || 'revaluationDate';
+    const sortOrder = filter.sortOrder === 'ASC' ? asc : desc;
+    
+    let orderBy;
+    switch (sortBy) {
+      case 'revaluationNumber':
+        orderBy = sortOrder(assetRevaluations.revaluationNumber);
+        break;
+      case 'createdAt':
+        orderBy = sortOrder(assetRevaluations.createdAt);
+        break;
+      case 'updatedAt':
+        orderBy = sortOrder(assetRevaluations.updatedAt);
+        break;
+      default:
+        orderBy = sortOrder(assetRevaluations.revaluationDate);
+    }
+
+    const results = await this.db.db
       .select()
       .from(assetRevaluations)
       .where(whereClause)
       .orderBy(orderBy)
-      .limit(filter.limit)
+      .limit(limit)
       .offset(offset);
 
     return {
       data: results,
-      total,
-      page: filter.page,
-      limit: filter.limit,
-      totalPages: Math.ceil(total / filter.limit),
+      total: Number(total),
+      page,
+      limit,
+      totalPages: Math.ceil(Number(total) / limit),
     };
   }
 
@@ -819,7 +947,7 @@ export class DepreciationService {
     userId: string
   ): Promise<DepreciationMethod> {
     // Check if method code already exists
-    const existingMethod = await this.db
+    const existingMethod = await this.db.db
       .select()
       .from(depreciationMethods)
       .where(
@@ -840,7 +968,7 @@ export class DepreciationService {
       throw new ConflictException('Depreciation method code already exists');
     }
 
-    const [newMethod] = await this.db
+    const [newMethod] = await this.db.db
       .insert(depreciationMethods)
       .values({
         ...createDepreciationMethodDto,
@@ -848,6 +976,10 @@ export class DepreciationService {
         updatedBy: userId,
       })
       .returning();
+
+    if (!newMethod) {
+      throw new BadRequestException('Failed to create depreciation method');
+    }
 
     return newMethod;
   }
@@ -858,9 +990,9 @@ export class DepreciationService {
     userId: string,
     companyId: string
   ): Promise<DepreciationMethod> {
-    const existingMethod = await this.findDepreciationMethodById(id, companyId);
+    await this.findDepreciationMethodById(id, companyId);
 
-    const [updatedMethod] = await this.db
+    const [updatedMethod] = await this.db.db
       .update(depreciationMethods)
       .set({
         ...updateDepreciationMethodDto,
@@ -875,6 +1007,10 @@ export class DepreciationService {
       )
       .returning();
 
+    if (!updatedMethod) {
+      throw new NotFoundException('Depreciation method not found or update failed');
+    }
+
     return updatedMethod;
   }
 
@@ -882,7 +1018,7 @@ export class DepreciationService {
     id: string,
     companyId: string
   ): Promise<DepreciationMethod> {
-    const [method] = await this.db
+    const result = await this.db.db
       .select()
       .from(depreciationMethods)
       .where(
@@ -893,6 +1029,7 @@ export class DepreciationService {
       )
       .limit(1);
 
+    const method = result[0];
     if (!method) {
       throw new NotFoundException('Depreciation method not found');
     }
@@ -903,7 +1040,7 @@ export class DepreciationService {
   async findDepreciationMethods(
     companyId: string
   ): Promise<DepreciationMethod[]> {
-    return await this.db
+    return await this.db.db
       .select()
       .from(depreciationMethods)
       .where(eq(depreciationMethods.companyId, companyId))
@@ -912,29 +1049,32 @@ export class DepreciationService {
 
   // Helper methods
   private async generateScheduleNumber(companyId: string): Promise<string> {
-    const [{ count: scheduleCount }] = await this.db
+    const countResult = await this.db.db
       .select({ count: count() })
       .from(depreciationSchedules)
       .where(eq(depreciationSchedules.companyId, companyId));
 
-    return `DEP-SCH-${String(scheduleCount + 1).padStart(6, '0')}`;
+    const scheduleCount = countResult[0]?.count ?? 0;
+    return `DEP-SCH-${String(Number(scheduleCount) + 1).padStart(6, '0')}`;
   }
 
   private async generateEntryNumber(companyId: string): Promise<string> {
-    const [{ count: entryCount }] = await this.db
+    const countResult = await this.db.db
       .select({ count: count() })
       .from(depreciationEntries)
       .where(eq(depreciationEntries.companyId, companyId));
 
-    return `DEP-ENT-${String(entryCount + 1).padStart(6, '0')}`;
+    const entryCount = countResult[0]?.count ?? 0;
+    return `DEP-ENT-${String(Number(entryCount) + 1).padStart(6, '0')}`;
   }
 
   private async generateRevaluationNumber(companyId: string): Promise<string> {
-    const [{ count: revaluationCount }] = await this.db
+    const countResult = await this.db.db
       .select({ count: count() })
       .from(assetRevaluations)
       .where(eq(assetRevaluations.companyId, companyId));
 
-    return `REV-${String(revaluationCount + 1).padStart(6, '0')}`;
+    const revaluationCount = countResult[0]?.count ?? 0;
+    return `REV-${String(Number(revaluationCount) + 1).padStart(6, '0')}`;
   }
 }
