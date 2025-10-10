@@ -4,7 +4,7 @@ import {
   maintenanceWorkOrders,
   maintenanceHistory,
   spareParts,
-  mainosts,
+  maintenanceCosts,
   type MaintenanceSchedule,
   type MaintenanceWorkOrder,
   type MaintenanceHistory,

@@ -23,7 +23,7 @@ export interface NotificationData {
 }
 
 export interface NotificationTemplate {
-  namering;
+  name: string;
   type: 'EMAIL' | 'SMS' | 'PUSH' | 'IN_APP';
   subject?: string;
   bodyTemplate: string;

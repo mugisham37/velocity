@@ -76,7 +76,7 @@ export class LeavePolicy {
 
   @Field()
   @Column({ default: 0 })
-  minNoticedays: number;
+  minNoticeDays: number;
 
   @Field()
   @Column({ default: 0 })

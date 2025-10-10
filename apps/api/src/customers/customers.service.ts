@@ -18,8 +18,7 @@ import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
 import { BaseService } from '../common/services/base.service';
 import { NotificationService } from '../common/services/notification.service';
-import { Injectable, BadRequestException, NotFoundException } from estjs / common;
-';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 
 export interface CreateCustomerDto {
   customerName: string;

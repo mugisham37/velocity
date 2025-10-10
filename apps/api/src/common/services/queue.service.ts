@@ -2,8 +2,7 @@ import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Logger } from finston;
-';
+import { Logger } from 'winston';
 
 export interface JobOptions {
   delay?: number; // Delay in milliseconds

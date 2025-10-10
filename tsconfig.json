@@ -4,7 +4,7 @@
     "target": "es2021",
     "lib": ["es2021", "DOM", "DOM.Iterable", "WebWorker"],
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "moduleDetection": "force",
 
     // JavaScript Support

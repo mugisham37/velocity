@@ -19,7 +19,7 @@ enum DepreciationMethod {
   STRAIGHT_LINE
   DECLINING_BALANCE
   UNITS_OF_PRODUCTION
-  SUM_OF_YEAIGITS
+  SUM_OF_YEARS_DIGITS
 }
 
 enum TransferStatus {

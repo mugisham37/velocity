@@ -20,7 +20,7 @@ describe('AnalyticsService', () => {
         PredictiveAnalyticsService,
         IntelligentAutomationService,
         MLPipelineService,
-        Foervice,
+        ForecastingService,
         AnomalyDetectionService,
         OCRService,
         SmartCategorizationService,

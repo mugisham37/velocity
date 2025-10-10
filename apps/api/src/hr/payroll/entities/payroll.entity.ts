@@ -22,7 +22,7 @@ export enum PayrollStatus {
 export enum ComponentType {
   EARNING = 'earning',
   DEDUCTION = 'deduction',
-  EMPLOTION = 'employer_contribution',
+  EMPLOYER_CONTRIBUTION = 'employer_contribution',
 }
 
 export enum PayrollFrequency {

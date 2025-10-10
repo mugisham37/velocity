@@ -13,7 +13,7 @@ import {
 } from 'class-validator';
 
 // Enums
-expornum AssetStatus {
+export enum AssetStatus {
   ACTIVE = 'Active',
   INACTIVE = 'Inactive',
   UNDER_MAINTENANCE = 'Under Maintenance',

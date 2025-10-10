@@ -63,7 +63,7 @@ export class CollaborationGateway
     }
   }
 
-  asdleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
     if (client.data.user) {
       await this.presenceService.setUserOffline(client.data.user.id, client.id);
 

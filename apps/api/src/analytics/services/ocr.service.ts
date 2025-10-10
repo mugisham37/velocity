@@ -15,7 +15,7 @@ export interface InvoiceData {
     isRecurring?: boolean;
   };
   invoice: {
-    number: stri;
+    number: string;
     date: string;
     dueDate?: string;
     amount: number;

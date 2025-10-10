@@ -47,7 +47,7 @@ export class CreateLeavePolicyDto {
   @Field({ nullable: true })
   @IsOptional()
   @IsNumber()
-  minNoticedays?: number;
+  minNoticeDays?: number;
 
   @Field({ nullable: true })
   @IsOptional()

@@ -6,6 +6,7 @@ import {
   glEntries,
   journalEntries,
   journalEntryTemplates,
+  journalEntryTemplateLines,
   recurringJournalEntries,
 } from '@kiro/database';
 import {
