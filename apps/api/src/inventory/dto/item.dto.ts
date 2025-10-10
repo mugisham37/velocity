@@ -23,7 +23,7 @@ export enum ItemStage {
   GROWTH = 'Growth',
   MATURITY = 'Maturity',
   DECLINE = 'Decline',
-  TINUATION = 'Discontinuation',
+  DISCONTINUATION = 'Discontinuation',
 }
 
 export enum BarcodeType {
@@ -37,11 +37,11 @@ export enum BarcodeType {
 export class CreateItemDto {
   @IsString()
   @Length(1, 50)
-  itemCode: string;
+  itemCode!: string;
 
   @IsString()
   @Length(1, 255)
-  itemName: string;
+  itemName!: string;
 
   @IsOptional()
   @IsString()
@@ -74,7 +74,7 @@ export class CreateItemDto {
 
   @IsString()
   @Length(1, 20)
-  stockUom: string;
+  stockUom!: string;
 
   @IsOptional()
   @IsString()
@@ -249,7 +249,7 @@ export class CreateItemDto {
   isFixedAsset?: boolean = false;
 
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 export class UpdateItemDto {
@@ -443,11 +443,11 @@ export class UpdateItemDto {
 export class CreateItemCategoryDto {
   @IsString()
   @Length(1, 50)
-  categoryCode: string;
+  categoryCode!: string;
 
   @IsString()
   @Length(1, 255)
-  categoryName: string;
+  categoryName!: string;
 
   @IsOptional()
   @IsUUID()
@@ -466,7 +466,7 @@ export class CreateItemCategoryDto {
   isActive?: boolean = true;
 
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 export class UpdateItemCategoryDto {
@@ -503,10 +503,10 @@ export enum AttributeType {
 export class CreateItemAttributeDto {
   @IsString()
   @Length(1, 100)
-  attributeName: string;
+  attributeName!: string;
 
   @IsEnum(AttributeType)
-  attributeType: AttributeType;
+  attributeType!: AttributeType;
 
   @IsOptional()
   @IsBoolean()
@@ -525,26 +525,26 @@ export class CreateItemAttributeDto {
   validationRules?: any;
 
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 export class CreateItemAttributeValueDto {
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @IsUUID()
-  attributeId: string;
+  attributeId!: string;
 
   @IsString()
-  value: string;
+  value!: string;
 }
 
 export class CreateItemVariantDto {
   @IsUUID()
-  templateItemId: string;
+  templateItemId!: string;
 
   @IsUUID()
-  variantItemId: string;
+  variantItemId!: string;
 
   @IsOptional()
   variantAttributes?: Record<string, any>;
@@ -559,13 +559,13 @@ export enum CrossReferenceType {
 
 export class CreateItemCrossReferenceDto {
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @IsUUID()
-  referenceItemId: string;
+  referenceItemId!: string;
 
   @IsEnum(CrossReferenceType)
-  referenceType: CrossReferenceType;
+  referenceType!: CrossReferenceType;
 
   @IsOptional()
   @IsNumber()
@@ -588,18 +588,18 @@ export enum DocumentType {
 
 export class CreateItemDocumentDto {
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @IsEnum(DocumentType)
-  documentType: DocumentType;
+  documentType!: DocumentType;
 
   @IsString()
   @Length(1, 255)
-  fileName: string;
+  fileName!: string;
 
   @IsString()
   @Length(1, 500)
-  filePath: string;
+  filePath!: string;
 
   @IsOptional()
   @IsNumber()
@@ -628,18 +628,18 @@ export class CreateItemDocumentDto {
   description?: string;
 
   @IsUUID()
-  uploadedBy: string;
+  uploadedBy!: string;
 }
 
 export class CreateItemLifecycleDto {
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @IsEnum(ItemStage)
-  stage: ItemStage;
+  stage!: ItemStage;
 
   @IsDateString()
-  effectiveDate: string;
+  effectiveDate!: string;
 
   @IsOptional()
   @IsString()
@@ -650,20 +650,20 @@ export class CreateItemLifecycleDto {
   notes?: string;
 
   @IsUUID()
-  createdBy: string;
+  createdBy!: string;
 }
 
 export class CreateItemPricingTierDto {
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @IsString()
   @Length(1, 100)
-  priceList: string;
+  priceList!: string;
 
   @IsString()
   @Length(3, 3)
-  currency: string;
+  currency!: string;
 
   @IsOptional()
   @IsUUID()
@@ -671,7 +671,7 @@ export class CreateItemPricingTierDto {
 
   @IsNumber()
   @Min(0)
-  minQty: number;
+  minQty!: number;
 
   @IsOptional()
   @IsNumber()
@@ -680,7 +680,7 @@ export class CreateItemPricingTierDto {
 
   @IsNumber()
   @Min(0)
-  rate: number;
+  rate!: number;
 
   @IsOptional()
   @IsNumber()
@@ -689,7 +689,7 @@ export class CreateItemPricingTierDto {
   discountPercent?: number = 0;
 
   @IsDateString()
-  validFrom: string;
+  validFrom!: string;
 
   @IsOptional()
   @IsDateString()

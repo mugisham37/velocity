@@ -115,15 +115,15 @@ export class CreateSerialNumberDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  serialNumber: string;
+  serialNumber!: string;
 
   @Field()
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @Field()
   @IsUUID()
-  warehouseId: string;
+  warehouseId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -134,13 +134,13 @@ export class CreateSerialNumberDto {
     defaultValue: SerialNumberStatus.AVAILABLE,
   })
   @IsEnum(SerialNumberStatus)
-  status: SerialNumberStatus;
+  status!: SerialNumberStatus;
 
   @Field(() => SerialNumberCondition, {
     defaultValue: SerialNumberCondition.GOOD,
   })
   @IsEnum(SerialNumberCondition)
-  condition: SerialNumberCondition;
+  condition!: SerialNumberCondition;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -242,11 +242,11 @@ export class CreateBatchNumberDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  batchNumber: string;
+  batchNumber!: string;
 
   @Field()
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -287,16 +287,16 @@ export class CreateBatchNumberDto {
     defaultValue: BatchQualityStatus.APPROVED,
   })
   @IsEnum(BatchQualityStatus)
-  qualityStatus: BatchQualityStatus;
+  qualityStatus!: BatchQualityStatus;
 
   @Field()
   @IsNumber()
-  totalQty: number;
+  totalQty!: number;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  uom: string;
+  uom!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -360,11 +360,11 @@ export class UpdateBatchNumberDto {
 export class CreateBatchLocationDto {
   @Field()
   @IsUUID()
-  batchId: string;
+  batchId!: string;
 
   @Field()
   @IsUUID()
-  warehouseId: string;
+  warehouseId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -373,7 +373,7 @@ export class CreateBatchLocationDto {
 
   @Field()
   @IsNumber()
-  qty: number;
+  qty!: number;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -387,33 +387,33 @@ export class CreateProductRecallDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  recallNumber: string;
+  recallNumber!: string;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  recallTitle: string;
+  recallTitle!: string;
 
   @Field(() => RecallType)
   @IsEnum(RecallType)
-  recallType: RecallType;
+  recallType!: RecallType;
 
   @Field(() => SeverityLevel)
   @IsEnum(SeverityLevel)
-  severityLevel: SeverityLevel;
+  severityLevel!: SeverityLevel;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  recallReason: string;
+  recallReason!: string;
 
   @Field()
   @IsDateString()
-  recallDate: string;
+  recallDate!: string;
 
   @Field()
   @IsDateString()
-  effectiveDate: string;
+  effectiveDate!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -433,7 +433,7 @@ export class CreateProductRecallDto {
   @Field(() => [String])
   @IsArray()
   @IsUUID('4', { each: true })
-  affectedItems: string[];
+  affectedItems!: string[];
 
   @Field(() => [String], { nullable: true })
   @IsOptional()
@@ -457,11 +457,11 @@ export class CreateProductRecallDto {
 
   @Field({ defaultValue: true })
   @IsBoolean()
-  customerNotificationRequired: boolean;
+  customerNotificationRequired!: boolean;
 
   @Field({ defaultValue: false })
   @IsBoolean()
-  supplierNotificationRequired: boolean;
+  supplierNotificationRequired!: boolean;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -511,15 +511,15 @@ export class CreateQualityInspectionDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  inspectionNumber: string;
+  inspectionNumber!: string;
 
   @Field(() => InspectionType)
   @IsEnum(InspectionType)
-  inspectionType: InspectionType;
+  inspectionType!: InspectionType;
 
   @Field()
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -533,11 +533,11 @@ export class CreateQualityInspectionDto {
 
   @Field()
   @IsDateString()
-  inspectionDate: string;
+  inspectionDate!: string;
 
   @Field()
   @IsUUID()
-  inspectorId: string;
+  inspectorId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -617,24 +617,24 @@ export class CreateComplianceReportDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  reportNumber: string;
+  reportNumber!: string;
 
   @Field(() => ComplianceReportType)
   @IsEnum(ComplianceReportType)
-  reportType: ComplianceReportType;
+  reportType!: ComplianceReportType;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  reportTitle: string;
+  reportTitle!: string;
 
   @Field()
   @IsDateString()
-  reportingPeriodFrom: string;
+  reportingPeriodFrom!: string;
 
   @Field()
   @IsDateString()
-  reportingPeriodTo: string;
+  reportingPeriodTo!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -720,7 +720,7 @@ export class UpdateComplianceReportDto {
 export class TraceabilityQueryDto {
   @Field()
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -744,11 +744,11 @@ export class TraceabilityQueryDto {
 
   @Field({ defaultValue: false })
   @IsBoolean()
-  includeForwardTrace: boolean;
+  includeForwardTrace!: boolean;
 
   @Field({ defaultValue: false })
   @IsBoolean()
-  includeBackwardTrace: boolean;
+  includeBackwardTrace!: boolean;
 }
 
 // Filter DTOs
@@ -903,7 +903,7 @@ export class QualityInspectionFilterDto {
 @ObjectType()
 export class TraceabilityReportDto {
   @Field()
-  itemId: string;
+  itemId!: string;
 
   @Field({ nullable: true })
   serialNumber?: string;
@@ -912,28 +912,28 @@ export class TraceabilityReportDto {
   batchNumber?: string;
 
   @Field(() => [TraceabilityEntryDto])
-  forwardTrace: TraceabilityEntryDto[];
+  forwardTrace!: TraceabilityEntryDto[];
 
   @Field(() => [TraceabilityEntryDto])
-  backwardTrace: TraceabilityEntryDto[];
+  backwardTrace!: TraceabilityEntryDto[];
 
   @Field(() => [String])
-  affectedCustomers: string[];
+  affectedCustomers!: string[];
 
   @Field(() => [String])
-  affectedSuppliers: string[];
+  affectedSuppliers!: string[];
 
   @Field(() => [String])
-  relatedDocuments: string[];
+  relatedDocuments!: string[];
 }
 
 @ObjectType()
 export class TraceabilityEntryDto {
   @Field()
-  transactionDate: string;
+  transactionDate!: string;
 
   @Field()
-  transactionType: string;
+  transactionType!: string;
 
   @Field({ nullable: true })
   fromLocation?: string;
@@ -957,65 +957,65 @@ export class TraceabilityEntryDto {
 @ObjectType()
 export class RecallAnalyticsDto {
   @Field()
-  totalRecalls: number;
+  totalRecalls!: number;
 
   @Field()
-  activeRecalls: number;
+  activeRecalls!: number;
 
   @Field()
-  completedRecalls: number;
+  completedRecalls!: number;
 
   @Field()
-  totalAffectedItems: number;
+  totalAffectedItems!: number;
 
   @Field()
-  totalRecoveredQty: number;
+  totalRecoveredQty!: number;
 
   @Field()
-  recoveryRate: number;
+  recoveryRate!: number;
 
   @Field(() => [RecallSummaryDto])
-  recallsBySeverity: RecallSummaryDto[];
+  recallsBySeverity!: RecallSummaryDto[];
 
   @Field(() => [RecallSummaryDto])
-  recallsByType: RecallSummaryDto[];
+  recallsByType!: RecallSummaryDto[];
 }
 
 @ObjectType()
 export class RecallSummaryDto {
   @Field()
-  category: string;
+  category!: string;
 
   @Field()
-  count: number;
+  count!: number;
 
   @Field()
-  percentage: number;
+  percentage!: number;
 }
 
 @ObjectType()
 export class ExpiryAlertDto {
   @Field()
-  batchId: string;
+  batchId!: string;
 
   @Field()
-  batchNumber: string;
+  batchNumber!: string;
 
   @Field()
-  itemId: string;
+  itemId!: string;
 
   @Field()
-  itemName: string;
+  itemName!: string;
 
   @Field()
-  expiryDate: string;
+  expiryDate!: string;
 
   @Field()
-  daysToExpiry: number;
+  daysToExpiry!: number;
 
   @Field()
-  availableQty: number;
+  availableQty!: number;
 
   @Field()
-  warehouseLocations: string[];
+  warehouseLocations!: string[];
 }

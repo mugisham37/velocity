@@ -26,20 +26,25 @@ export class DatabaseService {
   }
 
   // Convenience methods for common operations
-  async insert<T extends keyof typeof schema>(table: T) {
+  insert<T extends keyof typeof schema>(table: T) {
     return this.db.insert(schema[table]);
   }
 
-  async update<T extends keyof typeof schema>(table: T) {
+  update<T extends keyof typeof schema>(table: T) {
     return this.db.update(schema[table]);
   }
 
-  async delete<T extends keyof typeof schema>(table: T) {
+  delete<T extends keyof typeof schema>(table: T) {
     return this.db.delete(schema[table]);
   }
 
-  async select<T extends keyof typeof schema>(table: T) {
+  select<T extends keyof typeof schema>(table: T) {
     return this.db.select().from(schema[table]);
+  }
+
+  // Query builder access
+  get query() {
+    return this.db.query;
   }
 
   // Health check

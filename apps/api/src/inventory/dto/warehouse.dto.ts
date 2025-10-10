@@ -28,8 +28,10 @@ export enum LocationType {
   PICKING = 'Picking',
   PACKING = 'Packing',
   STAGING = 'Staging',
-  QUARANTINE = 'Quarantine
-port enum AccessLevel {
+  QUARANTINE = 'Quarantine',
+}
+
+export enum AccessLevel {
   PUBLIC = 'Public',
   RESTRICTED = 'Restricted',
   SECURE = 'Secure',
@@ -87,11 +89,11 @@ export class OperatingHoursDto {
 export class CreateWarehouseDto {
   @IsString()
   @Length(1, 50)
-  warehouseCode: string;
+  warehouseCode!: string;
 
   @IsString()
   @Length(1, 255)
-  warehouseName: string;
+  warehouseName!: string;
 
   @IsOptional()
   @IsEnum(WarehouseType)
@@ -164,7 +166,7 @@ export class CreateWarehouseDto {
   description?: string;
 
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 }
 
 export class UpdateWarehouseDto {
@@ -246,15 +248,15 @@ export class UpdateWarehouseDto {
 
 export class CreateWarehouseLocationDto {
   @IsUUID()
-  warehouseId: string;
+  warehouseId!: string;
 
   @IsString()
   @Length(1, 50)
-  locationCode: string;
+  locationCode!: string;
 
   @IsString()
   @Length(1, 255)
-  locationName: string;
+  locationName!: string;
 
   @IsOptional()
   @IsUUID()
@@ -459,13 +461,13 @@ export class UpdateWarehouseLocationDto {
 export class CreateWarehouseTransferDto {
   @IsString()
   @Length(1, 50)
-  transferNumber: string;
+  transferNumber!: string;
 
   @IsUUID()
-  fromWarehouseId: string;
+  fromWarehouseId!: string;
 
   @IsUUID()
-  toWarehouseId: string;
+  toWarehouseId!: string;
 
   @IsOptional()
   @IsUUID()
@@ -476,7 +478,7 @@ export class CreateWarehouseTransferDto {
   toLocationId?: string;
 
   @IsDateString()
-  transferDate: string;
+  transferDate!: string;
 
   @IsOptional()
   @IsDateString()
@@ -516,24 +518,24 @@ export class CreateWarehouseTransferDto {
   requiresApproval?: boolean = false;
 
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateWarehouseTransferItemDto)
-  items: CreateWarehouseTransferItemDto[];
+  items!: CreateWarehouseTransferItemDto[];
 }
 
 export class CreateWarehouseTransferItemDto {
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @IsNumber()
   @Min(0.01)
-  requestedQty: number;
+  requestedQty!: number;
 
   @IsString()
-  uom: string;
+  uom!: string;
 
   @IsOptional()
   @IsArray()

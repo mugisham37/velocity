@@ -34,7 +34,7 @@ import {
   lte,
   or,
   sql,
-} from '@kiro/database';
+} from 'drizzle-orm';
 import {
   CreateStockEntryDto,
   CreateStockReconciliationDto,
@@ -45,6 +45,7 @@ import {
   StockReconciliationFilterDto,
   StockReservationFilterDto,
   UpdateStockEntryDto,
+  UpdateStockReconciliationDto,
   UpdateStockReservationDto,
 } from '../dto/stock-transaction.dto';
 
@@ -58,12 +59,17 @@ export class StockTransactionService {
     userId: string
   ): Promise<StockEntry> {
     // Check if entry number already exists for the company
-    const existingEntry = await this.db.query.stockEntries.findFirst({
-      where: and(
-        eq(stockEntries.entryNumber, createStockEntryDto.entryNumber),
-        eq(stockEntries.companyId, createStockEntryDto.companyId)
-      ),
-    });
+    const existingEntry = await this.db.db
+      .select()
+      .from(stockEntries)
+      .where(
+        and(
+          eq(stockEntries.entryNumber, createStockEntryDto.entryNumber),
+          eq(stockEntries.companyId, createStockEntryDto.companyId)
+        )
+      )
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (existingEntry) {
       throw new ConflictException(
@@ -73,33 +79,48 @@ export class StockTransactionService {
 
     // Validate warehouses exist
     const warehouseValidations = [
-      this.db.query.warehouses.findFirst({
-        where: and(
-          eq(warehouses.id, createStockEntryDto.warehouseId),
-          eq(warehouses.companyId, createStockEntryDto.companyId)
-        ),
-      }),
+      this.db.db
+        .select()
+        .from(warehouses)
+        .where(
+          and(
+            eq(warehouses.id, createStockEntryDto.warehouseId),
+            eq(warehouses.companyId, createStockEntryDto.companyId)
+          )
+        )
+        .limit(1)
+        .then(rows => rows[0] || null),
     ];
 
     if (createStockEntryDto.fromWarehouseId) {
       warehouseValidations.push(
-        this.db.query.warehouses.findFirst({
-          where: and(
-            eq(warehouses.id, createStockEntryDto.fromWarehouseId),
-            eq(warehouses.companyId, createStockEntryDto.companyId)
-          ),
-        })
+        this.db.db
+          .select()
+          .from(warehouses)
+          .where(
+            and(
+              eq(warehouses.id, createStockEntryDto.fromWarehouseId),
+              eq(warehouses.companyId, createStockEntryDto.companyId)
+            )
+          )
+          .limit(1)
+          .then(rows => rows[0] || null)
       );
     }
 
     if (createStockEntryDto.toWarehouseId) {
       warehouseValidations.push(
-        this.db.query.warehouses.findFirst({
-          where: and(
-            eq(warehouses.id, createStockEntryDto.toWarehouseId),
-            eq(warehouses.companyId, createStockEntryDto.companyId)
-          ),
-        })
+        this.db.db
+          .select()
+          .from(warehouses)
+          .where(
+            and(
+              eq(warehouses.id, createStockEntryDto.toWarehouseId),
+              eq(warehouses.companyId, createStockEntryDto.companyId)
+            )
+          )
+          .limit(1)
+          .then(rows => rows[0] || null)
       );
     }
 
@@ -110,12 +131,15 @@ export class StockTransactionService {
 
     // Validate items exist
     const itemIds = createStockEntryDto.items.map(item => item.itemId);
-    const itemsExist = await this.db.query.items.findMany({
-      where: and(
-        sql`${items.id} = ANY(${itemIds})`,
-        eq(items.companyId, createStockEntryDto.companyId)
-      ),
-    });
+    const itemsExist = await this.db.db
+      .select()
+      .from(items)
+      .where(
+        and(
+          sql`${items.id} = ANY(${itemIds})`,
+          eq(items.companyId, createStockEntryDto.companyId)
+        )
+      );
 
     if (itemsExist.length !== itemIds.length) {
       throw new NotFoundException('One or more items not found');
@@ -129,7 +153,7 @@ export class StockTransactionService {
 
     // Create stock entry
     const { items: entryItems, ...entryData } = createStockEntryDto;
-    const [newEntry] = await this.db
+    const [newEntry] = await this.db.db
       .insert(stockEntries)
       .values({
         ...entryData,
@@ -185,7 +209,7 @@ export class StockTransactionService {
         })
       );
 
-      await this.db.insert(stockEntryItems).values(stockEntryItemsData);
+      await this.db.db.insert(stockEntryItems).values(stockEntryItemsData);
     }
 
     return newEntry;
@@ -196,9 +220,12 @@ export class StockTransactionService {
     updateStockEntryDto: UpdateStockEntryDto,
     userId: string
   ): Promise<StockEntry> {
-    const existingEntry = await this.db.query.stockEntries.findFirst({
-      where: eq(stockEntries.id, id),
-    });
+    const existingEntry = await this.db.db
+      .select()
+      .from(stockEntries)
+      .where(eq(stockEntries.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!existingEntry) {
       throw new NotFoundException('Stock entry not found');
@@ -209,7 +236,7 @@ export class StockTransactionService {
       throw new BadRequestException('Only draft stock entries can be modified');
     }
 
-    const [updatedEntry] = await this.db
+    const [updatedEntry] = await this.db.db
       .update(stockEntries)
       .set({
         ...updateStockEntryDto,
@@ -223,179 +250,116 @@ export class StockTransactionService {
   }
 
   async submitStockEntry(id: string, userId: string): Promise<StockEntry> {
-    const existingEntry = await this.db.query.stockEntries.findFirst({
-      where: eq(stockEntries.id, id),
-      with: {
-        stockEntryItems: {
-          with: {
-            item: true,
-          },
-        },
-      },
-    });
+    const existingEntry = await this.db.db
+      .select()
+      .from(stockEntries)
+      .where(eq(stockEntries.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!existingEntry) {
       throw new NotFoundException('Stock entry not found');
     }
 
+    // Check if entry is in draft status
     if (existingEntry.status !== 'Draft') {
       throw new BadRequestException('Stock entry is not in draft status');
     }
 
-    // Update stock levels and create ledger entries
-    await this.processStockTransaction(existingEntry);
-
-    // Update entry status
-    const [updatedEntry] = await this.db
+    // Update status to submitted
+    const [submittedEntry] = await this.db.db
       .update(stockEntries)
       .set({
         status: 'Submitted',
-        docStatus: 'Submitted',
         updatedBy: userId,
         updatedAt: new Date(),
       })
       .where(eq(stockEntries.id, id))
       .returning();
 
-    return updatedEntry;
+    // Create stock ledger entries and update stock levels
+    await this.processStockMovement(submittedEntry);
+
+    return submittedEntry;
   }
 
-  async getStockEntry(id: string): Promise<
-    StockEntry & {
-      stockEntryItems?: (StockEntryItem & { item: any; location?: any })[];
-    }
-  > {
-    const entry = await this.db.query.stockEntries.findFirst({
-      where: eq(stockEntries.id, id),
-      with: {
-        warehouse: true,
-        fromWarehouse: true,
-        toWarehouse: true,
-        stockEntryItems: {
-          with: {
-            item: true,
-            location: true,
-            fromLocation: true,
-            toLocation: true,
-          },
-        },
-      },
-    });
-
-    if (!entry) {
-      throw new NotFoundException('Stock entry not found');
-    }
-
-    return entry;
+  async getStockEntry(id: string): Promise<StockEntry | null> {
+    return this.db.db
+      .select()
+      .from(stockEntries)
+      .where(eq(stockEntries.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
   }
 
   async getStockEntries(
-    filterDto: StockEntryFilterDto,
+    filter: StockEntryFilterDto,
     companyId: string
-  ): Promise<{
-    entries: StockEntry[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    const {
-      page = 1,
-      limit = 20,
-      sortBy = 'transactionDate',
-      sortOrder = 'desc',
-      ...filters
-    } = filterDto;
-    const offset = (page - 1) * limit;
-
-    // Build where conditions
+  ): Promise<{ data: StockEntry[]; total: number }> {
     const whereConditions = [eq(stockEntries.companyId, companyId)];
 
-    if (filters.search) {
+    if (filter.search) {
       whereConditions.push(
         or(
-          ilike(stockEntries.entryNumber, `%${filters.search}%`),
-          ilike(stockEntries.referenceNumber, `%${filters.search}%`),
-          ilike(stockEntries.remarks, `%${filters.search}%`)
+          ilike(stockEntries.entryNumber, `%${filter.search}%`),
+          ilike(stockEntries.referenceNumber, `%${filter.search}%`)
         )
       );
     }
 
-    if (filters.entryType) {
-      whereConditions.push(eq(stockEntries.entryType, filters.entryType));
+    if (filter.entryType) {
+      whereConditions.push(eq(stockEntries.entryType, filter.entryType));
     }
 
-    if (filters.warehouseId) {
-      whereConditions.push(eq(stockEntries.warehouseId, filters.warehouseId));
+    if (filter.warehouseId) {
+      whereConditions.push(eq(stockEntries.warehouseId, filter.warehouseId));
     }
 
-    if (filters.status) {
-      whereConditions.push(eq(stockEntries.status, filters.status));
+    if (filter.status) {
+      whereConditions.push(eq(stockEntries.status, filter.status));
     }
 
-    if (filters.referenceType) {
-      whereConditions.push(
-        eq(stockEntries.referenceType, filters.referenceType)
-      );
+    if (filter.referenceType) {
+      whereConditions.push(eq(stockEntries.referenceType, filter.referenceType));
     }
 
-    if (filters.fromDate && filters.toDate) {
+    if (filter.fromDate && filter.toDate) {
       whereConditions.push(
         between(
           stockEntries.transactionDate,
-          new Date(filters.fromDate),
-          new Date(filters.toDate)
+          new Date(filter.fromDate),
+          new Date(filter.toDate)
         )
-      );
-    } else if (filters.fromDate) {
-      whereConditions.push(
-        gte(stockEntries.transactionDate, new Date(filters.fromDate))
-      );
-    } else if (filters.toDate) {
-      whereConditions.push(
-        lte(stockEntries.transactionDate, new Date(filters.toDate))
       );
     }
 
     const whereClause = and(...whereConditions);
 
     // Get total count
-    const [{ count: totalCount }] = await this.db
+    const [{ count: totalCount }] = await this.db.db
       .select({ count: count() })
       .from(stockEntries)
       .where(whereClause);
 
-    // Get entries with pagination and sorting
-    const orderBy =
-      sortOrder === 'desc'
-        ? desc(stockEntries[sortBy])
-        : asc(stockEntries[sortBy]);
+    // Get paginated data
+    const page = filter.page || 1;
+    const limit = filter.limit || 10;
+    const offset = (page - 1) * limit;
 
-    const entriesList = await this.db.query.stockEntries.findMany({
-      where: whereClause,
-      with: {
-        warehouse: true,
-        fromWarehouse: true,
-        toWarehouse: true,
-        stockEntryItems: {
-          with: {
-            item: true,
-          },
-        },
-      },
-      orderBy,
-      limit,
-      offset,
-    });
+    const sortBy = (filter.sortBy as keyof typeof stockEntries) || 'createdAt';
+    const sortOrder = filter.sortOrder === 'asc' ? asc : desc;
 
-    const totalPages = Math.ceil(totalCount / limit);
+    const entriesList = await this.db.db
+      .select()
+      .from(stockEntries)
+      .where(whereClause)
+      .orderBy(sortOrder(stockEntries[sortBy]))
+      .limit(limit)
+      .offset(offset);
 
     return {
-      entries: entriesList,
+      data: entriesList,
       total: totalCount,
-      page,
-      limit,
-      totalPages,
     };
   }
 
@@ -406,22 +370,36 @@ export class StockTransactionService {
   ): Promise<StockReservation> {
     // Validate item and warehouse exist
     const [item, warehouse] = await Promise.all([
-      this.db.query.items.findFirst({
-        where: and(
-          eq(items.id, createReservationDto.itemId),
-          eq(items.companyId, createReservationDto.companyId)
-        ),
-      }),
-      this.db.query.warehouses.findFirst({
-        where: and(
-          eq(warehouses.id, createReservationDto.warehouseId),
-          eq(warehouses.companyId, createReservationDto.companyId)
-        ),
-      }),
+      this.db.db
+        .select()
+        .from(items)
+        .where(
+          and(
+            eq(items.id, createReservationDto.itemId),
+            eq(items.companyId, createReservationDto.companyId)
+          )
+        )
+        .limit(1)
+        .then(rows => rows[0] || null),
+      this.db.db
+        .select()
+        .from(warehouses)
+        .where(
+          and(
+            eq(warehouses.id, createReservationDto.warehouseId),
+            eq(warehouses.companyId, createReservationDto.companyId)
+          )
+        )
+        .limit(1)
+        .then(rows => rows[0] || null),
     ]);
 
-    if (!item || !warehouse) {
-      throw new NotFoundException('Item or warehouse not found');
+    if (!item) {
+      throw new NotFoundException('Item not found');
+    }
+
+    if (!warehouse) {
+      throw new NotFoundException('Warehouse not found');
     }
 
     // Check available stock
@@ -431,29 +409,19 @@ export class StockTransactionService {
       createReservationDto.locationId
     );
 
-    if (availableStock < createReservationDto.reservedQty) {
-      throw new BadRequestException(
-        `Insufficient stock. Available: ${availableStock}, Requested: ${createReservationDto.reservedQty}`
-      );
+    if (availableStock.availableQty < createReservationDto.reservedQty) {
+      throw new BadRequestException('Insufficient stock available for reservation');
     }
 
-    const [newReservation] = await this.db
+    // Create reservation
+    const [newReservation] = await this.db.db
       .insert(stockReservations)
       .values({
         ...createReservationDto,
-        reservedQty: createReservationDto.reservedQty.toString(),
         createdBy: userId,
         updatedBy: userId,
       })
       .returning();
-
-    // Update stock levels
-    await this.updateStockLevelReservation(
-      createReservationDto.itemId,
-      createReservationDto.warehouseId,
-      createReservationDto.reservedQty,
-      'add'
-    );
 
     return newReservation;
   }
@@ -463,40 +431,26 @@ export class StockTransactionService {
     updateReservationDto: UpdateStockReservationDto,
     userId: string
   ): Promise<StockReservation> {
-    const existingReservation = await this.db.query.stockReservations.findFirst(
-      {
-        where: eq(stockReservations.id, id),
-      }
-    );
+    const existingReservation = await this.db.db
+      .select()
+      .from(stockReservations)
+      .where(eq(stockReservations.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!existingReservation) {
       throw new NotFoundException('Stock reservation not found');
     }
 
-    // Handle quantity changes
-    if (
-      updateReservationDto.reservedQty &&
-      updateReservationDto.reservedQty !==
-        parseFloat(existingReservation.reservedQty)
-    ) {
-      const qtyDifference =
-        updateReservationDto.reservedQty -
-        parseFloat(existingReservation.reservedQty);
-
-      await this.updateStockLevelReservation(
-        existingReservation.itemId,
-        existingReservation.warehouseId,
-        Math.abs(qtyDifference),
-        qtyDifference > 0 ? 'add' : 'remove'
-      );
+    // Check if reservation is active
+    if (existingReservation.status !== 'Active') {
+      throw new BadRequestException('Only active reservations can be modified');
     }
 
-    const [updatedReservation] = await this.db
+    const [updatedReservation] = await this.db.db
       .update(stockReservations)
       .set({
         ...updateReservationDto,
-        reservedQty: updateReservationDto.reservedQty?.toString(),
-        deliveredQty: updateReservationDto.deliveredQty?.toString(),
         updatedBy: userId,
         updatedAt: new Date(),
       })
@@ -510,35 +464,18 @@ export class StockTransactionService {
     id: string,
     userId: string
   ): Promise<StockReservation> {
-    const existingReservation = await this.db.query.stockReservations.findFirst(
-      {
-        where: eq(stockReservations.id, id),
-      }
-    );
+    const existingReservation = await this.db.db
+      .select()
+      .from(stockReservations)
+      .where(eq(stockReservations.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!existingReservation) {
       throw new NotFoundException('Stock reservation not found');
     }
 
-    if (existingReservation.status !== 'Active') {
-      throw new BadRequestException('Reservation is not active');
-    }
-
-    // Release reserved quantity
-    const remainingQty =
-      parseFloat(existingReservation.reservedQty) -
-      parseFloat(existingReservation.deliveredQty);
-
-    if (remainingQty > 0) {
-      await this.updateStockLevelReservation(
-        existingReservation.itemId,
-        existingReservation.warehouseId,
-        remainingQty,
-        'remove'
-      );
-    }
-
-    const [updatedReservation] = await this.db
+    const [releasedReservation] = await this.db.db
       .update(stockReservations)
       .set({
         status: 'Cancelled',
@@ -548,118 +485,81 @@ export class StockTransactionService {
       .where(eq(stockReservations.id, id))
       .returning();
 
-    return updatedReservation;
+    return releasedReservation;
   }
 
   async getStockReservations(
-    filterDto: StockReservationFilterDto,
+    filter: StockReservationFilterDto,
     companyId: string
-  ): Promise<{
-    reservations: StockReservation[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    const {
-      page = 1,
-      limit = 20,
-      sortBy = 'reservationDate',
-      sortOrder = 'desc',
-      ...filters
-    } = filterDto;
-    const offset = (page - 1) * limit;
-
-    // Build where conditions
+  ): Promise<{ data: StockReservation[]; total: number }> {
     const whereConditions = [eq(stockReservations.companyId, companyId)];
 
-    if (filters.search) {
+    if (filter.search) {
       whereConditions.push(
         or(
-          ilike(stockReservations.referenceNumber, `%${filters.search}%`),
-          ilike(stockReservations.remarks, `%${filters.search}%`)
+          ilike(stockReservations.referenceNumber, `%${filter.search}%`),
+          ilike(stockReservations.referenceType, `%${filter.search}%`)
         )
       );
     }
 
-    if (filters.itemId) {
-      whereConditions.push(eq(stockReservations.itemId, filters.itemId));
+    if (filter.itemId) {
+      whereConditions.push(eq(stockReservations.itemId, filter.itemId));
     }
 
-    if (filters.warehouseId) {
-      whereConditions.push(
-        eq(stockReservations.warehouseId, filters.warehouseId)
-      );
+    if (filter.warehouseId) {
+      whereConditions.push(eq(stockReservations.warehouseId, filter.warehouseId));
     }
 
-    if (filters.reservationType) {
-      whereConditions.push(
-        eq(stockReservations.reservationType, filters.reservationType)
-      );
+    if (filter.reservationType) {
+      whereConditions.push(eq(stockReservations.reservationType, filter.reservationType));
     }
 
-    if (filters.status) {
-      whereConditions.push(eq(stockReservations.status, filters.status));
+    if (filter.status) {
+      whereConditions.push(eq(stockReservations.status, filter.status));
     }
 
-    if (filters.referenceType) {
-      whereConditions.push(
-        eq(stockReservations.referenceType, filters.referenceType)
-      );
+    if (filter.referenceType) {
+      whereConditions.push(eq(stockReservations.referenceType, filter.referenceType));
     }
 
-    if (filters.fromDate && filters.toDate) {
+    if (filter.fromDate && filter.toDate) {
       whereConditions.push(
         between(
           stockReservations.reservationDate,
-          new Date(filters.fromDate),
-          new Date(filters.toDate)
+          new Date(filter.fromDate),
+          new Date(filter.toDate)
         )
-      );
-    } else if (filters.fromDate) {
-      whereConditions.push(
-        gte(stockReservations.reservationDate, new Date(filters.fromDate))
-      );
-    } else if (filters.toDate) {
-      whereConditions.push(
-        lte(stockReservations.reservationDate, new Date(filters.toDate))
       );
     }
 
     const whereClause = and(...whereConditions);
 
     // Get total count
-    const [{ count: totalCount }] = await this.db
+    const [{ count: totalCount }] = await this.db.db
       .select({ count: count() })
       .from(stockReservations)
       .where(whereClause);
 
-    // Get reservations with pagination and sorting
-    const orderBy =
-      sortOrder === 'desc'
-        ? desc(stockReservations[sortBy])
-        : asc(stockReservations[sortBy]);
+    // Get paginated data
+    const page = filter.page || 1;
+    const limit = filter.limit || 10;
+    const offset = (page - 1) * limit;
 
-    const reservationsList = await this.db.query.stockReservations.findMany({
-      where: whereClause,
-      with: {
-        item: true,
-        warehouse: true,
-        location: true,
-      },
-      orderBy,
-      limit,
-      offset,
-    });
+    const sortBy = (filter.sortBy as keyof typeof stockReservations) || 'createdAt';
+    const sortOrder = filter.sortOrder === 'asc' ? asc : desc;
 
-    const totalPages = Math.ceil(totalCount / limit);
+    const reservationsList = await this.db.db
+      .select()
+      .from(stockReservations)
+      .where(whereClause)
+      .orderBy(sortOrder(stockReservations[sortBy]))
+      .limit(limit)
+      .offset(offset);
 
     return {
-      reservations: reservationsList,
+      data: reservationsList,
       total: totalCount,
-      page,
-      limit,
-      totalPages,
     };
   }
 
@@ -669,16 +569,17 @@ export class StockTransactionService {
     userId: string
   ): Promise<StockReconciliation> {
     // Check if reconciliation number already exists for the company
-    const existingReconciliation =
-      await this.db.query.stockReconciliations.findFirst({
-        where: and(
-          eq(
-            stockReconciliations.reconciliationNumber,
-            createReconciliationDto.reconciliationNumber
-          ),
+    const existingReconciliation = await this.db.db
+      .select()
+      .from(stockReconciliations)
+      .where(
+        and(
+          eq(stockReconciliations.reconciliationNumber, createReconciliationDto.reconciliationNumber),
           eq(stockReconciliations.companyId, createReconciliationDto.companyId)
-        ),
-      });
+        )
+      )
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (existingReconciliation) {
       throw new ConflictException(
@@ -687,40 +588,29 @@ export class StockTransactionService {
     }
 
     // Validate warehouse exists
-    const warehouse = await this.db.query.warehouses.findFirst({
-      where: and(
-        eq(warehouses.id, createReconciliationDto.warehouseId),
-        eq(warehouses.companyId, createReconciliationDto.companyId)
-      ),
-    });
+    const warehouse = await this.db.db
+      .select()
+      .from(warehouses)
+      .where(
+        and(
+          eq(warehouses.id, createReconciliationDto.warehouseId),
+          eq(warehouses.companyId, createReconciliationDto.companyId)
+        )
+      )
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!warehouse) {
       throw new NotFoundException('Warehouse not found');
     }
 
-    // Calculate summary statistics
-    const totalItemsCount = createReconciliationDto.items.length;
-    let itemsWithVariance = 0;
-    let totalVarianceValue = 0;
-
-    createReconciliationDto.items.forEach(item => {
-      const varianceQty = item.physicalQty - item.systemQty;
-      if (varianceQty !== 0) {
-        itemsWithVariance++;
-        totalVarianceValue += varianceQty * (item.valuationRate || 0);
-      }
-    });
-
     // Create reconciliation
-    const { items: reconciliationItems, ...reconciliationData } =
-      createReconciliationDto;
-    const [newReconciliation] = await this.db
+    const { items: reconciliationItems, ...reconciliationData } = createReconciliationDto;
+    const [newReconciliation] = await this.db.db
       .insert(stockReconciliations)
       .values({
         ...reconciliationData,
-        totalItemsCount,
-        itemsWithVariance,
-        totalVarianceValue: totalVarianceValue.toString(),
+        totalItemsCount: reconciliationItems.length,
         createdBy: userId,
         updatedBy: userId,
       })
@@ -750,9 +640,7 @@ export class StockTransactionService {
         };
       });
 
-      await this.db
-        .insert(stockReconciliationItems)
-        .values(reconciliationItemsData);
+      await this.db.db.insert(stockReconciliationItems).values(reconciliationItemsData);
     }
 
     return newReconciliation;
@@ -762,349 +650,254 @@ export class StockTransactionService {
     id: string,
     userId: string
   ): Promise<StockReconciliation> {
-    const existingReconciliation =
-      await this.db.query.stockReconciliations.findFirst({
-        where: eq(stockReconciliations.id, id),
-        with: {
-          reconciliationItems: {
-            with: {
-              item: true,
-            },
-          },
-        },
-      });
+    const existingReconciliation = await this.db.db
+      .select()
+      .from(stockReconciliations)
+      .where(eq(stockReconciliations.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!existingReconciliation) {
       throw new NotFoundException('Stock reconciliation not found');
     }
 
+    // Check if reconciliation is in draft status
     if (existingReconciliation.status !== 'Draft') {
-      throw new BadRequestException(
-        'Stock reconciliation is not in draft status'
-      );
+      throw new BadRequestException('Stock reconciliation is not in draft status');
     }
 
-    // Create stock adjustments for variances
-    const adjustmentItems = existingReconciliation.reconciliationItems
-      .filter(item => parseFloat(item.varianceQty) !== 0)
-      .map(item => ({
-        itemId: item.itemId,
-        locationId: item.locationId,
-        qty: Math.abs(parseFloat(item.varianceQty)),
-        uom: 'Nos', // This should come from item master
-        valuationRate: parseFloat(item.valuationRate),
-        remarks: `Stock reconciliation adjustment - ${item.varianceReason}`,
-      }));
+    // Get reconciliation items with variances
+    const reconciliationItems = await this.db.db
+      .select()
+      .from(stockReconciliationItems)
+      .where(eq(stockReconciliationItems.reconciliationId, id));
 
-    if (adjustmentItems.length > 0) {
-      // Create stock adjustment entry
-      const adjustmentEntry = await this.createStockEntry(
-        {
-          entryNumber: `ADJ-${existingReconciliation.reconciliationNumber}`,
-          entryType: 'Adjustment',
-          referenceType: 'Stock Reconciliation',
-          referenceNumber: existingReconciliation.reconciliationNumber,
-          referenceId: existingReconciliation.id,
-          transactionDate: new Date().toISOString(),
-          postingDate: new Date().toISOString(),
-          warehouseId: existingReconciliation.warehouseId,
-          purpose: 'Stock Reconciliation Adjustment',
-          remarks: `Adjustment from reconciliation ${existingReconciliation.reconciliationNumber}`,
-          items: adjustmentItems,
-          companyId: existingReconciliation.companyId,
-        },
-        userId
-      );
+    const itemsWithVariance = reconciliationItems.filter(
+      item => parseFloat(item.varianceQty) !== 0
+    );
 
-      // Submit the adjustment entry
-      await this.submitStockEntry(adjustmentEntry.id, userId);
+    // Create stock adjustment entries for items with variances
+    for (const item of itemsWithVariance) {
+      if (parseFloat(item.varianceQty) !== 0) {
+        // Create adjustment entry for each item with variance
+        const adjustmentEntry = await this.createStockEntry(
+          {
+            entryNumber: `RECON-ADJ-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+            entryType: 'Adjustment',
+            referenceType: 'Stock Reconciliation',
+            referenceNumber: existingReconciliation.reconciliationNumber,
+            referenceId: existingReconciliation.id,
+            transactionDate: new Date().toISOString(),
+            postingDate: new Date().toISOString(),
+            warehouseId: existingReconciliation.warehouseId,
+            purpose: 'Stock Reconciliation Adjustment',
+            remarks: `Reconciliation variance: ${item.varianceReason || 'No reason provided'}`,
+            items: [
+              {
+                itemId: item.itemId,
+                locationId: item.locationId,
+                qty: Math.abs(parseFloat(item.varianceQty)),
+                uom: 'Nos', // This should come from item master
+                valuationRate: parseFloat(item.valuationRate),
+                remarks: item.remarks,
+              },
+            ],
+            companyId: existingReconciliation.companyId,
+          },
+          userId
+        );
+
+        await this.submitStockEntry(adjustmentEntry.id, userId);
+      }
     }
 
     // Update reconciliation status
-    const [updatedReconciliation] = await this.db
+    const [submittedReconciliation] = await this.db.db
       .update(stockReconciliations)
       .set({
         status: 'Completed',
+        itemsWithVariance: itemsWithVariance.length,
+        totalVarianceValue: itemsWithVariance
+          .reduce((sum, item) => sum + parseFloat(item.varianceValue), 0)
+          .toString(),
         updatedBy: userId,
         updatedAt: new Date(),
       })
       .where(eq(stockReconciliations.id, id))
       .returning();
 
-    return updatedReconciliation;
+    return submittedReconciliation;
   }
 
   async getStockReconciliations(
-    filterDto: StockReconciliationFilterDto,
+    filter: StockReconciliationFilterDto,
     companyId: string
-  ): Promise<{
-    reconciliations: StockReconciliation[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    const {
-      page = 1,
-      limit = 20,
-      sortBy = 'reconciliationDate',
-      sortOrder = 'desc',
-      ...filters
-    } = filterDto;
-    const offset = (page - 1) * limit;
-
-    // Build where conditions
+  ): Promise<{ data: StockReconciliation[]; total: number }> {
     const whereConditions = [eq(stockReconciliations.companyId, companyId)];
 
-    if (filters.search) {
+    if (filter.search) {
       whereConditions.push(
-        or(
-          ilike(
-            stockReconciliations.reconciliationNumber,
-            `%${filters.search}%`
-          ),
-          ilike(stockReconciliations.remarks, `%${filters.search}%`)
-        )
+        ilike(stockReconciliations.reconciliationNumber, `%${filter.search}%`)
       );
     }
 
-    if (filters.warehouseId) {
-      whereConditions.push(
-        eq(stockReconciliations.warehouseId, filters.warehouseId)
-      );
+    if (filter.warehouseId) {
+      whereConditions.push(eq(stockReconciliations.warehouseId, filter.warehouseId));
     }
 
-    if (filters.status) {
-      whereConditions.push(eq(stockReconciliations.status, filters.status));
+    if (filter.status) {
+      whereConditions.push(eq(stockReconciliations.status, filter.status));
     }
 
-    if (filters.reconciliationType) {
-      whereConditions.push(
-        eq(stockReconciliations.reconciliationType, filters.reconciliationType)
-      );
+    if (filter.reconciliationType) {
+      whereConditions.push(eq(stockReconciliations.reconciliationType, filter.reconciliationType));
     }
 
-    if (filters.fromDate && filters.toDate) {
+    if (filter.fromDate && filter.toDate) {
       whereConditions.push(
         between(
           stockReconciliations.reconciliationDate,
-          new Date(filters.fromDate),
-          new Date(filters.toDate)
+          new Date(filter.fromDate),
+          new Date(filter.toDate)
         )
-      );
-    } else if (filters.fromDate) {
-      whereConditions.push(
-        gte(stockReconciliations.reconciliationDate, new Date(filters.fromDate))
-      );
-    } else if (filters.toDate) {
-      whereConditions.push(
-        lte(stockReconciliations.reconciliationDate, new Date(filters.toDate))
       );
     }
 
     const whereClause = and(...whereConditions);
 
     // Get total count
-    const [{ count: totalCount }] = await this.db
+    const [{ count: totalCount }] = await this.db.db
       .select({ count: count() })
       .from(stockReconciliations)
       .where(whereClause);
 
-    // Get reconciliations with pagination and sorting
-    const orderBy =
-      sortOrder === 'desc'
-        ? desc(stockReconciliations[sortBy])
-        : asc(stockReconciliations[sortBy]);
+    // Get paginated data
+    const page = filter.page || 1;
+    const limit = filter.limit || 10;
+    const offset = (page - 1) * limit;
 
-    const reconciliationsList =
-      await this.db.query.stockReconciliations.findMany({
-        where: whereClause,
-        with: {
-          warehouse: true,
-          reconciliationItems: {
-            with: {
-              item: true,
-            },
-          },
-        },
-        orderBy,
-        limit,
-        offset,
-      });
+    const sortBy = (filter.sortBy as keyof typeof stockReconciliations) || 'createdAt';
+    const sortOrder = filter.sortOrder === 'asc' ? asc : desc;
 
-    const totalPages = Math.ceil(totalCount / limit);
+    const reconciliationsList = await this.db.db
+      .select()
+      .from(stockReconciliations)
+      .where(whereClause)
+      .orderBy(sortOrder(stockReconciliations[sortBy]))
+      .limit(limit)
+      .offset(offset);
 
     return {
-      reconciliations: reconciliationsList,
+      data: reconciliationsList,
       total: totalCount,
-      page,
-      limit,
-      totalPages,
     };
   }
 
-  // Stock Level Queries
+  // Stock Level and Ledger Queries
   async getStockLevels(
-    queryDto: StockLevelQueryDto,
+    query: StockLevelQueryDto,
     companyId: string
   ): Promise<StockLevel[]> {
     const whereConditions = [eq(stockLevels.companyId, companyId)];
 
-    if (queryDto.itemId) {
-      whereConditions.push(eq(stockLevels.itemId, queryDto.itemId));
+    if (query.itemId) {
+      whereConditions.push(eq(stockLevels.itemId, query.itemId));
     }
 
-    if (queryDto.warehouseId) {
-      whereConditions.push(eq(stockLevels.warehouseId, queryDto.warehouseId));
+    if (query.warehouseId) {
+      whereConditions.push(eq(stockLevels.warehouseId, query.warehouseId));
+    }
+
+    if (query.locationId) {
+      whereConditions.push(eq(stockLevels.locationId, query.locationId));
     }
 
     const whereClause = and(...whereConditions);
 
-    return this.db.query.stockLevels.findMany({
-      where: whereClause,
-      with: {
-        item: true,
-        warehouse: true,
-      },
-      orderBy: [asc(stockLevels.itemId), asc(stockLevels.warehouseId)],
-    });
+    return this.db.db
+      .select()
+      .from(stockLevels)
+      .where(whereClause);
   }
 
   async getStockLedger(
-    queryDto: StockLedgerQueryDto,
+    query: StockLedgerQueryDto,
     companyId: string
-  ): Promise<{
-    entries: StockLedgerEntry[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    const {
-      page = 1,
-      limit = 50,
-      sortBy = 'postingDate',
-      sortOrder = 'desc',
-      ...filters
-    } = queryDto;
-    const offset = (page - 1) * limit;
-
-    // Build where conditions
+  ): Promise<{ data: StockLedgerEntry[]; total: number }> {
     const whereConditions = [eq(stockLedgerEntries.companyId, companyId)];
 
-    if (filters.itemId) {
-      whereConditions.push(eq(stockLedgerEntries.itemId, filters.itemId));
+    if (query.itemId) {
+      whereConditions.push(eq(stockLedgerEntries.itemId, query.itemId));
     }
 
-    if (filters.warehouseId) {
-      whereConditions.push(
-        eq(stockLedgerEntries.warehouseId, filters.warehouseId)
-      );
+    if (query.warehouseId) {
+      whereConditions.push(eq(stockLedgerEntries.warehouseId, query.warehouseId));
     }
 
-    if (filters.voucherType) {
-      whereConditions.push(
-        eq(stockLedgerEntries.voucherType, filters.voucherType)
-      );
+    if (query.voucherType) {
+      whereConditions.push(eq(stockLedgerEntries.voucherType, query.voucherType));
     }
 
-    if (filters.voucherNumber) {
-      whereConditions.push(
-        eq(stockLedgerEntries.voucherNumber, filters.voucherNumber)
-      );
+    if (query.voucherNumber) {
+      whereConditions.push(eq(stockLedgerEntries.voucherNumber, query.voucherNumber));
     }
 
-    if (filters.fromDate && filters.toDate) {
+    if (query.fromDate && query.toDate) {
       whereConditions.push(
         between(
           stockLedgerEntries.postingDate,
-          new Date(filters.fromDate),
-          new Date(filters.toDate)
+          new Date(query.fromDate),
+          new Date(query.toDate)
         )
-      );
-    } else if (filters.fromDate) {
-      whereConditions.push(
-        gte(stockLedgerEntries.postingDate, new Date(filters.fromDate))
-      );
-    } else if (filters.toDate) {
-      whereConditions.push(
-        lte(stockLedgerEntries.postingDate, new Date(filters.toDate))
       );
     }
 
     const whereClause = and(...whereConditions);
 
     // Get total count
-    const [{ count: totalCount }] = await this.db
+    const [{ count: totalCount }] = await this.db.db
       .select({ count: count() })
       .from(stockLedgerEntries)
       .where(whereClause);
 
-    // Get entries with pagination and sorting
-    const orderBy =
-      sortOrder === 'desc'
-        ? desc(stockLedgerEntries[sortBy])
-        : asc(stockLedgerEntries[sortBy]);
+    // Get paginated data
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const offset = (page - 1) * limit;
 
-    const entriesList = await this.db.query.stockLedgerEntries.findMany({
-      where: whereClause,
-      with: {
-        item: true,
-        warehouse: true,
-        location: true,
-      },
-      orderBy,
-      limit,
-      offset,
-    });
+    const sortBy = (query.sortBy as keyof typeof stockLedgerEntries) || 'postingDate';
+    const sortOrder = query.sortOrder === 'asc' ? asc : desc;
 
-    const totalPages = Math.ceil(totalCount / limit);
+    const entriesList = await this.db.db
+      .select()
+      .from(stockLedgerEntries)
+      .where(whereClause)
+      .orderBy(sortOrder(stockLedgerEntries[sortBy]))
+      .limit(limit)
+      .offset(offset);
 
     return {
-      entries: entriesList,
+      data: entriesList,
       total: totalCount,
-      page,
-      limit,
-      totalPages,
     };
   }
 
-  async getStockReservation(id: string): Promise<StockReservation> {
-    const reservation = await this.db.query.stockReservations.findFirst({
-      where: eq(stockReservations.id, id),
-      with: {
-        item: true,
-        warehouse: true,
-        location: true,
-      },
-    });
-
-    if (!reservation) {
-      throw new NotFoundException('Stock reservation not found');
-    }
-
-    return reservation;
+  async getStockReservation(id: string): Promise<StockReservation | null> {
+    return this.db.db
+      .select()
+      .from(stockReservations)
+      .where(eq(stockReservations.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
   }
 
-  async getStockReconciliation(id: string): Promise<StockReconciliation> {
-    const reconciliation = await this.db.query.stockReconciliations.findFirst({
-      where: eq(stockReconciliations.id, id),
-      with: {
-        warehouse: true,
-        reconciliationItems: {
-          with: {
-            item: true,
-            location: true,
-          },
-        },
-      },
-    });
-
-    if (!reconciliation) {
-      throw new NotFoundException('Stock reconciliation not found');
-    }
-
-    return reconciliation;
+  async getStockReconciliation(id: string): Promise<StockReconciliation | null> {
+    return this.db.db
+      .select()
+      .from(stockReconciliations)
+      .where(eq(stockReconciliations.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
   }
 
   async updateStockReconciliation(
@@ -1112,22 +905,18 @@ export class StockTransactionService {
     updateReconciliationDto: UpdateStockReconciliationDto,
     userId: string
   ): Promise<StockReconciliation> {
-    const existingReconciliation =
-      await this.db.query.stockReconciliations.findFirst({
-        where: eq(stockReconciliations.id, id),
-      });
+    const existingReconciliation = await this.db.db
+      .select()
+      .from(stockReconciliations)
+      .where(eq(stockReconciliations.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!existingReconciliation) {
       throw new NotFoundException('Stock reconciliation not found');
     }
 
-    if (existingReconciliation.status !== 'Draft') {
-      throw new BadRequestException(
-        'Only draft reconciliations can be modified'
-      );
-    }
-
-    const [updatedReconciliation] = await this.db
+    const [updatedReconciliation] = await this.db.db
       .update(stockReconciliations)
       .set({
         ...updateReconciliationDto,
@@ -1140,176 +929,139 @@ export class StockTransactionService {
     return updatedReconciliation;
   }
 
+  // Helper Methods
   async getAvailableStock(
     itemId: string,
     warehouseId: string,
     locationId?: string
-  ): Promise<number> {
-    const stockLevel = await this.getCurrentStockLevel(
-      itemId,
-      warehouseId,
-      locationId
-    );
-    return (
-      parseFloat(stockLevel.actualQty) - parseFloat(stockLevel.reservedQty)
-    );
+  ): Promise<{ actualQty: string; reservedQty: string; availableQty: number }> {
+    const existingLevel = await this.db.db
+      .select()
+      .from(stockLevels)
+      .where(
+        and(
+          eq(stockLevels.itemId, itemId),
+          eq(stockLevels.warehouseId, warehouseId),
+          locationId ? eq(stockLevels.locationId, locationId) : sql`true`
+        )
+      )
+      .limit(1)
+      .then(rows => rows[0] || null);
+
+    if (!existingLevel) {
+      return { actualQty: '0', reservedQty: '0', availableQty: 0 };
+    }
+
+    const actualQty = parseFloat(existingLevel.actualQty);
+    const reservedQty = parseFloat(existingLevel.reservedQty || '0');
+    const availableQty = actualQty - reservedQty;
+
+    return {
+      actualQty: existingLevel.actualQty,
+      reservedQty: existingLevel.reservedQty || '0',
+      availableQty,
+    };
   }
 
-  // Utility Methods
   private async getCurrentStockLevel(
     itemId: string,
     warehouseId: string,
     locationId?: string
   ): Promise<StockLevel> {
-    const existingLevel = await this.db.query.stockLevels.findFirst({
-      where: and(
-        eq(stockLevels.itemId, itemId),
-        eq(stockLevels.warehouseId, warehouseId)
-      ),
-    });
+    const existingLevel = await this.db.db
+      .select()
+      .from(stockLevels)
+      .where(
+        and(
+          eq(stockLevels.itemId, itemId),
+          eq(stockLevels.warehouseId, warehouseId),
+          locationId ? eq(stockLevels.locationId, locationId) : sql`true`
+        )
+      )
+      .limit(1)
+      .then(rows => rows[0] || null);
 
-    return (
-      existingLevel || {
-        id: '',
+    if (existingLevel) {
+      return existingLevel;
+    }
+
+    // Create new stock level if it doesn't exist
+    const [newLevel] = await this.db.db
+      .insert(stockLevels)
+      .values({
         itemId,
         warehouseId,
+        locationId,
         actualQty: '0',
         reservedQty: '0',
         orderedQty: '0',
-        plannedQty: '0',
-        valuationRate: '0',
-        stockValue: '0',
-        companyId: '',
-        updatedAt: new Date(),
-      }
-    );
+        companyId: '', // This should be passed from the calling context
+      })
+      .returning();
+
+    return newLevel;
   }
 
-  private async getAvailableStock(
-    itemId: string,
-    warehouseId: string,
-    locationId?: string
-  ): Promise<number> {
-    const stockLevel = await this.getCurrentStockLevel(
-      itemId,
-      warehouseId,
-      locationId
-    );
-    return (
-      parseFloat(stockLevel.actualQty) - parseFloat(stockLevel.reservedQty)
-    );
-  }
+  private async processStockMovement(stockEntry: StockEntry): Promise<void> {
+    // Get stock entry items
+    const entryItems = await this.db.db
+      .select()
+      .from(stockEntryItems)
+      .where(eq(stockEntryItems.stockEntryId, stockEntry.id));
 
-  private async updateStockLevelReservation(
-    itemId: string,
-    warehouseId: string,
-    qty: number,
-    operation: 'add' | 'remove'
-  ): Promise<void> {
-    const existingLevel = await this.getCurrentStockLevel(itemId, warehouseId);
-
-    if (existingLevel.id) {
-      // Update existing level
-      const newReservedQty =
-        parseFloat(existingLevel.reservedQty) +
-        (operation === 'add' ? qty : -qty);
-
-      await this.db
-        .update(stockLevels)
-        .set({
-          reservedQty: Math.max(0, newReservedQty).toString(),
-          updatedAt: new Date(),
-        })
-        .where(eq(stockLevels.id, existingLevel.id));
-    }
-  }
-
-  private async processStockTransaction(
-    stockEntry: StockEntry & { stockEntryItems: any[] }
-  ): Promise<void> {
-    // Process each item in the stock entry
-    for (const item of stockEntry.stockEntryItems) {
-      // Update stock levels
-      await this.updateStockLevel(stockEntry, item);
-
+    for (const item of entryItems) {
       // Create stock ledger entry
-      await this.createStockLedgerEntry(stockEntry, item);
+      await this.db.db.insert(stockLedgerEntries).values({
+        itemId: item.itemId,
+        warehouseId: stockEntry.warehouseId,
+        locationId: item.locationId,
+        voucherType: 'Stock Entry',
+        voucherNumber: stockEntry.entryNumber,
+        voucherId: stockEntry.id,
+        postingDate: stockEntry.postingDate,
+        postingTime: new Date(),
+        actualQty: item.stockUomQty,
+        valuationRate: item.valuationRate,
+        stockValue: item.amount,
+        serialNo: Array.isArray(item.serialNumbers) ? item.serialNumbers[0] : null,
+        batchNo: item.batchNumbers ? JSON.stringify(item.batchNumbers) : null,
+        companyId: stockEntry.companyId,
+      });
+
+      // Update stock level
+      await this.updateStockLevel(
+        item.itemId,
+        stockEntry.warehouseId,
+        item.locationId,
+        parseFloat(item.stockUomQty),
+        stockEntry.entryType
+      );
     }
   }
 
   private async updateStockLevel(
-    stockEntry: StockEntry,
-    item: StockEntryItem
+    itemId: string,
+    warehouseId: string,
+    locationId: string | null,
+    qty: number,
+    entryType: string
   ): Promise<void> {
-    const existingLevel = await this.getCurrentStockLevel(
-      item.itemId,
-      stockEntry.warehouseId
-    );
-
-    const qtyChange = parseFloat(item.stockUomQty);
-    const isInward = ['Receipt', 'Transfer'].includes(stockEntry.entryType);
-    const actualQtyChange = isInward ? qtyChange : -qtyChange;
-
-    const newActualQty = parseFloat(existingLevel.actualQty) + actualQtyChange;
-    const newStockValue = newActualQty * parseFloat(item.valuationRate || '0');
-
-    if (existingLevel.id) {
-      // Update existing level
-      await this.db
-        .update(stockLevels)
-        .set({
-          actualQty: newActualQty.toString(),
-          valuationRate: item.valuationRate || '0',
-          stockValue: newStockValue.toString(),
-          updatedAt: new Date(),
-        })
-        .where(eq(stockLevels.id, existingLevel.id));
-    } else {
-      // Create new level
-      await this.db.insert(stockLevels).values({
-        itemId: item.itemId,
-        warehouseId: stockEntry.warehouseId,
-        actualQty: newActualQty.toString(),
-        reservedQty: '0',
-        orderedQty: '0',
-        plannedQty: '0',
-        valuationRate: item.valuationRate || '0',
-        stockValue: newStockValue.toString(),
-        companyId: stockEntry.companyId,
-      });
+    const currentLevel = await this.getCurrentStockLevel(itemId, warehouseId, locationId);
+    
+    let newQty = parseFloat(currentLevel.actualQty);
+    
+    if (entryType === 'Receipt' || entryType === 'Adjustment') {
+      newQty += qty;
+    } else if (entryType === 'Issue') {
+      newQty -= qty;
     }
-  }
 
-  private async createStockLedgerEntry(
-    stockEntry: StockEntry,
-    item: StockEntryItem
-  ): Promise<void> {
-    const qtyChange = parseFloat(item.stockUomQty);
-    const isInward = ['Receipt', 'Transfer'].includes(stockEntry.entryType);
-    const actualQty = isInward ? qtyChange : -qtyChange;
-
-    const qtyAfterTransaction = parseFloat(item.actualQtyAfter);
-    const stockValue =
-      qtyAfterTransaction * parseFloat(item.valuationRate || '0');
-    const stockValueDifference =
-      actualQty * parseFloat(item.valuationRate || '0');
-
-    await this.db.insert(stockLedgerEntries).values({
-      itemId: item.itemId,
-      warehouseId: stockEntry.warehouseId,
-      locationId: item.locationId,
-      voucherType: 'Stock Entry',
-      voucherNumber: stockEntry.entryNumber,
-      voucherId: stockEntry.id,
-      postingDate: stockEntry.postingDate,
-      postingTime: new Date(),
-      actualQty: actualQty.toString(),
-      qtyAfterTransaction: qtyAfterTransaction.toString(),
-      incomingRate: item.valuationRate || '0',
-      valuationRate: item.valuationRate || '0',
-      stockValue: stockValue.toString(),
-      stockValueDifference: stockValueDifference.toString(),
-      companyId: stockEntry.companyId,
-    });
+    await this.db.db
+      .update(stockLevels)
+      .set({
+        actualQty: newQty.toString(),
+        updatedAt: new Date(),
+      })
+      .where(eq(stockLevels.id, currentLevel.id));
   }
 }

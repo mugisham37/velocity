@@ -1,4 +1,4 @@
-import {
+import type {
   BatchLocation,
   BatchNumber,
   ProductRecall,
@@ -14,6 +14,7 @@ import {
   CreateBatchNumberDto,
   CreateProductRecallDto,
   CreateQualityInspectionDto,
+  CreateSerialNumberDto,
   ExpiryAlertDto,
   ProductRecallFilterDto,
   QualityInspectionFilterDto,
@@ -38,7 +39,7 @@ export class SerialBatchTrackingResolver {
   ) {}
 
   // Serial Number Mutations
-  @Mutation(() => SerialNumber)
+  @Mutation('createSerialNumber')
   async createSerialNumber(
     @Args('input') input: CreateSerialNumberDto,
     @Context() context: any
@@ -53,7 +54,7 @@ export class SerialBatchTrackingResolver {
     );
   }
 
-  @Mutation(() => SerialNumber)
+  @Mutation('updateSerialNumber')
   async updateSerialNumber(
     @Args('id') id: string,
     @Args('input') input: UpdateSerialNumberDto,
@@ -71,7 +72,7 @@ export class SerialBatchTrackingResolver {
   }
 
   // Serial Number Queries
-  @Query(() => [SerialNumber])
+  @Query('serialNumbers')
   async serialNumbers(
     @Args('filter', { nullable: true }) filter: SerialNumberFilterDto = {},
     @Args('limit', { nullable: true }) limit = 50,
@@ -91,7 +92,7 @@ export class SerialBatchTrackingResolver {
     );
   }
 
-  @Query(() => SerialNumber, { nullable: true })
+  @Query('serialNumber')
   async serialNumber(
     @Args('serialNumber') serialNumber: string,
     @Context() context: any
@@ -106,11 +107,11 @@ export class SerialBatchTrackingResolver {
       0
     );
 
-    return results.length > 0 ? results[0] : null;
+    return results.length > 0 ? results[0]! : null;
   }
 
   // Batch Number Mutations
-  @Mutation(() => BatchNumber)
+  @Mutation('createBatchNumber')
   async createBatchNumber(
     @Args('input') input: CreateBatchNumberDto,
     @Context() context: any
@@ -125,7 +126,7 @@ export class SerialBatchTrackingResolver {
     );
   }
 
-  @Mutation(() => BatchNumber)
+  @Mutation('updateBatchNumber')
   async updateBatchNumber(
     @Args('id') id: string,
     @Args('input') input: UpdateBatchNumberDto,
@@ -143,7 +144,7 @@ export class SerialBatchTrackingResolver {
   }
 
   // Batch Number Queries
-  @Query(() => [BatchNumber])
+  @Query('batchNumbers')
   async batchNumbers(
     @Args('filter', { nullable: true }) filter: BatchNumberFilterDto = {},
     @Args('limit', { nullable: true }) limit = 50,
@@ -163,7 +164,7 @@ export class SerialBatchTrackingResolver {
     );
   }
 
-  @Query(() => BatchNumber, { nullable: true })
+  @Query('batchNumber')
   async batchNumber(
     @Args('batchNumber') batchNumber: string,
     @Args('itemId') itemId: string,
@@ -179,11 +180,11 @@ export class SerialBatchTrackingResolver {
       0
     );
 
-    return results.length > 0 ? results[0] : null;
+    return results.length > 0 ? results[0]! : null;
   }
 
   // Batch Location Mutations
-  @Mutation(() => BatchLocation)
+  @Mutation('createBatchLocation')
   async createBatchLocation(
     @Args('input') input: CreateBatchLocationDto,
     @Context() context: any
@@ -198,7 +199,7 @@ export class SerialBatchTrackingResolver {
   }
 
   // Product Recall Mutations
-  @Mutation(() => ProductRecall)
+  @Mutation('createProductRecall')
   async createProductRecall(
     @Args('input') input: CreateProductRecallDto,
     @Context() context: any
@@ -213,7 +214,7 @@ export class SerialBatchTrackingResolver {
     );
   }
 
-  @Mutation(() => ProductRecall)
+  @Mutation('updateProductRecall')
   async updateProductRecall(
     @Args('id') id: string,
     @Args('input') input: UpdateProductRecallDto,
@@ -231,7 +232,7 @@ export class SerialBatchTrackingResolver {
   }
 
   // Product Recall Queries
-  @Query(() => [ProductRecall])
+  @Query('productRecalls')
   async productRecalls(
     @Args('filter', { nullable: true }) filter: ProductRecallFilterDto = {},
     @Args('limit', { nullable: true }) limit = 50,
@@ -252,7 +253,7 @@ export class SerialBatchTrackingResolver {
   }
 
   // Quality Inspection Mutations
-  @Mutation(() => QualityInspection)
+  @Mutation('createQualityInspection')
   async createQualityInspection(
     @Args('input') input: CreateQualityInspectionDto,
     @Context() context: any
@@ -266,7 +267,7 @@ export class SerialBatchTrackingResolver {
     );
   }
 
-  @Mutation(() => QualityInspection)
+  @Mutation('updateQualityInspection')
   async updateQualityInspection(
     @Args('id') id: string,
     @Args('input') input: UpdateQualityInspectionDto,
@@ -283,14 +284,13 @@ export class SerialBatchTrackingResolver {
   }
 
   // Quality Inspection Queries
-  @Query(() => [QualityInspection])
+  @Query('qualityInspections')
   async qualityInspections(
     @Args('filter', { nullable: true }) filter: QualityInspectionFilterDto = {},
-    @Args('limit', { nullable: true }) limit = 50,
-    @Args('offset', { nullable: true }) offset = 0,
-    @Context() context: any
+    @Args('limit', { nullable: true }) _limit = 50,
+    @Args('offset', { nullable: true }) _offset = 0,
+    @Context() _context: any
   ): Promise<QualityInspection[]> {
-    const { user } = context.req;
     this.logger.log(
       `Getting quality inspections with filter: ${JSON.stringify(filter)}`
     );
@@ -308,7 +308,7 @@ export class SerialBatchTrackingResolver {
   }
 
   // Traceability Queries
-  @Query(() => TraceabilityReportDto)
+  @Query('traceabilityReport')
   async traceabilityReport(
     @Args('query') query: TraceabilityQueryDto,
     @Context() context: any
@@ -323,7 +323,7 @@ export class SerialBatchTrackingResolver {
   }
 
   // Analytics Queries
-  @Query(() => RecallAnalyticsDto)
+  @Query('recallAnalytics')
   async recallAnalytics(@Context() context: any): Promise<RecallAnalyticsDto> {
     const { user } = context.req;
     this.logger.log(`Getting recall analytics for company: ${user.companyId}`);
@@ -331,7 +331,7 @@ export class SerialBatchTrackingResolver {
     return this.serialBatchTrackingService.getRecallAnalytics(user.companyId);
   }
 
-  @Query(() => [ExpiryAlertDto])
+  @Query('expiryAlerts')
   async expiryAlerts(
     @Args('daysAhead', { nullable: true }) daysAhead = 30,
     @Context() context: any
@@ -346,7 +346,7 @@ export class SerialBatchTrackingResolver {
   }
 
   // Batch Expiry Management
-  @Query(() => [BatchNumber])
+  @Query('expiringBatches')
   async expiringBatches(
     @Args('daysAhead', { nullable: true }) daysAhead = 30,
     @Context() context: any
@@ -369,7 +369,7 @@ export class SerialBatchTrackingResolver {
   }
 
   // Serial Number Maintenance Alerts
-  @Query(() => [SerialNumber])
+  @Query('maintenanceDueSerials')
   async maintenanceDueSerials(
     @Args('daysAhead', { nullable: true }) daysAhead = 7,
     @Context() context: any
@@ -394,7 +394,7 @@ export class SerialBatchTrackingResolver {
   }
 
   // Warranty Expiry Alerts
-  @Query(() => [SerialNumber])
+  @Query('warrantyExpiringSerials')
   async warrantyExpiringSerials(
     @Args('daysAhead', { nullable: true }) daysAhead = 30,
     @Context() context: any

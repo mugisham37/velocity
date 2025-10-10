@@ -13,8 +13,11 @@ import { User } from '../../auth/entities/user.entity';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
   CreateStockEntryDto,
+  CreateStockReconciliationDto,
   CreateStockReservationDto,
   StockEntryFilterDto,
+  StockEntryStatus,
+  StockEntryType,
   StockLedgerQueryDto,
   StockLevelQueryDto,
   StockReconciliationFilterDto,
@@ -157,16 +160,12 @@ export class StockTransactionResolver {
     );
 
     // Publish real-time updates for affected stock levels
-    if (stockEntry.stockEntryItems) {
-      for (const item of stockEntry.stockEntryItems) {
-        pubSub.publish('stockLevelUpdated', {
-          stockLevelUpdated: {
-            itemId: item.itemId,
-            warehouseId: stockEntry.warehouseId,
-          },
-        });
-      }
-    }
+    // Note: stockEntryItems would need to be fetched separately or included in the service response
+    pubSub.publish('stockLevelUpdated', {
+      stockLevelUpdated: {
+        warehouseId: stockEntry.warehouseId,
+      },
+    });
 
     pubSub.publish('stockEntryStatusChanged', {
       stockEntryStatusChanged: stockEntry,
@@ -182,7 +181,7 @@ export class StockTransactionResolver {
   ) {
     const stockEntry = await this.stockTransactionService.updateStockEntry(
       id,
-      { status: 'Cancelled' },
+      { status: StockEntryStatus.CANCELLED },
       user.id
     );
 
@@ -293,18 +292,12 @@ export class StockTransactionResolver {
       await this.stockTransactionService.submitStockReconciliation(id, user.id);
 
     // Publish real-time updates for affected stock levels
-    if (reconciliation.reconciliationItems) {
-      for (const item of reconciliation.reconciliationItems) {
-        if (parseFloat(item.varianceQty) !== 0) {
-          pubSub.publish('stockLevelUpdated', {
-            stockLevelUpdated: {
-              itemId: item.itemId,
-              warehouseId: reconciliation.warehouseId,
-            },
-          });
-        }
-      }
-    }
+    // Note: reconciliationItems would need to be fetched separately or included in the service response
+    pubSub.publish('stockLevelUpdated', {
+      stockLevelUpdated: {
+        warehouseId: reconciliation.warehouseId,
+      },
+    });
 
     return reconciliation;
   }
@@ -323,8 +316,8 @@ export class StockTransactionResolver {
       const adjustmentEntry =
         await this.stockTransactionService.createStockEntry(
           {
-            entryNumber: `BULK-ADJ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            entryType: 'Adjustment',
+            entryNumber: `BULK-ADJ-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+            entryType: StockEntryType.ADJUSTMENT,
             referenceType: 'Bulk Update',
             referenceNumber: `BULK-${Date.now()}`,
             transactionDate: new Date().toISOString(),
@@ -384,8 +377,8 @@ export class StockTransactionResolver {
 
     const adjustmentEntry = await this.stockTransactionService.createStockEntry(
       {
-        entryNumber: `ADJ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        entryType: 'Adjustment',
+        entryNumber: `ADJ-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        entryType: StockEntryType.ADJUSTMENT,
         referenceType: 'Stock Adjustment',
         referenceNumber: `ADJ-${Date.now()}`,
         transactionDate: new Date().toISOString(),
@@ -436,49 +429,26 @@ export class StockTransactionResolver {
     },
   })
   stockLevelUpdated(
-    @Args('itemId', { type: () => ID, nullable: true }) itemId?: string,
+    @Args('itemId', { type: () => ID, nullable: true }) _itemId?: string,
     @Args('warehouseId', { type: () => ID, nullable: true })
-    warehouseId?: string
+    _warehouseId?: string
   ) {
     return pubSub.asyncIterator('stockLevelUpdated');
   }
 
   @Subscription('stockEntryStatusChanged')
   stockEntryStatusChanged(
-    @Args('entryId', { type: () => ID }) entryId: string
+    @Args('entryId', { type: () => ID }) _entryId: string
   ) {
     return pubSub.asyncIterator('stockEntryStatusChanged');
   }
 
   @Subscription('stockReservationUpdated')
   stockReservationUpdated(
-    @Args('reservationId', { type: () => ID }) reservationId: string
+    @Args('reservationId', { type: () => ID }) _reservationId: string
   ) {
     return pubSub.asyncIterator('stockReservationUpdated');
   }
 
-  // Helper method to get stock reservation (not exposed in schema)
-  private async getStockReservation(id: string) {
-    // This would be implemented in the service
-    // For now, returning a placeholder
-    return null;
-  }
 
-  // Helper method to get stock reconciliation (not exposed in schema)
-  private async getStockReconciliation(id: string) {
-    // This would be implemented in the service
-    // For now, returning a placeholder
-    return null;
-  }
-
-  // Helper method to update stock reconciliation (not exposed in schema)
-  private async updateStockReconciliation(
-    id: string,
-    input: UpdateStockReconciliationDto,
-    userId: string
-  ) {
-    // This would be implemented in the service
-    // For now, returning a placeholder
-    return null;
-  }
 }

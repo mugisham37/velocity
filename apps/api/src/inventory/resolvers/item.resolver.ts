@@ -1,9 +1,8 @@
-import { UseInterceptors } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
-import { AuditInterceptor } from '../../common/interceptors/audit.interceptor';
 import {
   CreateItemAttributeDto,
   CreateItemAttributeValueDto,
@@ -22,7 +21,6 @@ import { ItemService } from '../services/item.service';
 
 @Resolver('Item')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@UseInterceptors(AuditInterceptor)
 export class ItemResolver {
   constructor(private readonly itemService: ItemService) {}
 

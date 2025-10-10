@@ -1,4 +1,4 @@
-import { Field, InputType, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { Field, InputType, registerEnumType } from '@nestjs/graphql';
 import { Transform, Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsDateString, IsDecimal, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
 
@@ -65,7 +65,7 @@ export class CreateStockEntryItemDto {
   @Field()
   @IsUUID()
   @IsNotEmpty()
-  itemId: string;
+  itemId!: string;
 
   @Field({ nullable: true })
   @IsUUID()
@@ -86,12 +86,12 @@ export class CreateStockEntryItemDto {
   @IsDecimal()
   @IsNotEmpty()
   @Transform(({ value }) => parseFloat(value))
-  qty: number;
+  qty!: number;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  uom: string;
+  uom!: string;
 
   @Field({ nullable: true })
   @IsDecimal()
@@ -140,12 +140,12 @@ export class CreateStockEntryDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  entryNumber: string;
+  entryNumber!: string;
 
   @Field(() => StockEntryType)
   @IsEnum(StockEntryType)
   @IsNotEmpty()
-  entryType: StockEntryType;
+  entryType!: StockEntryType;
 
   @Field({ nullable: true })
   @IsString()
@@ -165,17 +165,17 @@ export class CreateStockEntryDto {
   @Field()
   @IsDateString()
   @IsNotEmpty()
-  transactionDate: string;
+  transactionDate!: string;
 
   @Field()
   @IsDateString()
   @IsNotEmpty()
-  postingDate: string;
+  postingDate!: string;
 
   @Field()
   @IsUUID()
   @IsNotEmpty()
-  warehouseId: string;
+  warehouseId!: string;
 
   @Field({ nullable: true })
   @IsUUID()
@@ -206,12 +206,12 @@ export class CreateStockEntryDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateStockEntryItemDto)
-  items: CreateStockEntryItemDto[];
+  items!: CreateStockEntryItemDto[];
 
   @Field()
   @IsUUID()
   @IsNotEmpty()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()
@@ -293,12 +293,12 @@ export class CreateStockReservationDto {
   @Field()
   @IsUUID()
   @IsNotEmpty()
-  itemId: string;
+  itemId!: string;
 
   @Field()
   @IsUUID()
   @IsNotEmpty()
-  warehouseId: string;
+  warehouseId!: string;
 
   @Field({ nullable: true })
   @IsUUID()
@@ -308,38 +308,38 @@ export class CreateStockReservationDto {
   @Field(() => ReservationType)
   @IsEnum(ReservationType)
   @IsNotEmpty()
-  reservationType: ReservationType;
+  reservationType!: ReservationType;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  referenceType: string;
+  referenceType!: string;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  referenceNumber: string;
+  referenceNumber!: string;
 
   @Field()
   @IsUUID()
   @IsNotEmpty()
-  referenceId: string;
+  referenceId!: string;
 
   @Field()
   @IsDecimal()
   @IsNotEmpty()
   @Transform(({ value }) => parseFloat(value))
-  reservedQty: number;
+  reservedQty!: number;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  uom: string;
+  uom!: string;
 
   @Field()
   @IsDateString()
   @IsNotEmpty()
-  reservationDate: string;
+  reservationDate!: string;
 
   @Field({ nullable: true })
   @IsDateString()
@@ -373,7 +373,7 @@ export class CreateStockReservationDto {
   @Field()
   @IsUUID()
   @IsNotEmpty()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()
@@ -431,7 +431,7 @@ export class CreateStockReconciliationItemDto {
   @Field()
   @IsUUID()
   @IsNotEmpty()
-  itemId: string;
+  itemId!: string;
 
   @Field({ nullable: true })
   @IsUUID()
@@ -442,13 +442,13 @@ export class CreateStockReconciliationItemDto {
   @IsDecimal()
   @IsNotEmpty()
   @Transform(({ value }) => parseFloat(value))
-  systemQty: number;
+  systemQty!: number;
 
   @Field()
   @IsDecimal()
   @IsNotEmpty()
   @Transform(({ value }) => parseFloat(value))
-  physicalQty: number;
+  physicalQty!: number;
 
   @Field({ nullable: true })
   @IsDecimal()
@@ -491,22 +491,22 @@ export class CreateStockReconciliationDto {
   @Field()
   @IsString()
   @IsNotEmpty()
-  reconciliationNumber: string;
+  reconciliationNumber!: string;
 
   @Field()
   @IsDateString()
   @IsNotEmpty()
-  reconciliationDate: string;
+  reconciliationDate!: string;
 
   @Field()
   @IsUUID()
   @IsNotEmpty()
-  warehouseId: string;
+  warehouseId!: string;
 
   @Field(() => ReconciliationType)
   @IsEnum(ReconciliationType)
   @IsNotEmpty()
-  reconciliationType: ReconciliationType;
+  reconciliationType!: ReconciliationType;
 
   @Field({ nullable: true })
   @IsString()
@@ -527,12 +527,12 @@ export class CreateStockReconciliationDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateStockReconciliationItemDto)
-  items: CreateStockReconciliationItemDto[];
+  items!: CreateStockReconciliationItemDto[];
 
   @Field()
   @IsUUID()
   @IsNotEmpty()
-  companyId: string;
+  companyId!: string;
 }
 
 @InputType()

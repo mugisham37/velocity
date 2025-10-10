@@ -1,6 +1,5 @@
 import { DatabaseModule } from '@kiro/database';
 import { Module } from '@nestjs/common';
-import { GraphQLModule } from '@nestjs/graphql';
 import { ItemResolver } from './resolvers/item.resolver';
 import { SerialBatchTrackingResolver } from './resolvers/serial-batch-tracking.resolver';
 import { StockTransactionResolver } from './resolvers/stock-transaction.resolver';
@@ -12,9 +11,6 @@ import { WarehouseService } from './services/warehouse.service';
 @Module({
   imports: [
     DatabaseModule,
-    GraphQLModule.forFeature({
-      typePaths: ['./**/*.graphql'],
-    }),
   ],
   providers: [
     ItemService,
