@@ -1,12 +1,14 @@
 import {
   Injectable,
+} from '@nestjs/common';
+import type {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { FastifyRequest } from 'fastify';
+import type { FastifyRequest } from 'fastify';
 import { Logger } from 'winston';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -35,7 +37,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap({
-        next: (data) => {
+        next: (data: any) => {
           const duration = Date.now() - startTime;
           this.logger.info('Request completed', {
             requestId,
@@ -45,7 +47,7 @@ export class LoggingInterceptor implements NestInterceptor {
             responseSize: data ? JSON.stringify(data).length : 0,
           });
         },
-        error: (error) => {
+        error: (error: any) => {
           const duration = Date.now() - startTime;
           this.logger.error('Request failed', {
             requestId,

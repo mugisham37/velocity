@@ -1,10 +1,12 @@
 import {
   Injectable,
+} from '@nestjs/common';
+import type {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 export interface ApiResponse<T> {
@@ -27,7 +29,7 @@ export class TransformInterceptor<T>
     const requestId = (request as any).requestId;
 
     return next.handle().pipe(
-      map((data) => ({
+      map((data: T) => ({
         success: true,
         data,
         timestamp: new Date().toISOString(),

@@ -1,11 +1,10 @@
 import {
-  ExceptionFilter,
   Catch,
-  ArgumentsHost,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { FastifyRequest, FastifyReply } from 'fastify';
+import type { ExceptionFilter, ArgumentsHost } from '@nestjs/common';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 import { Logger } from 'winston';
 import { v4 as uuidv4 } from 'uuid';
 

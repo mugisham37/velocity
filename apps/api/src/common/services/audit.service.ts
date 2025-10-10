@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { auditLogs, dataRetentionPolicies, db } from '@kiro/database';
-import { and, desc, eq, gte, lte } from '@kiro/database';
+import { and, desc, eq, gte, lte, count } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 
@@ -54,11 +54,11 @@ export class AuditService {
         oldValues: entry.oldValues,
         newValues: entry.newValues,
         changes: changes || entry.changes,
-        userId: entry.userId,
+        userId: entry.userId || null,
         companyId: entry.companyId,
-        ipAddress: entry.ipAddress,
-        userAgent: entry.userAgent,
-        metadata: entry.metadata,
+        ipAddress: entry.ipAddress || null,
+        userAgent: entry.userAgent || null,
+        metadata: entry.metadata || null,
       });
 
       this.logger.info('Audit log created', {
@@ -127,10 +127,12 @@ export class AuditService {
     const whereClause = and(...conditions);
 
     // Get total count
-    const [{ count: total }] = await db
-      .select({ count: db.$count(auditLogs) })
+    const countResult = await db
+      .select({ count: count() })
       .from(auditLogs)
       .where(whereClause);
+    
+    const total = Number(countResult[0]?.count || 0);
 
     // Get data with pagination
     const data = await db
@@ -290,15 +292,15 @@ export class AuditService {
    * Create audit decorator for automatic logging
    */
   static createAuditDecorator(entityType: string) {
-    return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
+    return function (_target: any, propertyName: string, descriptor: PropertyDescriptor) {
       const method = descriptor.value;
 
       descriptor.value = async function (...args: any[]) {
-        const auditService = this.auditService as AuditService;
+        const auditService = (this as any).auditService as AuditService;
         const result = await method.apply(this, args);
 
         // Extract audit information from method context
-        const context = this.getAuditContext?.() || {};
+        const context = (this as any).getAuditContext?.() || {};
 
         await auditService.logAudit({
           entityType,

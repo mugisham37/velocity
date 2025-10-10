@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
+export interface MetricTags {
+  [key: string]: string;
+}
+
 @Injectable()
 export class PerformanceMonitorService {
   createTimer(operation: string): () => void {
@@ -17,5 +21,34 @@ export class PerformanceMonitorService {
         params
       });
     }
+  }
+
+  recordAPIPerformance(
+    endpoint: string,
+    method: string,
+    duration: number,
+    statusCode: number,
+    userAgent?: string,
+    ip?: string
+  ): void {
+    console.log(`API Performance: ${method} ${endpoint}`, {
+      duration: `${duration.toFixed(2)}ms`,
+      statusCode,
+      userAgent,
+      ip
+    });
+  }
+
+  recordMetric(
+    name: string,
+    value: number,
+    unit: string,
+    tags?: MetricTags
+  ): void {
+    console.log(`Metric: ${name}`, {
+      value,
+      unit,
+      tags
+    });
   }
 }

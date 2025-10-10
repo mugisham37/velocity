@@ -1,5 +1,7 @@
-import { Database, db } from '@kiro/database';
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { db } from '@kiro/database';
+import type { Database } from '@kiro/database';
+import { Inject, Injectable } from '@nestjs/common';
+import type { OnModuleInit } from '@nestjs/common';
 import { sql } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
@@ -32,7 +34,7 @@ export interface DatabaseStats {
     indexSize: string;
     indexCount: number;
   }>;
-  slows: Array<{
+  slowQueries: Array<{
     query: string;
     avgTime: number;
     calls: number;
@@ -85,7 +87,9 @@ export class DatabaseOptimizerService implements OnModuleInit {
 
       // Execute EXPLAIN ANALYZE
       const explainQuery = `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${query}`;
-      const result = await this.database.execute(sql.raw(explainQuery, params));
+      const result = (await this.database.execute(
+        sql.raw(explainQuery)
+      )) as any[];
 
       const plan = result[0]?.['QUERY PLAN']?.[0];
       if (!plan) {
@@ -220,15 +224,19 @@ export class DatabaseOptimizerService implements OnModuleInit {
       `;
 
       const largeTables = await this.database.execute(largeTablesQuery);
-      const recommendations = [];
+      const recommendations: Array<{
+        table: string;
+        recommendedPartitioning: 'range' | 'hash' | 'list';
+        partitionColumn: string;
+        reason: string;
+        estimatedBenefit: number;
+      }> = [];
 
       for (const table of largeTables) {
-        const analysis = await this.analyzeTableForPartitioning(
-          table.tablename
+        // Analysis is currently not implemented, but structure is ready for future use
+        await this.analyzeTableForPartitioning(
+          String((table as any)['tablename'] || '')
         );
-        if (analysis) {
-          recommendations.push(analysis);
-        }
       }
 
       return recommendations;
@@ -263,9 +271,9 @@ export class DatabaseOptimizerService implements OnModuleInit {
       };
 
       // Compare with current configuration
-      const changes = {};
+      const changes: Record<string, any> = {};
       for (const [key, recommendedValue] of Object.entries(recommendations)) {
-        const currentValue = currentConfig[key];
+        const currentValue = (currentConfig as any)[key];
         if (currentValue !== recommendedValue) {
           changes[key] = {
             current: currentValue,
@@ -326,14 +334,14 @@ export class DatabaseOptimizerService implements OnModuleInit {
   }
 
   private async getTotalDatabaseSize(): Promise<string> {
-    const result = await this.database.execute(sql`
+    const result = (await this.database.execute(sql`
       SELECT pg_size_pretty(pg_database_size(current_database())) as size
-    `);
-    return result[0]?.size || '0 bytes';
+    `)) as any[];
+    return (result[0] as any)?.['size'] || '0 bytes';
   }
 
   private async getTableStats(): Promise<DatabaseStats['tableStats']> {
-    const result = await this.database.execute(sql`
+    const result = (await this.database.execute(sql`
       SELECT
         schemaname,
         tablename,
@@ -345,20 +353,20 @@ export class DatabaseOptimizerService implements OnModuleInit {
       JOIN pg_class c ON c.relname = t.tablename
       ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC
       LIMIT 20
-    `);
+    `)) as any[];
 
-    return result.map(row => ({
-      tableName: row.tablename,
-      size: row.size,
-      rowCount: parseInt(row.row_count) || 0,
-      indexSize: row.index_size,
-      indexCount: parseInt(row.index_count) || 0,
+    return result.map((row: any) => ({
+      tableName: String(row['tablename'] || ''),
+      size: String(row['size'] || ''),
+      rowCount: parseInt(String(row['row_count'] || '0')) || 0,
+      indexSize: String(row['index_size'] || ''),
+      indexCount: parseInt(String(row['index_count'] || '0')) || 0,
     }));
   }
 
   private async getSlowQueries(): Promise<DatabaseStats['slowQueries']> {
     try {
-      const result = await this.database.execute(sql`
+      const result = (await this.database.execute(sql`
         SELECT
           query,
           mean_exec_time as avg_time,
@@ -368,13 +376,13 @@ export class DatabaseOptimizerService implements OnModuleInit {
         WHERE mean_exec_time > 100 -- queries taking more than 100ms on average
         ORDER BY mean_exec_time DESC
         LIMIT 20
-      `);
+      `)) as any[];
 
-      return result.map(row => ({
-        query: this.sanitizeQuery(row.query),
-        avgTime: parseFloat(row.avg_time) || 0,
-        calls: parseInt(row.calls) || 0,
-        totalTime: parseFloat(row.total_time) || 0,
+      return result.map((row: any) => ({
+        query: this.sanitizeQuery(String(row['query'] || '')),
+        avgTime: parseFloat(String(row['avg_time'] || '0')) || 0,
+        calls: parseInt(String(row['calls'] || '0')) || 0,
+        totalTime: parseFloat(String(row['total_time'] || '0')) || 0,
       }));
     } catch (error) {
       // pg_stat_statements might not be available
@@ -386,7 +394,7 @@ export class DatabaseOptimizerService implements OnModuleInit {
   }
 
   private async getIndexUsage(): Promise<DatabaseStats['indexUsage']> {
-    const result = await this.database.execute(sql`
+    const result = (await this.database.execute(sql`
       SELECT
         schemaname,
         tablename,
@@ -400,14 +408,14 @@ export class DatabaseOptimizerService implements OnModuleInit {
       FROM pg_stat_user_indexes
       ORDER BY idx_scan DESC
       LIMIT 50
-    `);
+    `)) as any[];
 
-    return result.map(row => ({
-      tableName: row.tablename,
-      indexName: row.indexname,
-      scans: parseInt(row.scans) || 0,
-      tuples: parseInt(row.tuples) || 0,
-      usage: parseFloat(row.usage) || 0,
+    return result.map((row: any) => ({
+      tableName: String(row['tablename'] || ''),
+      indexName: String(row['indexname'] || ''),
+      scans: parseInt(String(row['scans'] || '0')) || 0,
+      tuples: parseInt(String(row['tuples'] || '0')) || 0,
+      usage: parseFloat(String(row['usage'] || '0')) || 0,
     }));
   }
 
@@ -473,7 +481,7 @@ export class DatabaseOptimizerService implements OnModuleInit {
     }
   }
 
-  private extractIndexSuggestions(analysis: QueryAnalysis): IndexSuggestion[] {
+  private extractIndexSuggestions(_analysis: QueryAnalysis): IndexSuggestion[] {
     // This would require sophisticated query parsing
     // For now, return empty array
     return [];
@@ -515,14 +523,14 @@ export class DatabaseOptimizerService implements OnModuleInit {
     }
   }
 
-  private async analyzeTableForPartitioning(tableName: string): Promise<any> {
+  private async analyzeTableForPartitioning(_tableName: string): Promise<null> {
     // Analyze table structure and access patterns for partitioning recommendations
     // This would require detailed analysis of table schema and query patterns
     return null;
   }
 
   private async getCurrentConfiguration(): Promise<Record<string, any>> {
-    const result = await this.database.execute(sql`
+    const result = (await this.database.execute(sql`
       SELECT name, setting, unit
       FROM pg_settings
       WHERE name IN (
@@ -531,11 +539,14 @@ export class DatabaseOptimizerService implements OnModuleInit {
         'wal_buffers', 'default_statistics_target', 'random_page_cost',
         'effective_io_concurrency'
       )
-    `);
+    `)) as any[];
 
-    const config = {};
+    const config: Record<string, any> = {};
     for (const row of result) {
-      config[row.name] = row.setting + (row.unit ? row.unit : '');
+      const name = String((row as any)['name'] || '');
+      const setting = String((row as any)['setting'] || '');
+      const unit = String((row as any)['unit'] || '');
+      config[name] = setting + (unit ? unit : '');
     }
     return config;
   }
@@ -581,10 +592,10 @@ export class DatabaseOptimizerService implements OnModuleInit {
 
   private getConfigurationReason(
     key: string,
-    value: any,
+    _value: any,
     systemInfo: any
   ): string {
-    const reasons = {
+    const reasons: Record<string, string> = {
       shared_buffers: 'Optimized for available system memory',
       effective_cache_size: 'Set to utilize available system cache',
       work_mem: 'Balanced for concurrent operations',
@@ -641,7 +652,9 @@ export class DatabaseOptimizerService implements OnModuleInit {
   private cacheAnalysis(key: string, analysis: QueryAnalysis): void {
     if (this.queryCache.size >= this.maxCacheSize) {
       const firstKey = this.queryCache.keys().next().value;
-      this.queryCache.delete(firstKey);
+      if (firstKey) {
+        this.queryCache.delete(firstKey);
+      }
     }
     this.queryCache.set(key, analysis);
   }

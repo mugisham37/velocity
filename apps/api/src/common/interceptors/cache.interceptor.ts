@@ -1,12 +1,15 @@
 import {
+  Injectable,
+} from '@nestjs/common';
+import type {
   CallHandler,
   ExecutionContext,
-  Injectable,
   NestInterceptor,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { Observable, of } from 'rxjs';
+import type { Observable } from 'rxjs';
+import { of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { CacheService } from '../services/cache.service';
 
@@ -59,7 +62,7 @@ export class CacheInterceptor implements NestInterceptor {
 
     // Execute the handler and cache the result
     return next.handle().pipe(
-      tap(async result => {
+      tap(async (result: any) => {
         if (result !== null && result !== undefined) {
           await this.cacheService.set(resolvedCacheKey, result, {
             ttl: cacheTtl || 300, // Default 5 minutes
@@ -125,8 +128,8 @@ export class CacheInterceptor implements NestInterceptor {
 // Decorators for easy cache configuration
 export const Cache = (config: CacheConfig | string) => {
   return (
-    target: any,
-    propertyName: string,
+    _target: any,
+    _propertyName: string,
     descriptor: PropertyDescriptor
   ) => {
     if (typeof config === 'string') {
@@ -159,8 +162,8 @@ export const Cache = (config: CacheConfig | string) => {
 
 export const CacheKey = (key: string) => {
   return (
-    target: any,
-    propertyName: string,
+    _target: any,
+    _propertyName: string,
     descriptor: PropertyDescriptor
   ) => {
     Reflect.defineMetadata(CACHE_KEY_METADATA, key, descriptor.value);
@@ -169,8 +172,8 @@ export const CacheKey = (key: string) => {
 
 export const CacheTTL = (ttl: number) => {
   return (
-    target: any,
-    propertyName: string,
+    _target: any,
+    _propertyName: string,
     descriptor: PropertyDescriptor
   ) => {
     Reflect.defineMetadata(CACHE_TTL_METADATA, ttl, descriptor.value);
@@ -179,8 +182,8 @@ export const CacheTTL = (ttl: number) => {
 
 export const CacheTags = (tags: string[]) => {
   return (
-    target: any,
-    propertyName: string,
+    _target: any,
+    _propertyName: string,
     descriptor: PropertyDescriptor
   ) => {
     Reflect.defineMetadata(CACHE_TAGS_METADATA, tags, descriptor.value);

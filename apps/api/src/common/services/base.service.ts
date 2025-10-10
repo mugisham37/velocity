@@ -1,11 +1,12 @@
-import { Database, db, SQL, and, asc, count, desc, eq, sql } from '@kiro/database';
+import { db, and, asc, count, desc, eq, sql } from '@kiro/database';
+import type { Database, SQL } from '@kiro/database';
 import {
   BadRequestException,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PgTable, TableConfig } from 'drizzle-orm/pg-core';
+import type { PgTable, TableConfig } from 'drizzle-orm/pg-core';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { CacheService } from './cache.service';
@@ -38,9 +39,9 @@ export interface CacheOptions {
 @Injectable()
 export abstract class BaseService<
   TTable extends PgTable<TableConfig>,
-  TSelect,
-  TInsert,
-  TUpdate = Partial<TInsert>,
+  TSelect extends Record<string, unknown>,
+  TInsert extends Record<string, unknown>,
+  TUpdate extends Record<string, unknown> = Partial<TInsert>,
 > {
   protected abstract table: TTable;
   protected abstract tableName: string;
@@ -65,8 +66,8 @@ export abstract class BaseService<
       const insertData = companyId ? ({ ...data, companyId } as TInsert) : data;
 
       const [result] = await this.database
-        .insert(this.table)
-        .values(insertData)
+        .insert(this.table as any)
+        .values(insertData as any)
         .returning();
 
       this.invalidateCache();
@@ -75,8 +76,9 @@ export abstract class BaseService<
       return result as TSelect;
     } catch (error) {
       this.logger.error(`Failed to create ${this.tableName}`, { error, data });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new BadRequestException(
-        `Failed to create ${this.tableName}: ${error.message}`
+        `Failed to create ${this.tableName}: ${errorMessage}`
       );
     }
   }
@@ -105,7 +107,7 @@ export abstract class BaseService<
       const queryStart = performance.now();
       const [result] = await this.database
         .select()
-        .from(this.table)
+        .from(this.table as any)
         .where(and(...conditions))
         .limit(1);
 
@@ -169,8 +171,8 @@ export abstract class BaseService<
       } as TUpdate;
 
       const [result] = await this.database
-        .update(this.table)
-        .set(updateData)
+        .update(this.table as any)
+        .set(updateData as any)
         .where(and(...conditions))
         .returning();
 
@@ -207,7 +209,7 @@ export abstract class BaseService<
       }
 
       const [result] = await this.database
-        .delete(this.table)
+        .delete(this.table as any)
         .where(and(...conditions))
         .returning();
 
@@ -269,10 +271,12 @@ export abstract class BaseService<
 
       // Get total count
       const countStart = performance.now();
-      const [{ total }] = await this.database
+      const countResult = await this.database
         .select({ total: count() })
-        .from(this.table)
+        .from(this.table as any)
         .where(whereClause);
+      
+      const total = Number(countResult[0]?.total || 0);
 
       const countDuration = performance.now() - countStart;
       this.performanceMonitor.recordQueryPerformance(
@@ -289,7 +293,7 @@ export abstract class BaseService<
       const queryStart = performance.now();
       const data = await this.database
         .select()
-        .from(this.table)
+        .from(this.table as any)
         .where(whereClause)
         .orderBy(orderBy)
         .limit(limit)
@@ -348,12 +352,12 @@ export abstract class BaseService<
       const whereClause =
         conditions.length > 0 ? and(...conditions) : undefined;
 
-      const [{ total }] = await this.database
+      const countResult = await this.database
         .select({ total: count() })
-        .from(this.table)
+        .from(this.table as any)
         .where(whereClause);
 
-      return total;
+      return Number(countResult[0]?.total || 0);
     } catch (error) {
       this.logger.error(`Failed to count ${this.tableName}`, {
         error,
@@ -375,7 +379,7 @@ export abstract class BaseService<
 
       const [result] = await this.database
         .select({ id: (this.table as any).id })
-        .from(this.table)
+        .from(this.table as any)
         .where(and(...conditions))
         .limit(1);
 
@@ -405,8 +409,8 @@ export abstract class BaseService<
         : data;
 
       const results = await this.database
-        .insert(this.table)
-        .values(insertData)
+        .insert(this.table as any)
+        .values(insertData as any)
         .returning();
 
       this.invalidateCache();
@@ -420,8 +424,9 @@ export abstract class BaseService<
         error,
         count: data.length,
       });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new BadRequestException(
-        `Failed to bulk create ${this.tableName}: ${error.message}`
+        `Failed to bulk create ${this.tableName}: ${errorMessage}`
       );
     }
   }
@@ -441,7 +446,7 @@ export abstract class BaseService<
     params: any[] = []
   ): Promise<T[]> {
     try {
-      const result = await this.database.execute(sql.raw(query, params));
+      const result = await this.database.execute(sql.raw(query));
       return result as T[];
     } catch (error) {
       this.logger.error('Failed to execute raw query', {

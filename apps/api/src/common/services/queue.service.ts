@@ -1,4 +1,5 @@
-import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
@@ -39,11 +40,11 @@ type JobProcessor<T = any> = (job: Job<T>) => Promise<any>;
 
 @Injectable()
 export class QueueService implements OnModuleInit, OnModuleDestroy {
-  private redis: Redis;
+  private redis!: Redis;
   private processors = new Map<string, JobProcessor>();
   private activeJobs = new Map<string, Job>();
   private isProcessing = false;
-  private processingInterval: NodeJS.Timeout;
+  private processingInterval!: NodeJS.Timeout;
 
   constructor(
     private readonly configService: ConfigService,
@@ -51,11 +52,10 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     private readonly logger: Logger
   ) {}
 
-  async onModuleInit() {
+  async onModuleInit(): Promise<void> {
     try {
-      const redisUrl = this.configService.get<string>('REDIS_URL');
+      const redisUrl = this.configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
       this.redis = new Redis(redisUrl, {
-        retryDelayOnFailover: 100,
         enableReadyCheck: true,
         maxRetriesPerRequest: 3,
         lazyConnect: true,
@@ -71,7 +71,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async onModuleDestroy() {
+  async onModuleDestroy(): Promise<void> {
     this.isProcessing = false;
     if (this.processingInterval) {
       clearInterval(this.processingInterval);
@@ -91,7 +91,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     options: JobOptions = {}
   ): Promise<string> {
     try {
-      const jobId = `${queueName}:${jobName}:${Date.now()}:${Math.random().toString(36).substr(2, 9)}`;
+      const jobId = `${queueName}:${jobName}:${Date.now()}:${Math.random().toString(36).substring(2, 11)}`;
 
       const job: Job<T> = {
         id: jobId,
@@ -231,8 +231,8 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
 
       // Reset job status
       job.attempts = 0;
-      job.error = undefined;
-      job.failedAt = undefined;
+      delete job.error;
+      delete job.failedAt;
 
       // Update job data
       await this.redis.hset(jobKey, {
@@ -272,15 +272,27 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
         const pipeline = this.redis.pipeline();
 
         for (const jobId of jobsToRemove) {
-          pipeline.del(`job:${jobId}`);
+          if (jobId) {
+            pipeline.del(`job:${jobId}`);
+          }
         }
 
         if (completedJobs.length > 0) {
-          pipeline.zrem(`${queueKey}:completed`, ...completedJobs);
+          const validCompletedJobs = completedJobs.filter(Boolean);
+          if (validCompletedJobs.length > 0) {
+            for (const jobId of validCompletedJobs) {
+              pipeline.zrem(`${queueKey}:completed`, jobId);
+            }
+          }
         }
 
         if (failedJobs.length > 0) {
-          pipeline.zrem(`${queueKey}:failed`, ...failedJobs);
+          const validFailedJobs = failedJobs.filter(Boolean);
+          if (validFailedJobs.length > 0) {
+            for (const jobId of validFailedJobs) {
+              pipeline.zrem(`${queueKey}:failed`, jobId);
+            }
+          }
         }
 
         await pipeline.exec();
@@ -308,7 +320,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     }, 1000);
   }
 
-  private async processDelayedJobs(): void {
+  private async processDelayedJobs(): Promise<void> {
     try {
       // Get all queue names with delayed jobs
       const keys = await this.redis.keys('queue:*:delayed');
@@ -340,7 +352,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async processWaitingJobs(): void {
+  private async processWaitingJobs(): Promise<void> {
     try {
       // Get all queue names with waiting jobs
       const keys = await this.redis.keys('queue:*:waiting');
@@ -354,7 +366,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async processQueueJobs(queueName: string): void {
+  private async processQueueJobs(queueName: string): Promise<void> {
     try {
       const queueKey = `queue:${queueName}`;
       const waitingKey = `${queueKey}:waiting`;
@@ -368,6 +380,10 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
       }
 
       const jobId = jobIds[0];
+      if (!jobId) {
+        return;
+      }
+      
       const job = await this.getJob(jobId);
 
       if (!job) {
@@ -421,18 +437,19 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
       await this.completeJob(queueName, job, result);
 
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error('Job processing failed', {
         jobId: job.id,
         jobName: job.name,
-        error: error.message,
+        error: errorMessage,
         attempts: job.attempts
       });
 
       // Check if we should retry
       if (job.attempts < (job.options.attempts || 3)) {
-        await this.retryJobWithBackoff(queueName, job, error.message);
+        await this.retryJobWithBackoff(queueName, job, errorMessage);
       } else {
-        await this.failJob(queueName, job, error.message);
+        await this.failJob(queueName, job, errorMessage);
       }
     } finally {
       this.activeJobs.delete(job.id);

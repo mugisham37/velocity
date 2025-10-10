@@ -6,7 +6,7 @@ import {
   notifications,
 } from '@kiro/database';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, inArray } from '@kiro/database';
+import { and, desc, eq, inArray, isNull, count } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 
@@ -96,8 +96,10 @@ export class NotificationService {
         data,
         companyId,
       });
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       throw new BadRequestException(
-        `Failed to send notification: ${error.message}`
+        `Failed to send notification: ${errorMessage}`
       );
     }
   }
@@ -129,8 +131,10 @@ export class NotificationService {
         data,
         companyId,
       });
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       throw new BadRequestException(
-        `Failed to send bulk notifications: ${error.message}`
+        `Failed to send bulk notifications: ${errorMessage}`
       );
     }
   }
@@ -161,19 +165,25 @@ export class NotificationService {
         ? this.replaceTemplateVariables(template.subject, variables)
         : 'Notification';
 
-      await this.sendNotification(
-        {
-          title,
-          message,
-          type: 'INFO',
-          recipientId,
-          entityType,
-          entityId,
-          metadata: { templateName, variables },
-        },
-        companyId,
-        [template.type as any]
-      );
+      const notificationData: NotificationData = {
+        title,
+        message,
+        type: 'INFO',
+        recipientId,
+        metadata: { templateName, variables },
+      };
+
+      if (entityType) {
+        notificationData.entityType = entityType;
+      }
+
+      if (entityId) {
+        notificationData.entityId = entityId;
+      }
+
+      await this.sendNotification(notificationData, companyId, [
+        template.type as any,
+      ]);
     } catch (error) {
       this.logger.error('Failed to send notification from template', {
         error,
@@ -216,7 +226,7 @@ export class NotificationService {
     ];
 
     if (unreadOnly) {
-      conditions.push(eq(notifications.readAt, null));
+      conditions.push(isNull(notifications.readAt));
     }
 
     if (channel) {
@@ -226,10 +236,12 @@ export class NotificationService {
     const whereClause = and(...conditions);
 
     // Get total count
-    const [{ count: total }] = await db
-      .select({ count: db.$count(notifications) })
+    const countResult = await db
+      .select({ count: count() })
       .from(notifications)
       .where(whereClause);
+
+    const total = Number(countResult[0]?.count || 0);
 
     // Get data with pagination
     const data = await db
@@ -393,11 +405,11 @@ export class NotificationService {
       type: data.type,
       channel: data.channel,
       recipientId: data.recipientId,
-      senderId: data.senderId,
-      entityType: data.entityType,
-      entityId: data.entityId,
-      scheduledAt: data.scheduledAt,
-      metadata: data.metadata,
+      senderId: data.senderId || null,
+      entityType: data.entityType || null,
+      entityId: data.entityId || null,
+      scheduledAt: data.scheduledAt || null,
+      metadata: data.metadata || null,
       companyId: data.companyId,
       status: data.scheduledAt ? 'PENDING' : 'SENT',
     });

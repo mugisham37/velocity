@@ -1,11 +1,13 @@
 import {
+  Injectable,
+} from '@nestjs/common';
+import type {
   CallHandler,
   ExecutionContext,
-  Injectable,
   NestInterceptor,
 } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { PerformanceMonitorService } from '../services/performance-monitor.service';
 
@@ -25,7 +27,7 @@ export class PerformanceInterceptor implements NestInterceptor {
           const duration = performance.now() - startTime;
           this.recordPerformance(request, endpoint, method, duration, 200);
         },
-        error: error => {
+        error: (error: any) => {
           const duration = performance.now() - startTime;
           const statusCode = error.status || 500;
           this.recordPerformance(
