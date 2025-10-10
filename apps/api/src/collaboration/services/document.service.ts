@@ -12,7 +12,7 @@ interface DocumentState {
 interface Operation {
   id: string;
   type: 'insert' | 'delete' | 'retain';
-  position?: number;
+  position: number;
   content?: string;
   length?: number;
   userId: string;
@@ -152,7 +152,7 @@ export class DocumentService {
       );
       return {
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -232,7 +232,7 @@ export class DocumentService {
   ): string {
     switch (operation.type) {
       case 'insert':
-        const insertPos = operation.position || 0;
+        const insertPos = operation.position;
         return (
           content.slice(0, insertPos) +
           (operation.content || '') +
@@ -240,7 +240,7 @@ export class DocumentService {
         );
 
       case 'delete':
-        const deletePos = operation.position || 0;
+        const deletePos = operation.position;
         const deleteLength = operation.length || 0;
         return (
           content.slice(0, deletePos) + content.slice(deletePos + deleteLength)

@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 interface UserPresence {
   userId: string;
   username: string;
-  avatar?: string;
+  avatar: string;
   status: 'online' | 'away' | 'busy' | 'offline';
   lastSeen: Date;
   socketIds: string[];
@@ -28,7 +28,7 @@ export class PresenceService {
       presence = {
         userId,
         username: userInfo?.username || `User ${userId}`,
-        avatar: userInfo?.avatar,
+        avatar: userInfo?.avatar || '',
         status: 'online',
         lastSeen: new Date(),
         socketIds: [],
@@ -60,8 +60,8 @@ export class PresenceService {
     if (presence.socketIds.length === 0) {
       presence.status = 'offline';
       presence.lastSeen = new Date();
-      presence.currentDocument = undefined;
-      presence.currentActivity = undefined;
+      delete presence.currentDocument;
+      delete presence.currentActivity;
     }
 
     this.userPresence.set(userId, presence);
@@ -91,7 +91,11 @@ export class PresenceService {
     if (!presence) return;
 
     presence.currentActivity = activity;
-    presence.currentDocument = documentId;
+    if (documentId) {
+      presence.currentDocument = documentId;
+    } else {
+      delete presence.currentDocument;
+    }
     presence.lastSeen = new Date();
     this.userPresence.set(userId, presence);
   }
@@ -150,8 +154,8 @@ export class PresenceService {
         if (presence.status !== 'offline') {
           presence.status = 'offline';
           presence.socketIds = [];
-          presence.currentDocument = undefined;
-          presence.currentActivity = undefined;
+          delete presence.currentDocument;
+          delete presence.currentActivity;
           this.userPresence.set(userId, presence);
 
           this.logger.log(`Cleaned up stale presence for user ${userId}`);

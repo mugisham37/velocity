@@ -11,7 +11,7 @@ export class CollaborationService {
   async authenticateSocket(client: Socket): Promise<any> {
     try {
       const token =
-        client.handshake.auth?.token ||
+        client.handshake.auth?.['token'] ||
         client.handshake.headers?.authorization?.replace('Bearer ', '');
 
       if (!token) {
@@ -36,9 +36,9 @@ export class CollaborationService {
   }
 
   async validateUserAccess(
-    userId: string,
-    resourceId: string,
-    resourceType: string
+    _userId: string,
+    _resourceId: string,
+    _resourceType: string
   ): Promise<boolean> {
     // Implement access control logic based on your RBAC system
     // This is a placeholder implementation

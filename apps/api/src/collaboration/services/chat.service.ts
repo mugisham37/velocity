@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 interface ChatChannel {
   id: string;
   name: string;
-  description?: string;
+  description: string;
   type: 'public' | 'private' | 'direct' | 'project' | 'department';
   members: string[];
   admins: string[];
@@ -69,14 +69,14 @@ export class ChatService {
     const channel: ChatChannel = {
       id,
       name: data.name,
-      description: data.description,
+      description: data.description || '',
       type: data.type,
       members: data.members || [data.createdBy],
       admins: [data.createdBy],
       createdBy: data.createdBy,
       createdAt: new Date(),
       lastActivity: new Date(),
-      metadata: data.metadata,
+      metadata: data.metadata || {},
     };
 
     this.channels.set(id, channel);
@@ -104,7 +104,7 @@ export class ChatService {
     if (!channel.admins.includes(addedBy) && channel.type === 'private') {
       return false;
     }
-(!channel.members.includes(userId)) {
+    if (!channel.members.includes(userId)) {
       channel.members.push(userId);
       channel.lastActivity = new Date();
 
@@ -199,10 +199,11 @@ export class ChatService {
   }
 
   async updateMessage(messageId: string, userId: string, content: string): Promise<ChatMessage | null> {
-    for (const [channelId, messages] of this.messages.entries()) {
+    for (const [_channelId, messages] of this.messages.entries()) {
       const messageIndex = messages.findIndex(m => m.id === messageId);
       if (messageIndex !== -1) {
         const message = messages[messageIndex];
+        if (!message) return null;
 
         // Check if user can edit this message
         if (message.userId !== userId) {
@@ -230,6 +231,7 @@ export class ChatService {
       const messageIndex = messages.findIndex(m => m.id === messageId);
       if (messageIndex !== -1) {
         const message = messages[messageIndex];
+        if (!message) return false;
 
         // Check if user can delete this message
         const channel = this.channels.get(channelId);
@@ -247,7 +249,7 @@ export class ChatService {
   }
 
   async addReaction(messageId: string, userId: string, emoji: string): Promise<boolean> {
-    for (const [channelId, messages] of this.messages.entries()) {
+    for (const [_channelId, messages] of this.messages.entries()) {
       const message = messages.find(m => m.id === messageId);
       if (message) {
         if (!message.metadata) {
@@ -260,8 +262,8 @@ export class ChatService {
           message.metadata.reactions[emoji] = [];
         }
 
-        if (!message.metadata.reactions[emoji].includes(userId)) {
-          message.metadata.reactions[emoji].push(userId);
+        if (!message.metadata.reactions[emoji]!.includes(userId)) {
+          message.metadata.reactions[emoji]!.push(userId);
           this.logger.log(`User ${userId} added reaction ${emoji} to message ${messageId}`);
         }
 
@@ -273,14 +275,14 @@ export class ChatService {
   }
 
   async removeReaction(messageId: string, userId: string, emoji: string): Promise<boolean> {
-    for (const [channelId, messages] of this.messages.entries()) {
+    for (const [_channelId, messages] of this.messages.entries()) {
       const message = messages.find(m => m.id === messageId);
       if (message?.metadata?.reactions?.[emoji]) {
-        message.metadata.reactions[emoji] = message.metadata.reactions[emoji].filter(
+        message.metadata.reactions[emoji] = message.metadata.reactions[emoji]!.filter(
           id => id !== userId
         );
 
-        if (message.metadata.reactions[emoji].length === 0) {
+        if (message.metadata.reactions[emoji]!.length === 0) {
           delete message.metadata.reactions[emoji];
         }
 
@@ -366,6 +368,6 @@ export class ChatService {
   }
 
   private generateId(): string {
-    return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 }

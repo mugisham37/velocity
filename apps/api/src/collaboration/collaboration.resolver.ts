@@ -7,9 +7,9 @@ import {
   Resolver,
   Subscription,
 } from '@nestjs/graphql';
-import { PubSub } from 'graphql-subscriptions';
+import { PubSub } from './utils/pubsub';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CollaborationService } from './collaboration.service';
+
 import { ActivityFeedService } from './services/activity-feed.service';
 import { ChatService } from './services/chat.service';
 import { DocumentService } from './services/document.service';
@@ -22,7 +22,6 @@ const pubSub = new PubSub();
 @UseGuards(JwtAuthGuard)
 export class CollaborationResolver {
   constructor(
-    private readonly collaborationService: CollaborationService,
     private readonly documentService: DocumentService,
     private readonly presenceService: PresenceService,
     private readonly notificationService: NotificationService,
@@ -34,7 +33,7 @@ export class CollaborationResolver {
   @Query(() => String)
   async getDocumentState(
     @Args('documentId') documentId: string,
-    @Context() context: any
+    @Context() _context: any
   ) {
     const document = await this.documentService.getDocumentState(documentId);
     return JSON.stringify(document);
@@ -129,7 +128,12 @@ export class CollaborationResolver {
     @Context() context?: any
   ) {
     const userId = context.req.user.sub;
-    const filter = { limit, offset, entityType, entityId };
+    const filter: any = {
+      limit,
+      offset,
+      ...(entityType && { entityType }),
+      ...(entityId && { entityId }),
+    };
     const feed = await this.activityFeedService.getActivityFeed(userId, filter);
     return JSON.stringify(feed);
   }
@@ -203,8 +207,8 @@ export class CollaborationResolver {
     const channel = await this.chatService.createChannel({
       name,
       type: type as any,
-      description,
-      members,
+      ...(description && { description }),
+      ...(members && { members }),
       createdBy: userId,
     });
     return JSON.stringify(channel);

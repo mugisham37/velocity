@@ -36,7 +36,7 @@ export const roles = pgTable('roles', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 100 }).notNull(),
   description: text('description'),
-  parentRoleId: uuid('parent_role_id').references(() => roles.id),
+  parentRoleId: uuid('parent_role_id').references((): any => roles.id),
   isSystemRole: boolean('is_system_role').default(false).notNull(),
   companyId: uuid('company_id').references(() => companies.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -51,7 +51,7 @@ export const rolesRelations = relations(roles, ({ one, many }) => ({
   parentRole: one(roles, {
     fields: [roles.parentRoleId],
     references: [roles.id],
-  }),
+  }) as any,
   users: many(userRoles),
   permissions: many(rolePermissions),
 }));

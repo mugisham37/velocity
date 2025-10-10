@@ -8,7 +8,7 @@ interface ActivityItem {
   action: string;
   entityType: string;
   entityId: string;
-  entityName?: string;
+  entityName: string;
   description: string;
   metadata?: {
     changes?: { [field: string]: { from: any; to: any } };
@@ -63,9 +63,9 @@ export class ActivityFeedService {
       action: data.action,
       entityType: data.entityType,
       entityId: data.entityId,
-      entityName: data.entityName,
+      entityName: data.entityName || `${data.entityType} ${data.entityId}`,
       description: data.description,
-      metadata: data.metadata,
+      metadata: data.metadata || {},
       visibility: data.visibility || 'public',
       priority: data.priority || 'medium',
       createdAt: new Date(),
@@ -378,6 +378,6 @@ export class ActivityFeedService {
   }
 
   private generateId(): string {
-    return `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `activity_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 }

@@ -2,12 +2,11 @@ import { Logger, UseGuards } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import type { OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CollaborationService } from './collaboration.service';
@@ -17,7 +16,7 @@ import { PresenceService } from './services/presence.service';
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: process.env['FRONTEND_URL'] || 'http://localhost:3000',
     credentials: true,
   },
   namespace: '/collaboration',
@@ -27,7 +26,7 @@ export class CollaborationGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   private readonly logger = new Logger(CollaborationGateway.name);
 
@@ -82,7 +81,7 @@ export class CollaborationGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { documentId: string; documentType: string }
   ) {
-    const { documentId, documentType } = data;
+    const { documentId } = data;
     const user = client.data.user;
 
     await client.join(`document:${documentId}`);

@@ -40,8 +40,8 @@ interface Notification {
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
-  private emailTransporter: nodemailer.Transporter;
-  private twilioClient: Twilio;
+  private emailTransporter!: nodemailer.Transporter;
+  private twilioClient!: Twilio;
   private notifications = new Map<string, Notification>();
   private userPreferences = new Map<string, NotificationPreference>();
 
@@ -51,32 +51,32 @@ export class NotificationService {
 
   private initializeProviders() {
     // Initialize email transporter
-    if (process.env.SMTP_HOST) {
-      this.emailTransporter = nodemailer.createTransporter({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: process.env.SMTP_SECURE === 'true',
+    if (process.env['SMTP_HOST']) {
+      this.emailTransporter = nodemailer.createTransport({
+        host: process.env['SMTP_HOST'],
+        port: parseInt(process.env['SMTP_PORT'] || '587'),
+        secure: process.env['SMTP_SECURE'] === 'true',
         auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
+          user: process.env['SMTP_USER'],
+          pass: process.env['SMTP_PASS'],
         },
       });
     }
 
     // Initialize Twilio
-    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+    if (process.env['TWILIO_ACCOUNT_SID'] && process.env['TWILIO_AUTH_TOKEN']) {
       this.twilioClient = new Twilio(
-        process.env.TWILIO_ACCOUNT_SID,
-        process.env.TWILIO_AUTH_TOKEN
+        process.env['TWILIO_ACCOUNT_SID'],
+        process.env['TWILIO_AUTH_TOKEN']
       );
     }
 
     // Initialize Web Push
-    if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    if (process.env['VAPID_PUBLIC_KEY'] && process.env['VAPID_PRIVATE_KEY']) {
       webpush.setVapidDetails(
-        process.env.VAPID_SUBJECT || 'mailto:admin@kiro-erp.com',
-        process.env.VAPID_PUBLIC_KEY,
-        process.env.VAPIDVATE_KEY
+        process.env['VAPID_SUBJECT'] || 'mailto:admin@kiro-erp.com',
+        process.env['VAPID_PUBLIC_KEY'],
+        process.env['VAPID_PRIVATE_KEY']
       );
     }
   }
@@ -159,7 +159,7 @@ export class NotificationService {
     const userEmail = `user${notification.userId}@example.com`;
 
     await this.emailTransporter.sendMail({
-      from: process.env.SMTP_FROM || 'noreply@kiro-erp.com',
+      from: process.env['SMTP_FROM'] || 'noreply@kiro-erp.com',
       to: userEmail,
       subject: notification.title,
       html: this.generateEmailTemplate(notification),
@@ -176,9 +176,14 @@ export class NotificationService {
     // In a real implementation, you would get user phone from database
     const userPhone = `+1234567890`; // Placeholder
 
+    const fromNumber = process.env['TWILIO_PHONE_NUMBER'];
+    if (!fromNumber) {
+      throw new Error('TWILIO_PHONE_NUMBER not configured');
+    }
+
     await this.twilioClient.messages.create({
       body: `${notification.title}\n\n${notification.message}`,
-      from: process.env.TWILIO_PHONE_NUMBER,
+      from: fromNumber,
       to: userPhone,
     });
 
@@ -331,12 +336,12 @@ export class NotificationService {
     `;
   }
 
-  private async getUserPushSubscriptions(userId: string): Promise<any[]> {
+  private async getUserPushSubscriptions(_userId: string): Promise<any[]> {
     // In a real implementation, you would fetch from database
     return [];
   }
 
   private generateId(): string {
-    return `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `notif_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 }
