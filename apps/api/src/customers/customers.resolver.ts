@@ -1,6 +1,6 @@
-import { User } from '@kiro/database';
+import type { User } from '@kiro/database';
 import { UseGuards } from '@nestjs/common';
-import { Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CustomersService } from './customers.service';
@@ -42,7 +42,7 @@ export class CustomersResolver {
   ): Promise<Customer> {
     return this.customersService.updateCustomer(
       id,
-      input,
+      input as Record<string, unknown>,
       user.companyId,
       user.id
     ) as Promise<Customer>;
@@ -112,8 +112,8 @@ export class CustomersResolver {
         customerId,
         creditLimit,
         effectiveDate: new Date(effectiveDate),
-        expiryDate: expiryDate ? new Date(expiryDate) : undefined,
-        notes,
+        expiryDate: expiryDate ? new Date(expiryDate) : null,
+        notes: notes || null,
       },
       user!.companyId,
       user!.id
@@ -146,7 +146,7 @@ export class CustomersResolver {
     await this.customersService.createPortalUser(
       {
         customerId,
-        contactId,
+        contactId: contactId || null,
         username,
         email,
         password,

@@ -14,11 +14,16 @@ export class PerformanceMonitorService {
     };
   }
 
-  recordQueryPerformance(query: string, duration: number, params?: any[]): void {
-    if (duration > 1000) { // Log slow queries (>1s)
+  recordQueryPerformance(
+    query: string,
+    duration: number,
+    params?: any[]
+  ): void {
+    if (duration > 1000) {
+      // Log slow queries (>1s)
       console.warn(`Slow query detected: ${query}`, {
         duration: `${duration.toFixed(2)}ms`,
-        params
+        params,
       });
     }
   }
@@ -35,7 +40,7 @@ export class PerformanceMonitorService {
       duration: `${duration.toFixed(2)}ms`,
       statusCode,
       userAgent,
-      ip
+      ip,
     });
   }
 
@@ -48,7 +53,7 @@ export class PerformanceMonitorService {
     console.log(`Metric: ${name}`, {
       value,
       unit,
-      tags
+      tags,
     });
   }
 }

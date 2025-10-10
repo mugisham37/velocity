@@ -15,11 +15,11 @@ import {
 export class CustomerContactInput {
   @Field()
   @IsString()
-  firstName: string;
+  firstName!: string;
 
   @Field()
   @IsString()
-  lastName: string;
+  lastName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -51,7 +51,7 @@ export class CustomerContactInput {
 export class CreateCustomerInput {
   @Field()
   @IsString()
-  customerName: string;
+  customerName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -194,15 +194,15 @@ export class UpdateCustomerInput {
 export class CreateCustomerContactInput {
   @Field(() => ID)
   @IsString()
-  customerId: string;
+  customerId!: string;
 
   @Field()
   @IsString()
-  firstName: string;
+  firstName!: string;
 
   @Field()
   @IsString()
-  lastName: string;
+  lastName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -234,7 +234,7 @@ export class CreateCustomerContactInput {
 export class CreateCustomerSegmentInput {
   @Field()
   @IsString()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   @IsOptional()

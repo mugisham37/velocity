@@ -1,7 +1,7 @@
 import {
-  Customer,
-  CustomerContact,
-  NewCustomer,
+  type Customer,
+  type CustomerContact,
+  type NewCustomer,
   customerCommunicationPreferences,
   customerContacts,
   customerCreditLimits,
@@ -18,7 +18,7 @@ import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
 import { BaseService } from '../common/services/base.service';
 import { NotificationService } from '../common/services/notification.service';
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 
 export interface CreateCustomerDto {
   customerName: string;
@@ -37,7 +37,7 @@ export interface CreateCustomerDto {
   contacts?: CreateCustomerContactDto[];
 }
 
-export interface UpdateCustomerDto {
+export interface UpdateCustomerDto extends Record<string, unknown> {
   customerName?: string;
   parentCustomerId?: string;
   email?: string;
@@ -68,8 +68,8 @@ export interface CreateCreditLimitDto {
   customerId: string;
   creditLimit: number;
   effectiveDate: Date;
-  expiryDate?: Date;
-  notes?: string;
+  expiryDate?: Date | null;
+  notes?: string | null;
 }
 
 export interface CreateCustomerSegmentDto {
@@ -80,7 +80,7 @@ export interface CreateCustomerSegmentDto {
 
 export interface CustomerPortalUserDto {
   customerId: string;
-  contactId?: string;
+  contactId?: string | null;
   username: string;
   email: string;
   password: string;
@@ -88,17 +88,19 @@ export interface CustomerPortalUserDto {
 }
 
 @Injectable()
-export class CustomersService extends BaseService<typeof customers, Customer, NewCustomer, UpdateCustomerDto> {
-  protected table = customers;
+export class CustomersService extends BaseService<any, Customer, NewCustomer, Record<string, unknown>> {
+  protected table: any = customers;
   protected tableName = 'customers';
 
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
     logger: Logger,
     private readonly auditService: AuditService,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
+    cacheService: any, // TODO: Import proper CacheService
+    performanceMonitor: any // TODO: Import proper PerformanceMonitorService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -124,17 +126,17 @@ export class CustomersService extends BaseService<typeof customers, Customer, Ne
           customerCode,
           customerName: data.customerName,
           customerType: data.customerType || 'Individual',
-          parentCustomerId: data.parentCustomerId,
-          email: data.email,
-          phone: data.phone,
-          website: data.website,
-          taxId: data.taxId,
+          parentCustomerId: data.parentCustomerId || null,
+          email: data.email || null,
+          phone: data.phone || null,
+          website: data.website || null,
+          taxId: data.taxId || null,
           currency: data.currency || 'USD',
-          paymentTerms: data.paymentTerms,
+          paymentTerms: data.paymentTerms || null,
           creditLimit: data.creditLimit?.toString() || '0',
-          billingAddress: data.billingAddress,
-          shippingAddress: data.shippingAddress,
-          notes: data.notes,
+          billingAddress: data.billingAddress || null,
+          shippingAddress: data.shippingAddress || null,
+          notes: data.notes || null,
           companyId,
         })
         .returning();
@@ -142,13 +144,13 @@ export class CustomersService extends BaseService<typeof customers, Customer, Ne
       // Create contacts if provided
       if (data.contacts && data.contacts.length > 0) {
         const contactInserts = data.contacts.map(contact => ({
-          customerId: customer.id,
+          customerId: customer!.id,
           firstName: contact.firstName,
           lastName: contact.lastName,
-          email: contact.email,
-          phone: contact.phone,
-          designation: contact.designation,
-          department: contact.department,
+          email: contact.email || null,
+          phone: contact.phone || null,
+          designation: contact.designation || null,
+          department: contact.department || null,
           isPrimary: contact.isPrimary || false,
         }));
 
@@ -157,21 +159,23 @@ export class CustomersService extends BaseService<typeof customers, Customer, Ne
 
       // Create default communication preferences
       await tx.insert(customerCommunicationPreferences).values({
-        customerId: customer.id,
+        customerId: customer!.id,
         companyId,
       });
 
       // Log audit trail
-      await this.auditService.logAudit({
-        entityType: 'customers',
-        entityId: customer.id,
-        action: 'CREATE',
-        newValues: { ...customer, contacts: data.contacts },
-        companyId,
-        userId,
-      });
+      if (userId) {
+        await this.auditService.logAudit({
+          entityType: 'customers',
+          entityId: customer!.id,
+          action: 'CREATE',
+          newValues: { ...customer!, contacts: data.contacts },
+          companyId,
+          userId,
+        });
+      }
 
-      return customer;
+      return customer!;
     });
   }
 
@@ -197,15 +201,17 @@ export class CustomersService extends BaseService<typeof customers, Customer, Ne
     const updatedCustomer = await this.update(id, data, companyId);
 
     // Log audit trail
-    await this.auditService.logAudit({
-      entityType: 'customers',
-      entityId: id,
-      action: 'UPDATE',
-      oldValues: oldCustomer,
-      newValues: updatedCustomer,
-      companyId,
-      userId,
-    });
+    if (userId) {
+      await this.auditService.logAudit({
+        entityType: 'customers',
+        entityId: id,
+        action: 'UPDATE',
+        oldValues: oldCustomer,
+        newValues: updatedCustomer,
+        companyId,
+        userId,
+      });
+    }
 
     return updatedCustomer;
   }
@@ -272,25 +278,27 @@ export class CustomersService extends BaseService<typeof customers, Customer, Ne
         customerId: data.customerId,
         firstName: data.firstName,
         lastName: data.lastName,
-        email: data.email,
-        phone: data.phone,
-        designation: data.designation,
-        department: data.department,
+        email: data.email || null,
+        phone: data.phone || null,
+        designation: data.designation || null,
+        department: data.department || null,
         isPrimary: data.isPrimary || false,
       })
       .returning();
 
     // Log audit trail
-    await this.auditService.logAudit({
-      entityType: 'customer_contacts',
-      entityId: contact.id,
-      action: 'CREATE',
-      newValues: contact,
-      companyId,
-      userId,
-    });
+    if (userId) {
+      await this.auditService.logAudit({
+        entityType: 'customer_contacts',
+        entityId: contact!.id,
+        action: 'CREATE',
+        newValues: contact!,
+        companyId,
+        userId,
+      });
+    }
 
-    return contact;
+    return contact!;
   }
 
   /**
@@ -304,11 +312,10 @@ export class CustomersService extends BaseService<typeof customers, Customer, Ne
     await this.database.insert(customerCreditLimits).values({
       customerId: data.customerId,
       creditLimit: data.creditLimit.toString(),
-      availableCredit: data.creditLimit.toString(),
       effectiveDate: data.effectiveDate,
-      expiryDate: data.expiryDate,
+      expiryDate: data.expiryDate || null,
       approvedBy: userId,
-      notes: data.notes,
+      notes: data.notes || null,
       companyId,
     });
 
@@ -366,26 +373,28 @@ export class CustomersService extends BaseService<typeof customers, Customer, Ne
       .insert(customerSegments)
       .values({
         name: data.name,
-        description: data.description,
+        description: data.description || null,
         criteria: data.criteria,
         companyId,
       })
       .returning();
 
     // Auto-assign customers based on criteria
-    await this.assignCustomersToSegment(segment.id, data.criteria, companyId);
+    await this.assignCustomersToSegment(segment!.id, data.criteria, companyId);
 
     // Log audit trail
-    await this.auditService.logAudit({
-      entityType: 'customer_segments',
-      entityId: segment.id,
-      action: 'CREATE',
-      newValues: segment,
-      companyId,
-      userId,
-    });
+    if (userId) {
+      await this.auditService.logAudit({
+        entityType: 'customer_segments',
+        entityId: segment!.id,
+        action: 'CREATE',
+        newValues: segment!,
+        companyId,
+        userId,
+      });
+    }
 
-    return segment;
+    return segment!;
   }
 
   /**
@@ -436,7 +445,7 @@ export class CustomersService extends BaseService<typeof customers, Customer, Ne
       .insert(customerPortalUsers)
       .values({
         customerId: data.customerId,
-        contactId: data.contactId,
+        contactId: data.contactId || null,
         username: data.username,
         email: data.email,
         passwordHash,
@@ -451,7 +460,7 @@ export class CustomersService extends BaseService<typeof customers, Customer, Ne
         title: 'Welcome to Customer Portal',
         message: `Your customer portal account has been created. Username: ${data.username}`,
         type: 'INFO',
-        recipientId: portalUser.id,
+        recipientId: portalUser!.id,
         entityType: 'customers',
         entityId: data.customerId,
       },
@@ -460,16 +469,18 @@ export class CustomersService extends BaseService<typeof customers, Customer, Ne
     );
 
     // Log audit trail
-    await this.auditService.logAudit({
-      entityType: 'customer_portal_users',
-      entityId: portalUser.id,
-      action: 'CREATE',
-      newValues: { ...portalUser, passwordHash: '[REDACTED]' },
-      companyId,
-      userId,
-    });
+    if (userId) {
+      await this.auditService.logAudit({
+        entityType: 'customer_portal_users',
+        entityId: portalUser!.id,
+        action: 'CREATE',
+        newValues: { ...portalUser!, passwordHash: '[REDACTED]' },
+        companyId,
+        userId,
+      });
+    }
 
-    return { ...portalUser, passwordHash: undefined };
+    return { ...portalUser!, passwordHash: undefined };
   }
 
   /**
@@ -509,7 +520,7 @@ export class CustomersService extends BaseService<typeof customers, Customer, Ne
         )
       );
 
-    const nextNumber = result.maxCode ? parseInt(result.maxCode) + 1 : 1;
+    const nextNumber = result?.maxCode ? parseInt(result.maxCode) + 1 : 1;
     return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 
@@ -549,7 +560,7 @@ export class CustomersService extends BaseService<typeof customers, Customer, Ne
     newParentId: string,
     companyId: string
   ): Promise<boolean> {
-    let currentParentId = newParentId;
+    let currentParentId: string | null = newParentId;
 
     while (currentParentId) {
       if (currentParentId === customerId) {
@@ -557,7 +568,7 @@ export class CustomersService extends BaseService<typeof customers, Customer, Ne
       }
 
       const parent = await this.findById(currentParentId, companyId);
-      currentParentId = parent?.parentCustomerId || null;
+      currentParentId = parent?.parentCustomerId ?? null;
     }
 
     return false;
@@ -577,12 +588,12 @@ export class CustomersService extends BaseService<typeof customers, Customer, Ne
       .where(eq(customers.companyId, companyId));
 
     // Apply criteria filters (simplified example)
-    if (criteria.customerType) {
-      query = query.where(eq(customers.customerType, criteria.customerType));
+    if (criteria['customerType']) {
+      query = query.where(eq(customers.customerType, criteria['customerType']));
     }
 
-    if (criteria.minCreditLimit) {
-      query = query.where(sql`CAST(${customers.creditLimit} AS DECIMAL) >= ${criteria.minCreditLimit}`);
+    if (criteria['minCreditLimit']) {
+      query = query.where(sql`CAST(${customers.creditLimit} AS DECIMAL) >= ${criteria['minCreditLimit']}`);
     }
 
     const matchingCustomers = await query;

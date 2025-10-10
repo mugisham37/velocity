@@ -3,22 +3,22 @@ import { Field, ID, ObjectType } from '@nestjs/graphql';
 @ObjectType()
 export class Customer {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  customerCode: string;
+  customerCode!: string;
 
   @Field()
-  customerName: string;
+  customerName!: string;
 
   @Field()
-  customerType: string;
+  customerType!: string;
 
   @Field(() => ID, { nullable: true })
   parentCustomerId?: string | null;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field({ nullable: true })
   email?: string | null;
@@ -39,7 +39,7 @@ export class Customer {
   paymentTerms?: string | null;
 
   @Field()
-  creditLimit: string;
+  creditLimit!: string;
 
   @Field({ nullable: true })
   billingAddress?: any;
@@ -48,19 +48,19 @@ export class Customer {
   shippingAddress?: any;
 
   @Field()
-  isActive: boolean;
+  isActive!: boolean;
 
   @Field()
-  isBlocked: boolean;
+  isBlocked!: boolean;
 
   @Field({ nullable: true })
   notes?: string | null;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   // Virtual fields
   @Field(() => Customer, { nullable: true })
@@ -76,16 +76,16 @@ export class Customer {
 @ObjectType()
 export class CustomerContact {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field(() => ID)
-  customerId: string;
+  customerId!: string;
 
   @Field()
-  firstName: string;
+  firstName!: string;
 
   @Field()
-  lastName: string;
+  lastName!: string;
 
   @Field({ nullable: true })
   email?: string | null;
@@ -100,16 +100,16 @@ export class CustomerContact {
   department?: string | null;
 
   @Field()
-  isPrimary: boolean;
+  isPrimary!: boolean;
 
   @Field()
-  isActive: boolean;
+  isActive!: boolean;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Field(() => Customer)
   customer?: Customer;
@@ -118,10 +118,10 @@ export class CustomerContact {
 @ObjectType()
 export class CustomerSegment {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   description?: string | null;
@@ -130,35 +130,35 @@ export class CustomerSegment {
   criteria: any;
 
   @Field()
-  isActive: boolean;
+  isActive!: boolean;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 @ObjectType()
 export class CustomerAnalytics {
   @Field()
-  totalCustomers: number;
+  totalCustomers!: number;
 
   @Field()
-  activeCustomers: number;
+  activeCustomers!: number;
 
   @Field()
-  blockedCustomers: number;
+  blockedCustomers!: number;
 
   @Field()
-  individualCustomers: number;
+  individualCustomers!: number;
 
   @Field()
-  companyCustomers: number;
+  companyCustomers!: number;
 
   @Field()
-  totalCreditLimit: number;
+  totalCreditLimit!: number;
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { checkDatabaseHealth } from '@kiro/database';
 
-interface HealthStatus {
+export interface HealthStatus {
   status: 'healthy' | 'unhealthy';
   timestamp: string;
   uptime: number;
@@ -17,25 +17,24 @@ interface HealthStatus {
 @Injectable()
 export class HealthService {
   async getHealthStatus(): Promise<HealthStatus> {
-    const startTime = Date.now();
-    
     // Check database health
     const databaseHealthy = await checkDatabaseHealth();
-    
+
     // TODO: Add Redis health check
     const redisHealthy = true; // Placeholder
-    
+
     // TODO: Add Elasticsearch health check
     const elasticsearchHealthy = true; // Placeholder
-    
-    const allServicesHealthy = databaseHealthy && redisHealthy && elasticsearchHealthy;
-    
+
+    const allServicesHealthy =
+      databaseHealthy && redisHealthy && elasticsearchHealthy;
+
     return {
       status: allServicesHealthy ? 'healthy' : 'unhealthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      version: process.env.npm_package_version || '1.0.0',
-      environment: process.env.NODE_ENV || 'development',
+      version: process.env['npm_package_version'] || '1.0.0',
+      environment: process.env['NODE_ENV'] || 'development',
       services: {
         database: databaseHealthy ? 'healthy' : 'unhealthy',
         redis: redisHealthy ? 'healthy' : 'unhealthy',
