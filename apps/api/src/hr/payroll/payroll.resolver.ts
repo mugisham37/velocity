@@ -25,19 +25,22 @@ export class PayrollResolver {
   async createSalaryComponent(
     @Args('createSalaryComponentInput') createDto: CreateSalaryComponentDto
   ): Promise<SalaryComponent> {
-    return this.payrollService.createSalaryComponent(createDto);
+    const result = await this.payrollService.createSalaryComponent(createDto);
+    return result as SalaryComponent;
   }
 
   @Query(() => [SalaryComponent])
   async salaryComponents(): Promise<SalaryComponent[]> {
-    return this.payrollService.findAllSalaryComponents();
+    const results = await this.payrollService.findAllSalaryComponents();
+    return results as SalaryComponent[];
   }
 
   @Query(() => SalaryComponent)
   async salaryComponent(
     @Args('id', { type: () => ID }) id: string
   ): Promise<SalaryComponent> {
-    return this.payrollService.findSalaryComponent(id);
+    const result = await this.payrollService.findSalaryComponent(id);
+    return result as SalaryComponent;
   }
 
   // Salary Structure Management
@@ -45,21 +48,24 @@ export class PayrollResolver {
   async createSalaryStructure(
     @Args('createSalaryStructureInput') createDto: CreateSalaryStructureDto
   ): Promise<SalaryStructure> {
-    return this.payrollService.createSalaryStructure(createDto);
+    const result = await this.payrollService.createSalaryStructure(createDto);
+    return result as SalaryStructure;
   }
 
   @Query(() => SalaryStructure)
   async salaryStructure(
     @Args('id', { type: () => ID }) id: string
   ): Promise<SalaryStructure> {
-    return this.payrollService.findSalaryStructure(id);
+    const result = await this.payrollService.findSalaryStructure(id);
+    return result as SalaryStructure;
   }
 
   @Query(() => SalaryStructure, { nullable: true })
   async employeeSalaryStructure(
     @Args('employeeId') employeeId: string
   ): Promise<SalaryStructure | null> {
-    return this.payrollService.getEmployeeSalaryStructure(employeeId);
+    const result = await this.payrollService.getEmployeeSalaryStructure(employeeId);
+    return result ? (result as SalaryStructure) : null;
   }
 
   // Payroll Run Management
@@ -67,19 +73,22 @@ export class PayrollResolver {
   async createPayrollRun(
     @Args('createPayrollRunInput') createDto: CreatePayrollRunDto
   ): Promise<PayrollRun> {
-    return this.payrollService.createPayrollRun(createDto);
+    const result = await this.payrollService.createPayrollRun(createDto);
+    return result as PayrollRun;
   }
 
   @Query(() => [PayrollRun])
   async payrollRuns(): Promise<PayrollRun[]> {
-    return this.payrollService.findAllPayrollRuns();
+    const results = await this.payrollService.findAllPayrollRuns();
+    return results as PayrollRun[];
   }
 
   @Query(() => PayrollRun)
   async payrollRun(
     @Args('id', { type: () => ID }) id: string
   ): Promise<PayrollRun> {
-    return this.payrollService.findPayrollRun(id);
+    const result = await this.payrollService.findPayrollRun(id);
+    return result as PayrollRun;
   }
 
   @Mutation(() => PayrollRun)
@@ -87,7 +96,8 @@ export class PayrollResolver {
     @Args('processPayrollInput') processDto: ProcessPayrollDto,
     @CurrentUser() user: any
   ): Promise<PayrollRun> {
-    return this.payrollService.processPayroll(processDto, user?.id);
+    const result = await this.payrollService.processPayroll(processDto, user?.id);
+    return result as PayrollRun;
   }
 
   @Mutation(() => PayrollRun)
@@ -95,14 +105,15 @@ export class PayrollResolver {
     @Args('id', { type: () => ID }) id: string,
     @CurrentUser() user: any
   ): Promise<PayrollRun> {
-    return this.payrollService.approvePayrollRun(id, user?.id);
+    const result = await this.payrollService.approvePayrollRun(id, user?.id);
+    return result as PayrollRun;
   }
 
   @Query(() => String)
   async payrollStats(
-    @Args('year', { type: () => Int, nullable: true }) year?: number
+    @Args('year', { type: () => Int, nullable: true }) _year?: number
   ): Promise<string> {
-    const stats = await this.payrollService.getPayrollStats(year);
+    const stats = await this.payrollService.getPayrollStats();
     return JSON.stringify(stats);
   }
 }

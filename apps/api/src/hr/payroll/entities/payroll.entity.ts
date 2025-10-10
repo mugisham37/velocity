@@ -1,359 +1,278 @@
 import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import type { 
+  PayrollComponent, 
+  SalaryStructure as SalaryStructureType, 
+  SalaryStructureComponent,
+  PayrollRun as PayrollRunType,
+  PayrollEntry,
+  PayrollEntryComponent
+} from '@kiro/database';
+import { ComponentType, PayrollFrequency, PayrollStatus, PayrollEntryStatus, PaymentMethod } from '../../enums';
 import { Employee } from '../../employee/entities/employee.entity';
 
-export enum PayrollStatus {
-  DRAFT = 'draft',
-  PROCESSED = 'processed',
-  APPROVED = 'approved',
-  PAID = 'paid',
-  CANCELLED = 'cancelled',
-}
-
-export enum ComponentType {
-  EARNING = 'earning',
-  DEDUCTION = 'deduction',
-  EMPLOYER_CONTRIBUTION = 'employer_contribution',
-}
-
-export enum PayrollFrequency {
-  WEEKLY = 'weekly',
-  BIWEEKLY = 'biweekly',
-  MONTHLY = 'monthly',
-  QUARTERLY = 'quarterly',
-  ANNUALLY = 'annually',
-}
-
-registerEnumType(PayrollStatus, { name: 'PayrollStatus' });
 registerEnumType(ComponentType, { name: 'ComponentType' });
 registerEnumType(PayrollFrequency, { name: 'PayrollFrequency' });
+registerEnumType(PayrollStatus, { name: 'PayrollStatus' });
+registerEnumType(PayrollEntryStatus, { name: 'PayrollEntryStatus' });
+registerEnumType(PaymentMethod, { name: 'PaymentMethod' });
 
 @ObjectType()
-@Entity('salary_components')
-export class SalaryComponent {
+export class SalaryComponent implements PayrollComponent {
   @Field(() => ID)
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Field()
-  @Column()
-  name: string;
+  name!: string;
 
   @Field()
-  @Column()
-  code: string;
-
-  @Field(() => ComponentType)
-  @Column({ type: 'enum', enum: ComponentType })
-  type: ComponentType;
+  code!: string;
 
   @Field()
-  @Column({ default: false })
-  isStatutory: boolean;
+  type!: string;
 
   @Field()
-  @Column({ default: false })
-  isTaxable: boolean;
+  isStatutory!: boolean | null;
 
   @Field()
-  @Column({ default: false })
-  isVariable: boolean;
+  isTaxable!: boolean | null;
+
+  @Field()
+  isVariable!: boolean | null;
 
   @Field({ nullable: true })
-  @Column({ type: 'text', nullable: true })
-  formula?: string;
+  formula!: string | null;
 
   @Field({ nullable: true })
-  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
-  percentage?: number;
+  defaultAmount!: number | null;
 
   @Field({ nullable: true })
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  fixedAmount?: number;
+  percentage!: number | null;
 
   @Field({ nullable: true })
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  maxAmount?: number;
+  maxAmount!: number | null;
+
+  @Field({ nullable: true })
+  minAmount!: number | null;
 
   @Field()
-  @Column({ default: true })
-  isActive: boolean;
+  isActive!: boolean | null;
 
-  @Field({ nullable: true })
-  @Column({ type: 'text', nullable: true })
-  description?: string;
+  @Field()
+  companyId!: string;
 
   @Field(() => Date)
-  @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field(() => Date)
-  @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 @ObjectType()
-@Entity('salary_structures')
-export class SalaryStructure {
+export class SalaryStructure implements SalaryStructureType {
   @Field(() => ID)
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Field(() => Employee)
-  @ManyToOne(() => Employee, { eager: true })
-  @JoinColumn({ name: 'employeeId' })
-  employee: Employee;
+  id!: string;
 
   @Field()
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
-  baseSalary: number;
+  employeeId!: string;
 
-  @Field(() => PayrollFrequency)
-  @Column({
-    type: 'enum',
-    enum: PayrollFrequency,
-    default: PayrollFrequency.MONTHLY,
-  })
-  frequency: PayrollFrequency;
+  @Field(() => Employee, { nullable: true })
+  employee?: Employee;
 
   @Field()
-  @Column({ type: 'date' })
-  effectiveFrom: Date;
+  baseSalary!: number;
+
+  @Field()
+  currency!: string;
+
+  @Field()
+  frequency!: string;
+
+  @Field()
+  effectiveFrom!: string;
 
   @Field({ nullable: true })
-  @Column({ type: 'date', nullable: true })
-  effectiveTo?: Date;
+  effectiveTo!: string | null;
 
   @Field()
-  @Column({ default: true })
-  isActive: boolean;
+  isActive!: boolean | null;
 
-  @Field(() => [SalaryStructureComponent])
-  @OneToMany(
-    () => SalaryStructureComponent,
-    component => component.salaryStructure,
-    { cascade: true }
-  )
-  components: SalaryStructureComponent[];
+  @Field()
+  companyId!: string;
 
   @Field(() => Date)
-  @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field(() => Date)
-  @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
+
+  @Field(() => [SalaryStructureComponentEntity])
+  components?: SalaryStructureComponentEntity[];
 }
 
 @ObjectType()
-@Entity('salary_structure_components')
-export class SalaryStructureComponent {
+export class SalaryStructureComponentEntity implements SalaryStructureComponent {
   @Field(() => ID)
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Field(() => SalaryStructure)
-  @ManyToOne(() => SalaryStructure, structure => structure.components, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'salaryStructureId' })
-  salaryStructure: SalaryStructure;
-
-  @Field(() => SalaryComponent)
-  @ManyToOne(() => SalaryComponent, { eager: true })
-  @JoinColumn({ name: 'componentId' })
-  component: SalaryComponent;
-
-  @Field({ nullable: true })
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  amount?: number;
-
-  @Field({ nullable: true })
-  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
-  percentage?: number;
+  id!: string;
 
   @Field()
-  @Column({ default: true })
-  isActive: boolean;
+  salaryStructureId!: string;
+
+  @Field()
+  componentId!: string;
+
+  @Field(() => SalaryComponent, { nullable: true })
+  component?: SalaryComponent;
+
+  @Field({ nullable: true })
+  amount!: number | null;
+
+  @Field({ nullable: true })
+  percentage!: number | null;
+
+  @Field()
+  isActive!: boolean | null;
 }
 
 @ObjectType()
-@Entity('payroll_runs')
-export class PayrollRun {
+export class PayrollRun implements PayrollRunType {
   @Field(() => ID)
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Field()
-  @Column()
-  name: string;
+  name!: string;
 
   @Field()
-  @Column({ type: 'date' })
-  payrollDate: Date;
+  payrollDate!: string;
 
   @Field()
-  @Column({ type: 'date' })
-  startDate: Date;
+  startDate!: string;
 
   @Field()
-  @Column({ type: 'date' })
-  endDate: Date;
-
-  @Field(() => PayrollFrequency)
-  @Column({ type: 'enum', enum: PayrollFrequency })
-  frequency: PayrollFrequency;
-
-  @Field(() => PayrollStatus)
-  @Column({ type: 'enum', enum: PayrollStatus, default: PayrollStatus.DRAFT })
-  status: PayrollStatus;
+  endDate!: string;
 
   @Field()
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  totalGrossPay: number;
+  frequency!: string;
 
   @Field()
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  totalDeductions: number;
+  status!: string;
 
   @Field()
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  totalNetPay: number;
+  totalGrossPay!: number | null;
 
   @Field()
-  @Column({ type: 'int', default: 0 })
-  employeeCount: number;
+  totalDeductions!: number | null;
 
-  @Field(() => [PayrollEntry])
-  @OneToMany(() => PayrollEntry, entry => entry.payrollRun, { cascade: true })
-  entries: PayrollEntry[];
+  @Field()
+  totalNetPay!: number | null;
+
+  @Field()
+  employeeCount!: number | null;
 
   @Field({ nullable: true })
-  @Column({ nullable: true })
-  processedBy?: string;
+  processedBy!: string | null;
 
   @Field(() => Date, { nullable: true })
-  @Column({ type: 'timestamp', nullable: true })
-  processedAt?: Date;
+  processedAt!: Date | null;
 
   @Field({ nullable: true })
-  @Column({ nullable: true })
-  approvedBy?: string;
+  approvedBy!: string | null;
 
   @Field(() => Date, { nullable: true })
-  @Column({ type: 'timestamp', nullable: true })
-  approvedAt?: Date;
+  approvedAt!: Date | null;
+
+  @Field()
+  companyId!: string;
 
   @Field(() => Date)
-  @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field(() => Date)
-  @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
+
+  @Field(() => [PayrollEntryEntity])
+  entries?: PayrollEntryEntity[];
 }
 
 @ObjectType()
-@Entity('payroll_entries')
-export class PayrollEntry {
+export class PayrollEntryEntity implements PayrollEntry {
   @Field(() => ID)
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Field(() => PayrollRun)
-  @ManyToOne(() => PayrollRun, run => run.entries, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'payrollRunId' })
-  payrollRun: PayrollRun;
-
-  @Field(() => Employee)
-  @ManyToOne(() => Employee, { eager: true })
-  @JoinColumn({ name: 'employeeId' })
-  employee: Employee;
+  id!: string;
 
   @Field()
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
-  baseSalary: number;
+  payrollRunId!: string;
+
+  @Field(() => PayrollRun, { nullable: true })
+  payrollRun?: PayrollRun;
 
   @Field()
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  totalEarnings: number;
+  employeeId!: string;
+
+  @Field(() => Employee, { nullable: true })
+  employee?: Employee;
 
   @Field()
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  totalDeductions: number;
+  baseSalary!: number;
 
   @Field()
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  grossPay: number;
+  totalEarnings!: number;
 
   @Field()
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  netPay: number;
+  totalDeductions!: number;
 
   @Field()
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-  workedDays: number;
+  grossPay!: number;
 
   @Field()
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-  paidDays: number;
+  netPay!: number;
 
   @Field()
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-  overtimeHours: number;
+  workedDays!: number | null;
 
-  @Field(() => [PayrollEntryComponent])
-  @OneToMany(() => PayrollEntryComponent, component => component.payrollEntry, {
-    cascade: true,
-  })
-  components: PayrollEntryComponent[];
+  @Field()
+  paidDays!: number | null;
+
+  @Field()
+  overtimeHours!: number | null;
+
+  @Field()
+  status!: string;
 
   @Field({ nullable: true })
-  @Column({ type: 'text', nullable: true })
-  notes?: string;
+  paymentDate!: string | null;
+
+  @Field({ nullable: true })
+  paymentMethod!: string | null;
+
+  @Field({ nullable: true })
+  paymentReference!: string | null;
+
+  @Field()
+  companyId!: string;
 
   @Field(() => Date)
-  @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field(() => Date)
-  @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
+
+  @Field(() => [PayrollEntryComponentEntity])
+  components?: PayrollEntryComponentEntity[];
 }
 
 @ObjectType()
-@Entity('payroll_entry_components')
-export class PayrollEntryComponent {
+export class PayrollEntryComponentEntity implements PayrollEntryComponent {
   @Field(() => ID)
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Field(() => PayrollEntry)
-  @ManyToOne(() => PayrollEntry, entry => entry.components, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'payrollEntryId' })
-  payrollEntry: PayrollEntry;
-
-  @Field(() => SalaryComponent)
-  @ManyToOne(() => SalaryComponent, { eager: true })
-  @JoinColumn({ name: 'componentId' })
-  component: SalaryComponent;
+  id!: string;
 
   @Field()
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
-  amount: number;
+  payrollEntryId!: string;
 
-  @Field({ nullable: true })
-  @Column({ type: 'text', nullable: true })
-  calculation?: string;
+  @Field()
+  componentId!: string;
+
+  @Field(() => SalaryComponent, { nullable: true })
+  component?: SalaryComponent;
+
+  @Field()
+  amount!: number;
 }

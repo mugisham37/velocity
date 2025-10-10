@@ -287,3 +287,328 @@ export const employeeOnboardingRelations = relations(
     tasks: many(employeeOnboardingTasks),
   })
 );
+
+// Attendance Management Tables
+export const attendanceShifts = pgTable('attendance_shifts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  startTime: varchar('start_time', { length: 10 }).notNull(), // HH:MM format
+  endTime: varchar('end_time', { length: 10 }).notNull(), // HH:MM format
+  type: varchar('type', { length: 50 }).notNull().default('Regular'), // Regular, Night, Weekend
+  isActive: boolean('is_active').default(true),
+  companyId: uuid('company_id').references(() => companies.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const attendance = pgTable('attendance', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  employeeId: uuid('employee_id').references(() => employees.id).notNull(),
+  date: date('date').notNull(),
+  status: varchar('status', { length: 50 }).notNull(), // Present, Absent, Late, Half Day, Holiday, Leave
+  checkInTime: timestamp('check_in_time'),
+  checkOutTime: timestamp('check_out_time'),
+  workingHours: integer('working_hours').default(0), // in minutes
+  overtimeHours: integer('overtime_hours').default(0), // in minutes
+  lateMinutes: integer('late_minutes').default(0),
+  earlyLeaveMinutes: integer('early_leave_minutes').default(0),
+  shiftId: uuid('shift_id').references(() => attendanceShifts.id),
+  location: jsonb('location'), // GPS coordinates if applicable
+  notes: text('notes'),
+  approvedBy: uuid('approved_by').references(() => employees.id),
+  approvedAt: timestamp('approved_at'),
+  companyId: uuid('company_id').references(() => companies.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Leave Management Tables
+export const leavePolicies = pgTable('leave_policies', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  leaveType: varchar('leave_type', { length: 100 }).notNull(), // Annual, Sick, Maternity, etc.
+  annualAllocation: integer('annual_allocation').notNull(),
+  accrualType: varchar('accrual_type', { length: 50 }).notNull().default('Annual'), // Annual, Monthly, Per Pay Period
+  maxCarryForward: integer('max_carry_forward').default(0),
+  maxAccumulation: integer('max_accumulation').default(0),
+  requiresApproval: boolean('requires_approval').default(true),
+  minNoticeDays: integer('min_notice_days').default(0),
+  maxConsecutiveDays: integer('max_consecutive_days').default(0),
+  isActive: boolean('is_active').default(true),
+  companyId: uuid('company_id').references(() => companies.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const leaveRequests = pgTable('leave_requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  employeeId: uuid('employee_id').references(() => employees.id).notNull(),
+  leavePolicyId: uuid('leave_policy_id').references(() => leavePolicies.id).notNull(),
+  startDate: date('start_date').notNull(),
+  endDate: date('end_date').notNull(),
+  daysRequested: integer('days_requested').notNull(),
+  status: varchar('status', { length: 50 }).notNull().default('Pending'), // Pending, Approved, Rejected, Cancelled
+  reason: text('reason').notNull(),
+  isHalfDay: boolean('is_half_day').default(false),
+  halfDayPeriod: varchar('half_day_period', { length: 20 }), // Morning, Afternoon
+  appliedDate: date('applied_date').defaultNow().notNull(),
+  approvedBy: uuid('approved_by').references(() => employees.id),
+  approvedAt: timestamp('approved_at'),
+  rejectionReason: text('rejection_reason'),
+  attachments: jsonb('attachments'), // File paths/URLs
+  companyId: uuid('company_id').references(() => companies.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const leaveBalances = pgTable('leave_balances', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  employeeId: uuid('employee_id').references(() => employees.id).notNull(),
+  leavePolicyId: uuid('leave_policy_id').references(() => leavePolicies.id).notNull(),
+  allocated: integer('allocated').notNull(),
+  used: integer('used').default(0),
+  pending: integer('pending').default(0),
+  carriedForward: integer('carried_forward').default(0),
+  year: integer('year').notNull(),
+  companyId: uuid('company_id').references(() => companies.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Payroll Management Tables
+export const payrollComponents = pgTable('payroll_components', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  code: varchar('code', { length: 50 }).notNull().unique(),
+  type: varchar('type', { length: 50 }).notNull(), // Earning, Deduction
+  isStatutory: boolean('is_statutory').default(false),
+  isTaxable: boolean('is_taxable').default(true),
+  isVariable: boolean('is_variable').default(false),
+  formula: text('formula'), // Calculation formula
+  defaultAmount: integer('default_amount').default(0), // in cents
+  percentage: integer('percentage'), // for percentage-based components
+  maxAmount: integer('max_amount'), // maximum amount limit
+  minAmount: integer('min_amount'), // minimum amount limit
+  isActive: boolean('is_active').default(true),
+  companyId: uuid('company_id').references(() => companies.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const salaryStructures = pgTable('salary_structures', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  employeeId: uuid('employee_id').references(() => employees.id).notNull(),
+  baseSalary: integer('base_salary').notNull(), // in cents
+  currency: varchar('currency', { length: 3 }).notNull().default('USD'),
+  frequency: varchar('frequency', { length: 20 }).notNull().default('Monthly'), // Monthly, Bi-weekly, Weekly
+  effectiveFrom: date('effective_from').notNull(),
+  effectiveTo: date('effective_to'),
+  isActive: boolean('is_active').default(true),
+  companyId: uuid('company_id').references(() => companies.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const salaryStructureComponents = pgTable('salary_structure_components', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  salaryStructureId: uuid('salary_structure_id').references(() => salaryStructures.id).notNull(),
+  componentId: uuid('component_id').references(() => payrollComponents.id).notNull(),
+  amount: integer('amount'), // in cents
+  percentage: integer('percentage'), // for percentage-based components
+  isActive: boolean('is_active').default(true),
+});
+
+export const payrollRuns = pgTable('payroll_runs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  payrollDate: date('payroll_date').notNull(),
+  startDate: date('start_date').notNull(),
+  endDate: date('end_date').notNull(),
+  frequency: varchar('frequency', { length: 20 }).notNull(), // Monthly, Bi-weekly, Weekly
+  status: varchar('status', { length: 50 }).notNull().default('Draft'), // Draft, Processing, Completed, Cancelled
+  totalGrossPay: integer('total_gross_pay').default(0), // in cents
+  totalDeductions: integer('total_deductions').default(0), // in cents
+  totalNetPay: integer('total_net_pay').default(0), // in cents
+  employeeCount: integer('employee_count').default(0),
+  processedBy: uuid('processed_by').references(() => employees.id),
+  processedAt: timestamp('processed_at'),
+  approvedBy: uuid('approved_by').references(() => employees.id),
+  approvedAt: timestamp('approved_at'),
+  companyId: uuid('company_id').references(() => companies.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const payrollEntries = pgTable('payroll_entries', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  payrollRunId: uuid('payroll_run_id').references(() => payrollRuns.id).notNull(),
+  employeeId: uuid('employee_id').references(() => employees.id).notNull(),
+  baseSalary: integer('base_salary').notNull(), // in cents
+  totalEarnings: integer('total_earnings').notNull(), // in cents
+  totalDeductions: integer('total_deductions').notNull(), // in cents
+  grossPay: integer('gross_pay').notNull(), // in cents
+  netPay: integer('net_pay').notNull(), // in cents
+  workedDays: integer('worked_days').default(0),
+  paidDays: integer('paid_days').default(0),
+  overtimeHours: integer('overtime_hours').default(0), // in minutes
+  status: varchar('status', { length: 50 }).notNull().default('Draft'), // Draft, Processed, Paid
+  paymentDate: date('payment_date'),
+  paymentMethod: varchar('payment_method', { length: 50 }), // Bank Transfer, Cash, Cheque
+  paymentReference: varchar('payment_reference', { length: 255 }),
+  companyId: uuid('company_id').references(() => companies.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const payrollEntryComponents = pgTable('payroll_entry_components', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  payrollEntryId: uuid('payroll_entry_id').references(() => payrollEntries.id).notNull(),
+  componentId: uuid('component_id').references(() => payrollComponents.id).notNull(),
+  amount: integer('amount').notNull(), // in cents
+});
+
+// Relations for new tables
+export const attendanceShiftsRelations = relations(attendanceShifts, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [attendanceShifts.companyId],
+    references: [companies.id],
+  }),
+  attendanceRecords: many(attendance),
+}));
+
+export const attendanceRelations = relations(attendance, ({ one }) => ({
+  employee: one(employees, {
+    fields: [attendance.employeeId],
+    references: [employees.id],
+  }),
+  shift: one(attendanceShifts, {
+    fields: [attendance.shiftId],
+    references: [attendanceShifts.id],
+  }),
+  approvedBy: one(employees, {
+    fields: [attendance.approvedBy],
+    references: [employees.id],
+  }),
+  company: one(companies, {
+    fields: [attendance.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const leavePoliciesRelations = relations(leavePolicies, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [leavePolicies.companyId],
+    references: [companies.id],
+  }),
+  leaveRequests: many(leaveRequests),
+  leaveBalances: many(leaveBalances),
+}));
+
+export const leaveRequestsRelations = relations(leaveRequests, ({ one }) => ({
+  employee: one(employees, {
+    fields: [leaveRequests.employeeId],
+    references: [employees.id],
+  }),
+  leavePolicy: one(leavePolicies, {
+    fields: [leaveRequests.leavePolicyId],
+    references: [leavePolicies.id],
+  }),
+  approvedBy: one(employees, {
+    fields: [leaveRequests.approvedBy],
+    references: [employees.id],
+  }),
+  company: one(companies, {
+    fields: [leaveRequests.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const leaveBalancesRelations = relations(leaveBalances, ({ one }) => ({
+  employee: one(employees, {
+    fields: [leaveBalances.employeeId],
+    references: [employees.id],
+  }),
+  leavePolicy: one(leavePolicies, {
+    fields: [leaveBalances.leavePolicyId],
+    references: [leavePolicies.id],
+  }),
+  company: one(companies, {
+    fields: [leaveBalances.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const payrollComponentsRelations = relations(payrollComponents, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [payrollComponents.companyId],
+    references: [companies.id],
+  }),
+  salaryStructureComponents: many(salaryStructureComponents),
+  payrollEntryComponents: many(payrollEntryComponents),
+}));
+
+export const salaryStructuresRelations = relations(salaryStructures, ({ one, many }) => ({
+  employee: one(employees, {
+    fields: [salaryStructures.employeeId],
+    references: [employees.id],
+  }),
+  company: one(companies, {
+    fields: [salaryStructures.companyId],
+    references: [companies.id],
+  }),
+  components: many(salaryStructureComponents),
+}));
+
+export const salaryStructureComponentsRelations = relations(salaryStructureComponents, ({ one }) => ({
+  salaryStructure: one(salaryStructures, {
+    fields: [salaryStructureComponents.salaryStructureId],
+    references: [salaryStructures.id],
+  }),
+  component: one(payrollComponents, {
+    fields: [salaryStructureComponents.componentId],
+    references: [payrollComponents.id],
+  }),
+}));
+
+export const payrollRunsRelations = relations(payrollRuns, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [payrollRuns.companyId],
+    references: [companies.id],
+  }),
+  processedBy: one(employees, {
+    fields: [payrollRuns.processedBy],
+    references: [employees.id],
+  }),
+  approvedBy: one(employees, {
+    fields: [payrollRuns.approvedBy],
+    references: [employees.id],
+  }),
+  entries: many(payrollEntries),
+}));
+
+export const payrollEntriesRelations = relations(payrollEntries, ({ one, many }) => ({
+  payrollRun: one(payrollRuns, {
+    fields: [payrollEntries.payrollRunId],
+    references: [payrollRuns.id],
+  }),
+  employee: one(employees, {
+    fields: [payrollEntries.employeeId],
+    references: [employees.id],
+  }),
+  company: one(companies, {
+    fields: [payrollEntries.companyId],
+    references: [companies.id],
+  }),
+  components: many(payrollEntryComponents),
+}));
+
+export const payrollEntryComponentsRelations = relations(payrollEntryComponents, ({ one }) => ({
+  payrollEntry: one(payrollEntries, {
+    fields: [payrollEntryComponents.payrollEntryId],
+    references: [payrollEntries.id],
+  }),
+  component: one(payrollComponents, {
+    fields: [payrollEntryComponents.componentId],
+    references: [payrollComponents.id],
+  }),
+}));

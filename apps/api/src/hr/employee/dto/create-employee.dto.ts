@@ -8,25 +8,34 @@ import {
   IsOptional,
   IsPhoneNumber,
 } from 'class-validator';
-import {
-  EmployeeStatus,
-  Gender,
-  MaritalStatus,
-} from '../entities/employee.entity';
+import { EmploymentStatus, EmploymentType } from '../../enums';
+
+export enum Gender {
+  MALE = 'Male',
+  FEMALE = 'Female',
+  OTHER = 'Other',
+}
+
+export enum MaritalStatus {
+  SINGLE = 'Single',
+  MARRIED = 'Married',
+  DIVORCED = 'Divorced',
+  WIDOWED = 'Widowed',
+}
 
 @InputType()
 export class CreateEmployeeDto {
   @Field()
   @IsNotEmpty()
-  employeeId: string;
+  employeeId!: string;
 
   @Field()
   @IsNotEmpty()
-  firstName: string;
+  firstName!: string;
 
   @Field()
   @IsNotEmpty()
-  lastName: string;
+  lastName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -35,7 +44,7 @@ export class CreateEmployeeDto {
   @Field()
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  email!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -73,17 +82,26 @@ export class CreateEmployeeDto {
   @Field()
   @IsNotEmpty()
   @IsDateString()
-  hireDate: string;
+  hireDate!: string;
+
+  @Field()
+  @IsNotEmpty()
+  companyId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
   @IsDateString()
   terminationDate?: string;
 
-  @Field(() => EmployeeStatus, { nullable: true })
+  @Field(() => EmploymentStatus, { nullable: true })
   @IsOptional()
-  @IsEnum(EmployeeStatus)
-  status?: EmployeeStatus;
+  @IsEnum(EmploymentStatus)
+  status?: EmploymentStatus;
+
+  @Field(() => EmploymentType, { nullable: true })
+  @IsOptional()
+  @IsEnum(EmploymentType)
+  employmentType?: EmploymentType;
 
   @Field({ nullable: true })
   @IsOptional()

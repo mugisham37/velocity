@@ -7,22 +7,22 @@ import {
   IsNumber,
   IsOptional,
 } from 'class-validator';
-import { AttendanceStatus, ShiftType } from '../entities/attendance.entity';
+import { AttendanceStatus, ShiftType } from '../../enums';
 
 @InputType()
 export class CreateAttendanceDto {
   @Field()
   @IsNotEmpty()
-  employeeId: string;
+  employeeId!: string;
 
   @Field()
   @IsNotEmpty()
   @IsDateString()
-  date: string;
+  date!: string;
 
   @Field(() => AttendanceStatus)
   @IsEnum(AttendanceStatus)
-  status: AttendanceStatus;
+  status!: AttendanceStatus;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -87,15 +87,19 @@ export class CreateAttendanceDto {
 export class CreateShiftDto {
   @Field()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @Field()
   @IsNotEmpty()
-  startTime: string;
+  startTime!: string;
 
   @Field()
   @IsNotEmpty()
-  endTime: string;
+  endTime!: string;
+
+  @Field()
+  @IsNotEmpty()
+  companyId!: string;
 
   @Field(() => ShiftType, { nullable: true })
   @IsOptional()

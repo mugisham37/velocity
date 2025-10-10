@@ -8,21 +8,25 @@ import {
   IsNumber,
   IsOptional,
 } from 'class-validator';
-import { AccrualType, LeaveStatus, LeaveType } from '../entities/leave.entity';
+import { AccrualType, LeaveStatus, LeaveType } from '../../enums';
 
 @InputType()
 export class CreateLeavePolicyDto {
   @Field()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @Field(() => LeaveType)
   @IsEnum(LeaveType)
-  leaveType: LeaveType;
+  leaveType!: LeaveType;
 
   @Field()
   @IsDecimal()
-  annualAllocation: number;
+  annualAllocation!: number;
+
+  @Field()
+  @IsNotEmpty()
+  companyId!: string;
 
   @Field(() => AccrualType, { nullable: true })
   @IsOptional()
@@ -63,29 +67,33 @@ export class CreateLeavePolicyDto {
 export class CreateLeaveApplicationDto {
   @Field()
   @IsNotEmpty()
-  employeeId: string;
+  employeeId!: string;
 
   @Field()
   @IsNotEmpty()
-  leavePolicyId: string;
-
-  @Field()
-  @IsNotEmpty()
-  @IsDateString()
-  startDate: string;
+  leavePolicyId!: string;
 
   @Field()
   @IsNotEmpty()
   @IsDateString()
-  endDate: string;
+  startDate!: string;
+
+  @Field()
+  @IsNotEmpty()
+  @IsDateString()
+  endDate!: string;
 
   @Field()
   @IsDecimal()
-  daysRequested: number;
+  daysRequested!: number;
 
   @Field()
   @IsNotEmpty()
-  reason: string;
+  reason!: string;
+
+  @Field()
+  @IsNotEmpty()
+  companyId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -105,7 +113,7 @@ export class CreateLeaveApplicationDto {
 export class ApproveLeaveDto {
   @Field(() => LeaveStatus)
   @IsEnum(LeaveStatus)
-  status: LeaveStatus;
+  status!: LeaveStatus;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -116,15 +124,19 @@ export class ApproveLeaveDto {
 export class CreateLeaveBalanceDto {
   @Field()
   @IsNotEmpty()
-  employeeId: string;
+  employeeId!: string;
 
   @Field()
   @IsNotEmpty()
-  leavePolicyId: string;
+  leavePolicyId!: string;
 
   @Field()
   @IsDecimal()
-  allocated: number;
+  allocated!: number;
+
+  @Field()
+  @IsNotEmpty()
+  companyId!: string;
 
   @Field({ nullable: true })
   @IsOptional()

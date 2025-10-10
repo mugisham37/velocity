@@ -19,10 +19,11 @@ export class AttendanceResolver {
     @Args('createAttendanceInput') createAttendanceDto: CreateAttendanceDto,
     @CurrentUser() user: any
   ): Promise<AttendanceRecord> {
-    return this.attendanceService.createAttendance(
+    const result = await this.attendanceService.createAttendance(
       createAttendanceDto,
       user?.id
     );
+    return result as AttendanceRecord;
   }
 
   @Mutation(() => AttendanceRecord)
@@ -33,20 +34,22 @@ export class AttendanceResolver {
     @Args('longitude', { nullable: true }) longitude?: number,
     @Args('deviceId', { nullable: true }) deviceId?: string
   ): Promise<AttendanceRecord> {
-    return this.attendanceService.checkIn(
+    const result = await this.attendanceService.checkIn(
       employeeId,
       location,
       latitude,
       longitude,
       deviceId
     );
+    return result as AttendanceRecord;
   }
 
   @Mutation(() => AttendanceRecord)
   async checkOut(
     @Args('employeeId') employeeId: string
   ): Promise<AttendanceRecord> {
-    return this.attendanceService.checkOut(employeeId);
+    const result = await this.attendanceService.checkOut(employeeId);
+    return result as AttendanceRecord;
   }
 
   @Query(() => [AttendanceRecord])
@@ -55,11 +58,12 @@ export class AttendanceResolver {
     @Args('startDate', { nullable: true }) startDate?: string,
     @Args('endDate', { nullable: true }) endDate?: string
   ): Promise<AttendanceRecord[]> {
-    return this.attendanceService.getAttendanceByEmployee(
+    const results = await this.attendanceService.getAttendanceByEmployee(
       employeeId,
       startDate,
       endDate
     );
+    return results as AttendanceRecord[];
   }
 
   @Query(() => [AttendanceRecord])
@@ -67,7 +71,11 @@ export class AttendanceResolver {
     @Args('startDate') startDate: string,
     @Args('endDate') endDate: string
   ): Promise<AttendanceRecord[]> {
-    return this.attendanceService.getAttendanceByDateRange(startDate, endDate);
+    const results = await this.attendanceService.getAttendanceByDateRange(
+      startDate,
+      endDate
+    );
+    return results as AttendanceRecord[];
   }
 
   @Query(() => String)
@@ -89,17 +97,20 @@ export class AttendanceResolver {
   async createShift(
     @Args('createShiftInput') createShiftDto: CreateShiftDto
   ): Promise<Shift> {
-    return this.attendanceService.createShift(createShiftDto);
+    const result = await this.attendanceService.createShift(createShiftDto);
+    return result as Shift;
   }
 
   @Query(() => [Shift])
   async shifts(): Promise<Shift[]> {
-    return this.attendanceService.findAllShifts();
+    const results = await this.attendanceService.findAllShifts();
+    return results as Shift[];
   }
 
   @Query(() => Shift)
   async shift(@Args('id', { type: () => ID }) id: string): Promise<Shift> {
-    return this.attendanceService.findShift(id);
+    const result = await this.attendanceService.findShift(id);
+    return result as Shift;
   }
 
   @Mutation(() => Shift)
@@ -107,7 +118,8 @@ export class AttendanceResolver {
     @Args('id', { type: () => ID }) id: string,
     @Args('updateShiftInput') updateData: CreateShiftDto
   ): Promise<Shift> {
-    return this.attendanceService.updateShift(id, updateData);
+    const result = await this.attendanceService.updateShift(id, updateData);
+    return result as Shift;
   }
 
   @Mutation(() => Boolean)

@@ -3,242 +3,258 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, Repository } from 'typeorm';
+import { db, eq, and, ilike, count, asc } from '@kiro/database';
+import { employees } from '@kiro/database';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
-import { Employee, EmployeeStatus } from './entities/employee.entity';
+import { EmploymentStatus } from '../enums';
 
 @Injectable()
 export class EmployeeService {
-  constructor(
-    @InjectRepository(Employee)
-    private employeeRepository: Repository<Employee>
-  ) {}
+  constructor() {}
 
   async create(
     createEmployeeDto: CreateEmployeeDto,
-    createdBy?: string
-  ): Promise<Employee> {
-    // Check if employee  already exists
-    const existingEmployee = await this.employeeRepository.findOne({
-      where: { employeeId: createEmployeeDto.employeeId },
-    });
+    _createdBy?: string
+  ) {
+    // Check if employee already exists
+    const existingEmployee = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.employeeId, createEmployeeDto.employeeId))
+      .limit(1);
 
-    if (existingEmployee) {
+    if (existingEmployee.length > 0) {
       throw new ConflictException('Employee ID already exists');
     }
 
     // Check if email already exists
-    const existingEmail = await this.employeeRepository.findOne({
-      where: { email: createEmployeeDto.email },
-    });
+    if (createEmployeeDto.email) {
+      const existingEmail = await db
+        .select()
+        .from(employees)
+        .where(eq(employees.email, createEmployeeDto.email))
+        .limit(1);
 
-    if (existingEmail) {
-      throw new ConflictException('Email already exists');
+      if (existingEmail.length > 0) {
+        throw new ConflictException('Email already exists');
+      }
     }
 
-    const employee = this.employeeRepository.create({
-      ...createEmployeeDto,
-      dateOfBirth: createEmployeeDto.dateOfBirth
-        ? new Date(createEmployeeDto.dateOfBirth)
-        : undefined,
-      hireDate: new Date(createEmployeeDto.hireDate),
-      terminationDate: createEmployeeDto.terminationDate
-        ? new Date(createEmployeeDto.terminationDate)
-        : undefined,
-      status: createEmployeeDto.status || EmployeeStatus.ACTIVE,
-      createdBy,
-    });
+    const [employee] = await db
+      .insert(employees)
+      .values({
+        ...createEmployeeDto,
+        dateOfBirth: createEmployeeDto.dateOfBirth || null,
+        dateOfJoining: createEmployeeDto.hireDate,
+        status: EmploymentStatus.ACTIVE,
+      })
+      .returning();
 
-    return this.employeeRepository.save(employee);
+    return employee;
   }
 
   async findAll(
     page: number = 1,
     limit: number = 10,
     search?: string,
-    department?: string,
-    status?: EmployeeStatus
-  ): Promise<{ employees: Employee[]; total: number; totalPages: number }> {
-    const skip = (page - 1) * limit;
-    const where: FindOptionsWhere<Employee> = {};
+    departmentId?: string,
+    status?: string
+  ) {
+    const offset = (page - 1) * limit;
+    const conditions = [];
 
     if (search) {
-      where.firstName = ILike(`%${search}%`);
+      conditions.push(ilike(employees.firstName, `%${search}%`));
     }
 
-    if (department) {
-      where.department = department;
+    if (departmentId) {
+      conditions.push(eq(employees.departmentId, departmentId));
     }
 
     if (status) {
-      where.status = status;
+      conditions.push(eq(employees.status, status));
     }
 
-    const [employees, total] = await this.employeeRepository.findAndCount({
-      where,
-      relations: ['manager', 'directReports'],
-      skip,
-      take: limit,
-      order: { lastName: 'ASC', firstName: 'ASC' },
-    });
+    let query = db
+      .select()
+      .from(employees)
+      .orderBy(asc(employees.lastName), asc(employees.firstName))
+      .limit(limit)
+      .offset(offset);
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    const employeeList = await query;
+
+    // Get total count
+    let countQuery = db.select({ count: count() }).from(employees);
+    if (conditions.length > 0) {
+      countQuery = countQuery.where(and(...conditions));
+    }
+    const countResult = await countQuery;
+    const total = Number(countResult[0]?.count || 0);
 
     return {
-      employees,
+      employees: employeeList,
       total,
       totalPages: Math.ceil(total / limit),
     };
   }
 
-  async findOne(id: string): Promise<Employee> {
-    const employee = await this.employeeRepository.findOne({
-      where: { id },
-      relations: ['manager', 'directReports'],
-    });
+  async findOne(id: string) {
+    const employee = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.id, id))
+      .limit(1);
 
-    if (!employee) {
+    if (employee.length === 0) {
       throw new NotFoundException('Employee not found');
     }
 
-    return employee;
+    const result = employee[0];
+    if (!result) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    return result;
   }
 
-  async findByEmployeeId(employeeId: string): Promise<Employee> {
-    const employee = await this.employeeRepository.findOne({
-      where: { employeeId },
-      relations: ['manager', 'directReports'],
-    });
+  async findByEmployeeId(employeeId: string) {
+    const employee = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.employeeId, employeeId))
+      .limit(1);
 
-    if (!employee) {
+    if (employee.length === 0) {
       throw new NotFoundException('Employee not found');
     }
 
-    return employee;
+    const result = employee[0];
+    if (!result) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    return result;
   }
 
   async update(
     id: string,
     updateEmployeeDto: UpdateEmployeeDto,
-    updatedBy?: string
-  ): Promise<Employee> {
+    _updatedBy?: string
+  ) {
     const employee = await this.findOne(id);
 
     // Check if employee ID is being changed and if it already exists
     if (
       updateEmployeeDto.employeeId &&
-      updateEmployeeDto.employeeId !== employee.employeeId
+      updateEmployeeDto.employeeId !== employee['employeeId']
     ) {
-      const existingEmployee = await this.employeeRepository.findOne({
-        where: { employeeId: updateEmployeeDto.employeeId },
-      });
+      const existingEmployee = await db
+        .select()
+        .from(employees)
+        .where(eq(employees.employeeId, updateEmployeeDto.employeeId))
+        .limit(1);
 
-      if (existingEmployee) {
+      if (existingEmployee.length > 0) {
         throw new ConflictException('Employee ID already exists');
       }
     }
 
     // Check if email is being changed and if it already exists
-    if (updateEmployeeDto.email && updateEmployeeDto.email !== employee.email) {
-      const existingEmail = await this.employeeRepository.findOne({
-        where: { email: updateEmployeeDto.email },
-      });
+    if (updateEmployeeDto.email && updateEmployeeDto.email !== employee['email']) {
+      const existingEmail = await db
+        .select()
+        .from(employees)
+        .where(eq(employees.email, updateEmployeeDto.email))
+        .limit(1);
 
-      if (existingEmail) {
+      if (existingEmail.length > 0) {
         throw new ConflictException('Email already exists');
       }
     }
 
     const updateData = {
       ...updateEmployeeDto,
-      dateOfBirth: updateEmployeeDto.dateOfBirth
-        ? new Date(updateEmployeeDto.dateOfBirth)
-        : undefined,
-      hireDate: updateEmployeeDto.hireDate
-        ? new Date(updateEmployeeDto.hireDate)
-        : undefined,
-      terminationDate: updateEmployeeDto.terminationDate
-        ? new Date(updateEmployeeDto.terminationDate)
-        : undefined,
-      updatedBy,
+      dateOfBirth: updateEmployeeDto.dateOfBirth || null,
+      dateOfJoining: updateEmployeeDto.hireDate || employee['dateOfJoining'],
+      dateOfLeaving: updateEmployeeDto.terminationDate || null,
     };
 
-    await this.employeeRepository.update(id, updateData);
-    return this.findOne(id);
+    const [updatedEmployee] = await db
+      .update(employees)
+      .set(updateData)
+      .where(eq(employees.id, id))
+      .returning();
+
+    return updatedEmployee;
   }
 
   async remove(id: string): Promise<void> {
-    const employee = await this.findOne(id);
-    await this.employeeRepository.remove(employee);
+    await this.findOne(id);
+    await db
+      .update(employees)
+      .set({ isActive: false })
+      .where(eq(employees.id, id));
   }
 
-  async getOrganizationChart(): Promise<Employee[]> {
-    // Get all employees with their manager relationships
-    const employees = await this.employeeRepository.find({
-      relations: ['manager', 'directReports'],
-      where: { status: EmployeeStatus.ACTIVE },
-      order: { lastName: 'ASC', firstName: 'ASC' },
-    });
+  async getOrganizationChart() {
+    // Get all active employees
+    const employeeList = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.status, EmploymentStatus.ACTIVE))
+      .orderBy(asc(employees.lastName), asc(employees.firstName));
 
     // Return top-level managers (employees without managers)
-    return employees.filter(emp => !emp.manager);
+    return employeeList.filter(emp => !emp['reportsToId']);
   }
 
-  async getEmployeesByDepartment(): Promise<
-    { department: string; count: number }[]
-  > {
-    const result = await this.employeeRepository
-      .createQueryBuilder('employee')
-      .select('employee.department', 'department')
-      .addSelect('COUNT(*)', 'count')
-      .where('employee.status = :status', { status: EmployeeStatus.ACTIVE })
-      .groupBy('employee.department')
-      .getRawMany();
+  async getEmployeesByDepartment() {
+    // This would need a proper GROUP BY query with Drizzle
+    // For now, let's get all employees and group them manually
+    const employeeList = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.status, EmploymentStatus.ACTIVE));
 
-    return result.map(item => ({
-      department: item.department || 'Unassigned',
-      count: parseInt(item.count),
+    const departmentCounts = employeeList.reduce((acc: Record<string, number>, emp) => {
+      const dept = emp['departmentId'] || 'Unassigned';
+      acc[dept] = (acc[dept] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(departmentCounts).map(([department, count]) => ({
+      department,
+      count,
     }));
   }
 
-  async getEmployeeStats(): Promise<{
-    total: number;
-    active: number;
-    inactive: number;
-    terminated: number;
-    onLeave: number;
-  }> {
-    const stats = await this.employeeRepository
-      .createQueryBuilder('employee')
-      .select('employee.status', 'status')
-      .addSelect('COUNT(*)', 'count')
-      .groupBy('employee.status')
-      .getRawMany();
+  async getEmployeeStats() {
+    const employeeList = await db.select().from(employees);
 
     const result = {
-      total: 0,
+      total: employeeList.length,
       active: 0,
       inactive: 0,
       terminated: 0,
       onLeave: 0,
     };
 
-    stats.forEach(stat => {
-      const count = parseInt(stat.count);
-      result.total += count;
-
-      switch (stat.status) {
-        case EmployeeStatus.ACTIVE:
-          result.active = count;
+    employeeList.forEach(emp => {
+      switch (emp['status']) {
+        case EmploymentStatus.ACTIVE:
+          result.active++;
           break;
-        case EmployeeStatus.INACTIVE:
-          result.inactive = count;
+        case EmploymentStatus.INACTIVE:
+          result.inactive++;
           break;
-        case EmployeeStatus.TERMINATED:
-          result.terminated = count;
-          break;
-        case EmployeeStatus.ON_LEAVE:
-          result.onLeave = count;
+        case EmploymentStatus.TERMINATED:
+          result.terminated++;
           break;
       }
     });

@@ -5,7 +5,8 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { EmployeeService } from './employee.service';
-import { Employee, EmployeeStatus } from './entities/employee.entity';
+import { Employee } from './entities/employee.entity';
+import { EmploymentStatus } from '../enums';
 
 @Resolver(() => Employee)
 @UseGuards(JwtAuthGuard)
@@ -17,7 +18,8 @@ export class EmployeeResolver {
     @Args('createEmployeeInput') createEmployeeDto: CreateEmployeeDto,
     @CurrentUser() user: any
   ): Promise<Employee> {
-    return this.employeeService.create(createEmployeeDto, user?.id);
+    const result = await this.employeeService.create(createEmployeeDto, user?.id);
+    return result as Employee;
   }
 
   @Query(() => [Employee])
@@ -26,8 +28,8 @@ export class EmployeeResolver {
     @Args('limit', { type: () => Int, defaultValue: 10 }) limit: number,
     @Args('search', { nullable: true }) search?: string,
     @Args('department', { nullable: true }) department?: string,
-    @Args('status', { type: () => EmployeeStatus, nullable: true })
-    status?: EmployeeStatus
+    @Args('status', { type: () => EmploymentStatus, nullable: true })
+    status?: EmploymentStatus
   ): Promise<Employee[]> {
     const result = await this.employeeService.findAll(
       page,
@@ -36,21 +38,23 @@ export class EmployeeResolver {
       department,
       status
     );
-    return result.employees;
+    return result.employees as Employee[];
   }
 
   @Query(() => Employee)
   async employee(
     @Args('id', { type: () => ID }) id: string
   ): Promise<Employee> {
-    return this.employeeService.findOne(id);
+    const result = await this.employeeService.findOne(id);
+    return result as Employee;
   }
 
   @Query(() => Employee)
   async employeeByEmployeeId(
     @Args('employeeId') employeeId: string
   ): Promise<Employee> {
-    return this.employeeService.findByEmployeeId(employeeId);
+    const result = await this.employeeService.findByEmployeeId(employeeId);
+    return result as Employee;
   }
 
   @Mutation(() => Employee)
@@ -59,7 +63,8 @@ export class EmployeeResolver {
     @Args('updateEmployeeInput') updateEmployeeDto: UpdateEmployeeDto,
     @CurrentUser() user: any
   ): Promise<Employee> {
-    return this.employeeService.update(id, updateEmployeeDto, user?.id);
+    const result = await this.employeeService.update(id, updateEmployeeDto, user?.id);
+    return result as Employee;
   }
 
   @Mutation(() => Boolean)
@@ -72,7 +77,8 @@ export class EmployeeResolver {
 
   @Query(() => [Employee])
   async organizationChart(): Promise<Employee[]> {
-    return this.employeeService.getOrganizationChart();
+    const results = await this.employeeService.getOrganizationChart();
+    return results as Employee[];
   }
 
   @Query(() => String)

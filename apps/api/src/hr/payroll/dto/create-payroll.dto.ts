@@ -7,22 +7,26 @@ import {
   IsEnum,
   IsNotEmpty,
   IsOptional,
-} from 'class-or';
-import { ComponentType, PayrollFrequency } from '../entities/payroll.entity';
+} from 'class-validator';
+import { ComponentType, PayrollFrequency } from '../../enums';
 
 @InputType()
 export class CreateSalaryComponentDto {
   @Field()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @Field()
   @IsNotEmpty()
-  code: string;
+  code!: string;
 
   @Field(() => ComponentType)
   @IsEnum(ComponentType)
-  type: ComponentType;
+  type!: ComponentType;
+
+  @Field()
+  @IsNotEmpty()
+  companyId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -67,7 +71,7 @@ export class CreateSalaryComponentDto {
 export class SalaryStructureComponentDto {
   @Field()
   @IsNotEmpty()
-  componentId: string;
+  componentId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -84,11 +88,15 @@ export class SalaryStructureComponentDto {
 export class CreateSalaryStructureDto {
   @Field()
   @IsNotEmpty()
-  employeeId: string;
+  employeeId!: string;
 
   @Field()
   @IsDecimal()
-  baseSalary: number;
+  baseSalary!: number;
+
+  @Field()
+  @IsNotEmpty()
+  companyId!: string;
 
   @Field(() => PayrollFrequency, { nullable: true })
   @IsOptional()
@@ -98,7 +106,7 @@ export class CreateSalaryStructureDto {
   @Field()
   @IsNotEmpty()
   @IsDateString()
-  effectiveFrom: string;
+  effectiveFrom!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -107,33 +115,37 @@ export class CreateSalaryStructureDto {
 
   @Field(() => [SalaryStructureComponentDto])
   @IsArray()
-  components: SalaryStructureComponentDto[];
+  components!: SalaryStructureComponentDto[];
 }
 
 @InputType()
 export class CreatePayrollRunDto {
   @Field()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @Field()
   @IsNotEmpty()
   @IsDateString()
-  payrollDate: string;
+  payrollDate!: string;
 
   @Field()
   @IsNotEmpty()
   @IsDateString()
-  startDate: string;
+  startDate!: string;
 
   @Field()
   @IsNotEmpty()
   @IsDateString()
-  endDate: string;
+  endDate!: string;
 
   @Field(() => PayrollFrequency)
   @IsEnum(PayrollFrequency)
-  frequency: PayrollFrequency;
+  frequency!: PayrollFrequency;
+
+  @Field()
+  @IsNotEmpty()
+  companyId!: string;
 
   @Field(() => [String], { nullable: true })
   @IsOptional()
@@ -145,7 +157,7 @@ export class CreatePayrollRunDto {
 export class ProcessPayrollDto {
   @Field()
   @IsNotEmpty()
-  payrollRunId: string;
+  payrollRunId!: string;
 
   @Field({ nullable: true })
   @IsOptional()

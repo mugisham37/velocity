@@ -1,361 +1,361 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { AttendanceService } from '../attendance/attendance.service';
-import { EmployeeService } from '../employee/employee.service';
-import { CreateSalaryComponentDto } from './dto/create-payroll.dto';
 import {
-  PayrollEntry,
-  PayrollEntryComponent,
-  PayrollRun,
-  SalaryComponent,
-  SalaryStructure,
-  SalaryStructureComponent,
-} from './entities/payroll.entity';
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { db, eq, and, desc } from '@kiro/database';
+import { 
+  payrollComponents, 
+  salaryStructures, 
+  salaryStructureComponents,
+  payrollRuns,
+  payrollEntries,
+  payrollEntryComponents,
+  employees 
+} from '@kiro/database';
+import { EmployeeService } from '../employee/employee.service';
+import { AttendanceService } from '../attendance/attendance.service';
+import {
+  CreateSalaryComponentDto,
+  CreateSalaryStructureDto,
+  CreatePayrollRunDto,
+  ProcessPayrollDto,
+} from './dto/create-payroll.dto';
+import { PayrollStatus, ComponentType } from '../enums';
 
 @Injectable()
 export class PayrollService {
   constructor(
-    @InjectRepository(SalaryComponent)
-    private salaryComponentRepository: Repository<SalaryComponent>,
-    @InjectRepository(SalaryStructure)
-    private salaryStructureRepository: Repository<SalaryStructure>,
-    @InjectRepository(SalaryStructureComponent)
-    private salaryStructureComponentRepository: Repository<SalaryStructureComponent>,
-    @InjectRepository(PayrollRun)
-    private payrollRunRepository: Repository<PayrollRun>,
-    @InjectRepository(PayrollEntry)
-    private payrollEntryRepository: Repository<PayrollEntry>,
-    @InjectRepository(PayrollEntryComponent)
-    private payrollEntryComponentRepository: Repository<PayrollEntryComponent>,
     private employeeService: EmployeeService,
     private attendanceService: AttendanceService
   ) {}
 
   // Salary Component Management
-  async createSalaryComponent(
-    createDto: CreateSalaryComponentDto
-  ): Promise<SalaryComponent> {
-    const component = this.salaryComponentRepository.create(createDto);
-    return this.salaryComponentRepository.save(component);
-  }
-
-  async findAllSalaryComponents(): Promise<SalaryComponent[]> {
-    return this.salaryComponentRepository.find({
-      where: { isActive: true },
-      order: { name: 'ASC' },
-    });
-  }
-
-  async findSalaryComponent(id: string): Promise<SalaryComponent> {
-    const component = await this.salaryComponentRepository.findOne({
-      where: { id },
-    });
-    if (!component) {
-      throw new NotFoundException('Salary component not found');
-    }
+  async createSalaryComponent(createSalaryComponentDto: CreateSalaryComponentDto) {
+    const [component] = await db
+      .insert(payrollComponents)
+      .values(createSalaryComponentDto)
+      .returning();
     return component;
   }
-  // Salary Structure Management
-  async createSalaryStructure(
-    createDto: CreateSalaryStructureDto
-  ): Promise<SalaryStructure> {
-    const employee = await this.employeeService.findOne(createDto.employeeId);
 
-    // Deactivate existing active salary structure
-    await this.salaryStructureRepository.update(
-      { employee: { id: createDto.employeeId }, isActive: true },
-      { isActive: false, effectiveTo: new Date(createDto.effectiveFrom) }
-    );
-
-    const structure = this.salaryStructureRepository.create({
-      ...createDto,
-      employee,
-      effectiveFrom: new Date(createDto.effectiveFrom),
-      effectiveTo: createDto.effectiveTo
-        ? new Date(createDto.effectiveTo)
-        : undefined,
-    });
-
-    const savedStructure = await this.salaryStructureRepository.save(structure);
-
-    // Create salary structure components
-    for (const componentDto of createDto.components) {
-      const component = await this.findSalaryComponent(
-        componentDto.componentId
-      );
-      const structureComponent = this.salaryStructureComponentRepository.create(
-        {
-          salaryStructure: savedStructure,
-          component,
-          amount: componentDto.amount,
-          percentage: componentDto.percentage,
-        }
-      );
-      await this.salaryStructureComponentRepository.save(structureComponent);
-    }
-
-    return this.findSalaryStructure(savedStructure.id);
+  async findAllSalaryComponents() {
+    return await db
+      .select()
+      .from(payrollComponents)
+      .where(eq(payrollComponents.isActive, true))
+      .orderBy(payrollComponents.name);
   }
 
-  async findSalaryStructure(id: string): Promise<SalaryStructure> {
-    const structure = await this.salaryStructureRepository.findOne({
-      where: { id },
-      relations: ['employee', 'components', 'components.component'],
-    });
+  async findSalaryComponent(id: string) {
+    const components = await db
+      .select()
+      .from(payrollComponents)
+      .where(eq(payrollComponents.id, id))
+      .limit(1);
 
-    if (!structure) {
-      throw new NotFoundException('Salary structure not found');
+    if (components.length === 0) {
+      throw new NotFoundException('Salary component not found');
+    }
+
+    return components[0];
+  }
+
+  // Salary Structure Management
+  async createSalaryStructure(createSalaryStructureDto: CreateSalaryStructureDto) {
+    const employee = await this.employeeService.findOne(createSalaryStructureDto.employeeId);
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    const [structure] = await db
+      .insert(salaryStructures)
+      .values({
+        employeeId: createSalaryStructureDto.employeeId,
+        baseSalary: createSalaryStructureDto.baseSalary,
+        currency: 'USD',
+        frequency: createSalaryStructureDto.frequency || 'Monthly',
+        effectiveFrom: createSalaryStructureDto.effectiveFrom,
+        effectiveTo: createSalaryStructureDto.effectiveTo || null,
+        isActive: true,
+        companyId: createSalaryStructureDto.companyId,
+      })
+      .returning();
+
+    // Add components
+    if (createSalaryStructureDto.components && createSalaryStructureDto.components.length > 0 && structure) {
+      const componentValues = createSalaryStructureDto.components.map(comp => ({
+        salaryStructureId: structure.id,
+        componentId: comp.componentId,
+        amount: comp.amount || null,
+        percentage: comp.percentage || null,
+        isActive: true,
+      }));
+
+      await db.insert(salaryStructureComponents).values(componentValues);
     }
 
     return structure;
   }
 
-  async getEmployeeSalaryStructure(
-    employeeId: string
-  ): Promise<SalaryStructure | null> {
-    return this.salaryStructureRepository.findOne({
-      where: { employee: { id: employeeId }, isActive: true },
-      relations: ['employee', 'components', 'components.component'],
-    });
+  async findSalaryStructureByEmployee(employeeId: string) {
+    return await db
+      .select()
+      .from(salaryStructures)
+      .where(
+        and(
+          eq(salaryStructures.employeeId, employeeId),
+          eq(salaryStructures.isActive, true)
+        )
+      )
+      .orderBy(desc(salaryStructures.effectiveFrom))
+      .limit(1);
+  }
+
+  // Add missing methods
+  async findSalaryStructure(id: string) {
+    const structures = await db
+      .select()
+      .from(salaryStructures)
+      .where(eq(salaryStructures.id, id))
+      .limit(1);
+
+    if (structures.length === 0) {
+      throw new NotFoundException('Salary structure not found');
+    }
+
+    const result = structures[0];
+    if (!result) {
+      throw new NotFoundException('Salary structure not found');
+    }
+
+    return result;
+  }
+
+  async getEmployeeSalaryStructure(employeeId: string) {
+    const structures = await this.findSalaryStructureByEmployee(employeeId);
+    return structures.length > 0 ? structures[0] : null;
+  }
+
+  async approvePayrollRun(id: string, approvedBy: string) {
+    const [updatedRun] = await db
+      .update(payrollRuns)
+      .set({
+        status: PayrollStatus.COMPLETED,
+        approvedBy,
+        approvedAt: new Date(),
+      })
+      .where(eq(payrollRuns.id, id))
+      .returning();
+
+    if (!updatedRun) {
+      throw new NotFoundException('Payroll run not found');
+    }
+
+    return updatedRun;
   }
 
   // Payroll Run Management
-  async createPayrollRun(createDto: CreatePayrollRunDto): Promise<PayrollRun> {
-    const payrollRun = this.payrollRunRepository.create({
-      ...createDto,
-      payrollDate: new Date(createDto.payrollDate),
-      startDate: new Date(createDto.startDate),
-      endDate: new Date(createDto.endDate),
-    });
-
-    return this.payrollRunRepository.save(payrollRun);
-  }
-
-  async findAllPayrollRuns(): Promise<PayrollRun[]> {
-    return this.payrollRunRepository.find({
-      relations: ['entries', 'entries.employee'],
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  async findPayrollRun(id: string): Promise<PayrollRun> {
-    const payrollRun = await this.payrollRunRepository.findOne({
-      where: { id },
-      relations: [
-        'entries',
-        'entries.employee',
-        'entries.components',
-        'entries.components.component',
-      ],
-    });
-
-    if (!payrollRun) {
-      throw new NotFoundException('Payroll run not found');
-    }
+  async createPayrollRun(createPayrollRunDto: CreatePayrollRunDto) {
+    const [payrollRun] = await db
+      .insert(payrollRuns)
+      .values({
+        ...createPayrollRunDto,
+        status: PayrollStatus.DRAFT,
+        totalGrossPay: 0,
+        totalDeductions: 0,
+        totalNetPay: 0,
+        employeeCount: 0,
+        processedBy: null,
+        processedAt: null,
+        approvedBy: null,
+        approvedAt: null,
+      })
+      .returning();
 
     return payrollRun;
   }
 
-  async processPayroll(
-    processDto: ProcessPayrollDto,
-    processedBy?: string
-  ): Promise<PayrollRun> {
-    const payrollRun = await this.findPayrollRun(processDto.payrollRunId);
+  async findAllPayrollRuns() {
+    return await db
+      .select()
+      .from(payrollRuns)
+      .orderBy(desc(payrollRuns.payrollDate));
+  }
+
+  async findPayrollRun(id: string) {
+    const runs = await db
+      .select()
+      .from(payrollRuns)
+      .where(eq(payrollRuns.id, id))
+      .limit(1);
+
+    if (runs.length === 0) {
+      throw new NotFoundException('Payroll run not found');
+    }
+
+    const result = runs[0];
+    if (!result) {
+      throw new NotFoundException('Payroll run not found');
+    }
+
+    return result;
+  }
+
+  async processPayroll(processPayrollDto: ProcessPayrollDto, processedBy: string) {
+    const payrollRun = await this.findPayrollRun(processPayrollDto.payrollRunId);
+    if (!payrollRun) {
+      throw new NotFoundException('Payroll run not found');
+    }
 
     if (payrollRun.status !== PayrollStatus.DRAFT) {
       throw new BadRequestException('Payroll run is not in draft status');
     }
 
-    // Get employees to process
-    const employees = await this.employeeService.findAll(1, 1000); // Get all employees
-    let employeesToProcess = employees.employees;
+    // Get all active employees
+    const employeeList = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.isActive, true));
 
-    // Calculate payroll for each employee
     let totalGrossPay = 0;
     let totalDeductions = 0;
     let totalNetPay = 0;
-    let employeeCount = 0;
 
-    for (const employee of employeesToProcess) {
-      const salaryStructure = await this.getEmployeeSalaryStructure(
-        employee.id
-      );
-      if (!salaryStructure) continue;
-
-      // Get attendance data for the payroll period
-      const attendanceStats = await this.attendanceService.getAttendanceStats(
-        employee.id,
-        payrollRun.startDate.getMonth() + 1,
-        payrollRun.startDate.getFullYear()
-      );
-
-      const payrollEntry = await this.calculatePayrollEntry(
-        payrollRun,
-        employee,
-        salaryStructure,
-        attendanceStats
-      );
-
-      totalGrossPay += payrollEntry.grossPay;
-      totalDeductions += payrollEntry.totalDeductions;
-      totalNetPay += payrollEntry.netPay;
-      employeeCount++;
-    }
-
-    // Update payroll run totals
-    payrollRun.totalGrossPay = totalGrossPay;
-    payrollRun.totalDeductions = totalDeductions;
-    payrollRun.totalNetPay = totalNetPay;
-    payrollRun.employeeCount = employeeCount;
-    payrollRun.status = PayrollStatus.PROCESSED;
-    payrollRun.processedBy = processedBy;
-    payrollRun.processedAt = new Date();
-
-    return this.payrollRunRepository.save(payrollRun);
-  }
-
-  private async calculatePayrollEntry(
-    payrollRun: PayrollRun,
-    employee: any,
-    salaryStructure: SalaryStructure,
-    attendanceStats: any
-  ): Promise<PayrollEntry> {
-    const payrollEntry = this.payrollEntryRepository.create({
-      payrollRun,
-      employee,
-      baseSalary: salaryStructure.baseSalary,
-      workedDays: attendanceStats.present || 0,
-      paidDays: attendanceStats.present || 0,
-      overtimeHours: attendanceStats.totalOvertimeHours || 0,
-    });
-
-    const savedEntry = await this.payrollEntryRepository.save(payrollEntry);
-
-    let totalEarnings = salaryStructure.baseSalary;
-    let totalDeductions = 0;
-
-    // Calculate each component
-    for (const structureComponent of salaryStructure.components) {
-      if (!structureComponent.isActive) continue;
-
-      const amount = this.calculateComponentAmount(
-        structureComponent,
-        salaryStructure.baseSalary,
-        attendanceStats
-      );
-
-      const entryComponent = this.payrollEntryComponentRepository.create({
-        payrollEntry: savedEntry,
-        component: structureComponent.component,
-        amount,
-        calculation: `Base: ${salaryStructure.baseSalary}`,
-      });
-
-      await this.payrollEntryComponentRepository.save(entryComponent);
-
-      if (structureComponent.component.type === ComponentType.EARNING) {
-        totalEarnings += amount;
-      } else if (
-        structureComponent.component.type === ComponentType.DEDUCTION
-      ) {
-        totalDeductions += amount;
+    // Process each employee
+    for (const employee of employeeList) {
+      const salaryStructure = await this.findSalaryStructureByEmployee(employee['id']);
+      
+      if (salaryStructure.length === 0) {
+        continue; // Skip employees without salary structure
       }
-    }
 
-    // Update payroll entry totals
-    savedEntry.totalEarnings = totalEarnings;
-    savedEntry.totalDeductions = totalDeductions;
-    savedEntry.grossPay = totalEarnings;
-    savedEntry.netPay = totalEarnings - totalDeductions;
-
-    return this.payrollEntryRepository.save(savedEntry);
-  }
-
-  private calculateComponentAmount(
-    structureComponent: SalaryStructureComponent,
-    baseSalary: number,
-    attendanceStats: any
-  ): number {
-    const component = structureComponent.component;
-
-    if (structureComponent.amount) {
-      return structureComponent.amount;
-    }
-
-    if (structureComponent.percentage) {
-      const calculatedAmount =
-        (baseSalary * structureComponent.percentage) / 100;
-      return component.maxAmount
-        ? Math.min(calculatedAmount, component.maxAmount)
-        : calculatedAmount;
-    }
-
-    if (component.fixedAmount) {
-      return component.fixedAmount;
-    }
-
-    if (component.percentage) {
-      const calculatedAmount = (baseSalary * component.percentage) / 100;
-      return component.maxAmount
-        ? Math.min(calculatedAmount, component.maxAmount)
-        : calculatedAmount;
-    }
-
-    return 0;
-  }
-
-  async approvePayrollRun(
-    id: string,
-    approvedBy?: string
-  ): Promise<PayrollRun> {
-    const payrollRun = await this.findPayrollRun(id);
-
-    if (payrollRun.status !== PayrollStatus.PROCESSED) {
-      throw new BadRequestException(
-        'Payroll run must be processed before approval'
+      const structure = salaryStructure[0];
+      if (!structure) {
+        continue;
+      }
+      
+      // Get attendance data for the period
+      const attendanceStats = await this.attendanceService.getAttendanceStats(
+        employee['id'],
+        new Date(payrollRun.startDate).getMonth() + 1,
+        new Date(payrollRun.startDate).getFullYear()
       );
+
+      // Calculate basic pay
+      const baseSalary = structure.baseSalary;
+      let totalEarnings = baseSalary;
+      let totalEmployeeDeductions = 0;
+
+      // Get salary components
+      const components = await db
+        .select({
+          component: payrollComponents,
+          structureComponent: salaryStructureComponents,
+        })
+        .from(salaryStructureComponents)
+        .leftJoin(payrollComponents, eq(salaryStructureComponents.componentId, payrollComponents.id))
+        .where(eq(salaryStructureComponents.salaryStructureId, structure.id));
+
+      // Calculate earnings and deductions
+      for (const comp of components) {
+        if (!comp.component) continue;
+
+        let amount = 0;
+        if (comp.structureComponent.amount) {
+          amount = comp.structureComponent.amount;
+        } else if (comp.structureComponent.percentage) {
+          amount = (baseSalary * comp.structureComponent.percentage) / 100;
+        }
+
+        if (comp.component.type === ComponentType.EARNING) {
+          totalEarnings += amount;
+        } else if (comp.component.type === ComponentType.DEDUCTION) {
+          totalEmployeeDeductions += amount;
+        }
+      }
+
+      const grossPay = totalEarnings;
+      const netPay = grossPay - totalEmployeeDeductions;
+
+      // Create payroll entry
+      const [entry] = await db
+        .insert(payrollEntries)
+        .values({
+          payrollRunId: payrollRun.id,
+          employeeId: employee['id'],
+          baseSalary,
+          totalEarnings,
+          totalDeductions: totalEmployeeDeductions,
+          grossPay,
+          netPay,
+          workedDays: attendanceStats.totalDays,
+          paidDays: attendanceStats.present,
+          overtimeHours: Math.round(attendanceStats.totalOvertimeHours),
+          status: 'Draft',
+          paymentDate: null,
+          paymentMethod: null,
+          paymentReference: null,
+          companyId: employee['companyId'],
+        })
+        .returning();
+
+      if (!entry) {
+        continue;
+      }
+
+      // Add component entries
+      for (const comp of components) {
+        if (!comp.component) continue;
+
+        let amount = 0;
+        if (comp.structureComponent.amount) {
+          amount = comp.structureComponent.amount;
+        } else if (comp.structureComponent.percentage) {
+          amount = (baseSalary * comp.structureComponent.percentage) / 100;
+        }
+
+        await db.insert(payrollEntryComponents).values({
+          payrollEntryId: entry.id,
+          componentId: comp.component.id,
+          amount,
+        });
+      }
+
+      totalGrossPay += grossPay;
+      totalDeductions += totalEmployeeDeductions;
+      totalNetPay += netPay;
     }
 
-    payrollRun.status = PayrollStatus.APPROVED;
-    payrollRun.approvedBy = approvedBy;
-    payrollRun.approvedAt = new Date();
+    // Update payroll run
+    const [updatedRun] = await db
+      .update(payrollRuns)
+      .set({
+        status: PayrollStatus.PROCESSING,
+        totalGrossPay,
+        totalDeductions,
+        totalNetPay,
+        employeeCount: employeeList.length,
+        processedBy,
+        processedAt: new Date(),
+      })
+      .where(eq(payrollRuns.id, payrollRun.id))
+      .returning();
 
-    return this.payrollRunRepository.save(payrollRun);
+    return updatedRun;
   }
 
-  async getPayrollStats(year?: number): Promise<any> {
-    const currentYear = year || new Date().getFullYear();
-
-    const payrollRuns = await this.payrollRunRepository.find({
-      where: {
-        payrollDate: new Date(`${currentYear}-01-01`),
-      },
-    });
+  async getPayrollStats() {
+    const runs = await db.select().from(payrollRuns);
 
     const stats = {
-      totalRuns: payrollRuns.length,
-      totalEmployees: payrollRuns.reduce(
-        (sum, run) => sum + run.employeeCount,
-        0
-      ),
-      totalGrossPay: payrollRuns.reduce(
-        (sum, run) => sum + run.totalGrossPay,
-        0
-      ),
-      totalDeductions: payrollRuns.reduce(
-        (sum, run) => sum + run.totalDeductions,
-        0
-      ),
-      totalNetPay: payrollRuns.reduce((sum, run) => sum + run.totalNetPay, 0),
-      byStatus: {
-        draft: payrollRuns.filter(r => r.status === PayrollStatus.DRAFT).length,
-        processed: payrollRuns.filter(r => r.status === PayrollStatus.PROCESSED)
-          .length,
-        approved: payrollRuns.filter(r => r.status === PayrollStatus.APPROVED)
-          .length,
-        paid: payrollRuns.filter(r => r.status === PayrollStatus.PAID).length,
-      },
+      totalRuns: runs.length,
+      draftRuns: runs.filter(run => run.status === PayrollStatus.DRAFT).length,
+      processingRuns: runs.filter(run => run.status === PayrollStatus.PROCESSING).length,
+      completedRuns: runs.filter(run => run.status === PayrollStatus.COMPLETED).length,
+      cancelledRuns: runs.filter(run => run.status === PayrollStatus.CANCELLED).length,
+      totalGrossPay: runs.reduce((sum, run) => sum + (run.totalGrossPay || 0), 0),
+      totalNetPay: runs.reduce((sum, run) => sum + (run.totalNetPay || 0), 0),
     };
 
     return stats;

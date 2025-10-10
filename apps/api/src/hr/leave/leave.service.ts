@@ -1,11 +1,10 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { db, eq, and, gte, lte, desc } from '@kiro/database';
+import { leavePolicies, leaveRequests, leaveBalances } from '@kiro/database';
 import { EmployeeService } from '../employee/employee.service';
 import {
   ApproveLeaveDto,
@@ -13,398 +12,286 @@ import {
   CreateLeaveBalanceDto,
   CreateLeavePolicyDto,
 } from './dto/create-leave.dto';
-import {
-  LeaveApplication,
-  LeaveBalance,
-  LeavePolicy,
-  LeaveStatus,
-} from './entities/leave.entity';
+import { LeaveStatus } from '../enums';
 
 @Injectable()
 export class LeaveService {
-  constructor(
-    @InjectRepository(LeavePolicy)
-    private leavePolicyRepository: Repository<LeavePolicy>,
-    @InjectRepository(LeaveApplication)
-    private leaveApplicationRepository: Repository<LeaveApplication>,
-    @InjectRepository(LeaveBalance)
-    private leaveBalanceRepository: Repository<LeaveBalance>,
-    private employeeService: EmployeeService
-  ) {}
+  constructor(private employeeService: EmployeeService) {}
 
   // Leave Policy Management
-  async createLeavePolicy(
-    createLeavePolicyDto: CreateLeavePolicyDto
-  ): Promise<LeavePolicy> {
-    const policy = this.leavePolicyRepository.create(createLeavePolicyDto);
-    return this.leavePolicyRepository.save(policy);
-  }
-
-  async findAllLeavePolicies(): Promise<LeavePolicy[]> {
-    return this.leavePolicyRepository.find({
-      where: { isActive: true },
-      order: { name: 'ASC' },
-    });
-  }
-
-  async findLeavePolicy(id: string): Promise<LeavePolicy> {
-    const policy = await this.leavePolicyRepository.findOne({ where: { id } });
-    if (!policy) {
-      throw new NotFoundException('Leave policy not found');
-    }
+  async createLeavePolicy(createLeavePolicyDto: CreateLeavePolicyDto) {
+    const [policy] = await db
+      .insert(leavePolicies)
+      .values(createLeavePolicyDto)
+      .returning();
     return policy;
   }
 
-  async updateLeavePolicy(
-    id: string,
-    updateData: Partial<CreateLeavePolicyDto>
-  ): Promise<LeavePolicy> {
-    await this.leavePolicyRepository.update(id, updateData);
-    return this.findLeavePolicy(id);
+  async findAllLeavePolicies() {
+    return await db
+      .select()
+      .from(leavePolicies)
+      .where(eq(leavePolicies.isActive, true))
+      .orderBy(leavePolicies.name);
   }
 
-  async deleteLeavePolicy(id: string): Promise<void> {
-    const policy = await this.findLeavePolicy(id);
-    policy.isActive = false;
-    await this.leavePolicyRepository.save(policy);
+  async findLeavePolicy(id: string) {
+    const policies = await db
+      .select()
+      .from(leavePolicies)
+      .where(eq(leavePolicies.id, id))
+      .limit(1);
+
+    if (policies.length === 0) {
+      throw new NotFoundException('Leave policy not found');
+    }
+
+    return policies[0];
   }
 
   // Leave Application Management
-  async createLeaveApplication(
-    createLeaveApplicationDto: CreateLeaveApplicationDto,
-    createdBy?: string
-  ): Promise<LeaveApplication> {
-    const employee = await this.employeeService.findOne(
-      createLeaveApplicationDto.employeeId
-    );
-    const leavePolicy = await this.findLeavePolicy(
-      createLeaveApplicationDto.leavePolicyId
-    );
-
-    // Check if employee has sufficient leave balance
-    const balance = await this.getLeaveBalance(
-      createLeaveApplicationDto.employeeId,
-      createLeaveApplicationDto.leavePolicyId
-    );
-    if (
-      balance &&
-      balance.available < createLeaveApplicationDto.daysRequested
-    ) {
-      throw new BadRequestException('Insufficient leave balance');
+  async createLeaveApplication(createLeaveApplicationDto: CreateLeaveApplicationDto) {
+    const employee = await this.employeeService.findOne(createLeaveApplicationDto.employeeId);
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
     }
 
-    // Check for overlapping leave applications
-    const overlapping = await this.leaveApplicationRepository.findOne({
-      where: {
-        employee: { id: createLeaveApplicationDto.employeeId },
-        status: LeaveStatus.APPROVED,
-        startDate: Between(
-          new Date(createLeaveApplicationDto.startDate),
-          new Date(createLeaveApplicationDto.endDate)
-        ),
-      },
-    });
+    await this.findLeavePolicy(createLeaveApplicationDto.leavePolicyId);
 
-    if (overlapping) {
-      throw new ConflictException(
-        'Leave application overlaps with existing approved leave'
-      );
+    const appliedDate = new Date().toISOString().split('T')[0];
+    if (!appliedDate) {
+      throw new Error('Unable to get current date');
     }
 
-    const application = this.leaveApplicationRepository.create({
-      ...createLeaveApplicationDto,
-      employee,
-      leavePolicy,
-      startDate: new Date(createLeaveApplicationDto.startDate),
-      endDate: new Date(createLeaveApplicationDto.endDate),
-      createdBy,
-    });
+    const insertData = {
+      employeeId: createLeaveApplicationDto.employeeId,
+      leavePolicyId: createLeaveApplicationDto.leavePolicyId,
+      startDate: createLeaveApplicationDto.startDate,
+      endDate: createLeaveApplicationDto.endDate,
+      daysRequested: createLeaveApplicationDto.daysRequested,
+      reason: createLeaveApplicationDto.reason,
+      companyId: createLeaveApplicationDto.companyId,
+      status: LeaveStatus.PENDING,
+      appliedDate,
+      isHalfDay: createLeaveApplicationDto.isHalfDay || false,
+      halfDayPeriod: createLeaveApplicationDto.halfDayPeriod || null,
+      approvedBy: null,
+      approvedAt: null,
+      rejectionReason: null,
+      attachments: null,
+    };
 
-    const savedApplication =
-      await this.leaveApplicationRepository.save(application);
-
-    // Update pending balance
-    if (balance) {
-      balance.pending += createLeaveApplicationDto.daysRequested;
-      await this.leaveBalanceRepository.save(balance);
-    }
-
-    return savedApplication;
-  }
-
-  async findAllLeaveApplications(
-    employeeId?: string,
-    status?: LeaveStatus,
-    startDate?: string,
-    endDate?: string
-  ): Promise<LeaveApplication[]> {
-    const where: any = {};
-
-    if (employeeId) {
-      where.employee = { id: employeeId };
-    }
-
-    if (status) {
-      where.status = status;
-    }
-
-    if (startDate && endDate) {
-      where.startDate = Between(new Date(startDate), new Date(endDate));
-    }
-
-    return this.leaveApplicationRepository.find({
-      where,
-      relations: ['employee', 'leavePolicy', 'approvedBy'],
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  async findLeaveApplication(id: string): Promise<LeaveApplication> {
-    const application = await this.leaveApplicationRepository.findOne({
-      where: { id },
-      relations: ['employee', 'leavePolicy', 'approvedBy'],
-    });
-
-    if (!application) {
-      throw new NotFoundException('Leave application not found');
-    }
+    const [application] = await db
+      .insert(leaveRequests)
+      .values(insertData)
+      .returning();
 
     return application;
   }
 
-  async approveLeaveApplication(
-    id: string,
-    approveLeaveDto: ApproveLeaveDto,
-    approvedById?: string
-  ): Promise<LeaveApplication> {
-    const application = await this.findLeaveApplication(id);
+  async findAllLeaveApplications(employeeId?: string) {
+    let query = db
+      .select()
+      .from(leaveRequests)
+      .orderBy(desc(leaveRequests.appliedDate));
 
-    if (application.status !== LeaveStatus.PENDING) {
-      throw new BadRequestException(
-        'Leave application is not in pending status'
-      );
+    if (employeeId) {
+      query = query.where(eq(leaveRequests.employeeId, employeeId));
     }
 
-    const approvedBy = approvedById
-      ? await this.employeeService.findOne(approvedById)
-      : undefined;
-
-    application.status = approveLeaveDto.status;
-    application.approverComments = approveLeaveDto.approverComments;
-    application.approvedBy = approvedBy;
-    application.approvedAt = new Date();
-
-    const savedApplication =
-      await this.leaveApplicationRepository.save(application);
-
-    // Update leave balance
-    const balance = await this.getLeaveBalance(
-      application.employee.id,
-      application.leavePolicy.id
-    );
-    if (balance) {
-      balance.pending -= application.daysRequested;
-
-      if (approveLeaveDto.status === LeaveStatus.APPROVED) {
-        balance.used += application.daysRequested;
-      }
-
-      await this.leaveBalanceRepository.save(balance);
-    }
-
-    return savedApplication;
+    return await query;
   }
 
-  async cancelLeaveApplication(
-    id: string,
-    updatedBy?: string
-  ): Promise<LeaveApplication> {
-    const application = await this.findLeaveApplication(id);
+  async approveLeave(id: string, approveLeaveDto: ApproveLeaveDto, approvedBy: string) {
+    const applications = await db
+      .select()
+      .from(leaveRequests)
+      .where(eq(leaveRequests.id, id))
+      .limit(1);
 
-    if (application.status === LeaveStatus.CANCELLED) {
-      throw new BadRequestException('Leave application is already cancelled');
+    if (applications.length === 0) {
+      throw new NotFoundException('Leave application not found');
     }
 
-    application.status = LeaveStatus.CANCELLED;
-    application.updatedBy = updatedBy;
-
-    const savedApplication =
-      await this.leaveApplicationRepository.save(application);
-
-    // Update leave balance
-    const balance = await this.getLeaveBalance(
-      application.employee.id,
-      application.leavePolicy.id
-    );
-    if (balance) {
-      if (application.status === LeaveStatus.PENDING) {
-        balance.pending -= application.daysRequested;
-      } else if (application.status === LeaveStatus.APPROVED) {
-        balance.used -= application.daysRequested;
-      }
-
-      await this.leaveBalanceRepository.save(balance);
+    const application = applications[0];
+    if (!application) {
+      throw new NotFoundException('Leave application not found');
     }
 
-    return savedApplication;
+    if (application.status !== LeaveStatus.PENDING) {
+      throw new BadRequestException('Leave application is not in pending status');
+    }
+
+    const [updatedApplication] = await db
+      .update(leaveRequests)
+      .set({
+        status: approveLeaveDto.status,
+        approvedBy,
+        approvedAt: new Date(),
+        rejectionReason: approveLeaveDto.status === LeaveStatus.REJECTED 
+          ? (approveLeaveDto as any).approverComments 
+          : null,
+      })
+      .where(eq(leaveRequests.id, id))
+      .returning();
+
+    return updatedApplication;
+  }
+
+  // Add missing methods
+  async updateLeavePolicy(id: string, updateData: Partial<CreateLeavePolicyDto>) {
+    const [updatedPolicy] = await db
+      .update(leavePolicies)
+      .set(updateData)
+      .where(eq(leavePolicies.id, id))
+      .returning();
+
+    if (!updatedPolicy) {
+      throw new NotFoundException('Leave policy not found');
+    }
+    return updatedPolicy;
+  }
+
+  async deleteLeavePolicy(id: string): Promise<void> {
+    const [updatedPolicy] = await db
+      .update(leavePolicies)
+      .set({ isActive: false })
+      .where(eq(leavePolicies.id, id))
+      .returning();
+
+    if (!updatedPolicy) {
+      throw new NotFoundException('Leave policy not found');
+    }
+  }
+
+  async findLeaveApplication(id: string) {
+    const applications = await db
+      .select()
+      .from(leaveRequests)
+      .where(eq(leaveRequests.id, id))
+      .limit(1);
+
+    if (applications.length === 0) {
+      throw new NotFoundException('Leave application not found');
+    }
+
+    const result = applications[0];
+    if (!result) {
+      throw new NotFoundException('Leave application not found');
+    }
+
+    return result;
+  }
+
+  async approveLeaveApplication(id: string, approveLeaveDto: ApproveLeaveDto, approvedBy: string) {
+    return this.approveLeave(id, approveLeaveDto, approvedBy);
+  }
+
+  async cancelLeaveApplication(id: string, cancelledBy: string) {
+    const [updatedApplication] = await db
+      .update(leaveRequests)
+      .set({
+        status: LeaveStatus.CANCELLED,
+        approvedBy: cancelledBy,
+        approvedAt: new Date(),
+      })
+      .where(eq(leaveRequests.id, id))
+      .returning();
+
+    if (!updatedApplication) {
+      throw new NotFoundException('Leave application not found');
+    }
+
+    return updatedApplication;
+  }
+
+  async getEmployeeLeaveBalances(employeeId: string, year?: number) {
+    const currentYear = year || new Date().getFullYear();
+    
+    return await db
+      .select()
+      .from(leaveBalances)
+      .where(
+        and(
+          eq(leaveBalances.employeeId, employeeId),
+          eq(leaveBalances.year, currentYear)
+        )
+      );
+  }
+
+  async updateLeaveBalance(id: string, updateData: Partial<CreateLeaveBalanceDto>) {
+    const [updatedBalance] = await db
+      .update(leaveBalances)
+      .set(updateData)
+      .where(eq(leaveBalances.id, id))
+      .returning();
+
+    if (!updatedBalance) {
+      throw new NotFoundException('Leave balance not found');
+    }
+    return updatedBalance;
+  }
+
+  async getLeaveCalendar(startDate: string, endDate: string) {
+    return await db
+      .select()
+      .from(leaveRequests)
+      .where(
+        and(
+          gte(leaveRequests.startDate, startDate),
+          lte(leaveRequests.endDate, endDate),
+          eq(leaveRequests.status, LeaveStatus.APPROVED)
+        )
+      )
+      .orderBy(leaveRequests.startDate);
   }
 
   // Leave Balance Management
-  async createLeaveBalance(
-    createLeaveBalanceDto: CreateLeaveBalanceDto
-  ): Promise<LeaveBalance> {
-    const employee = await this.employeeService.findOne(
-      createLeaveBalanceDto.employeeId
-    );
-    const leavePolicy = await this.findLeavePolicy(
-      createLeaveBalanceDto.leavePolicyId
-    );
-
-    // Check if balance already exists for this year
-    const year = createLeaveBalanceDto.year || new Date().getFullYear();
-    const existingBalance = await this.leaveBalanceRepository.findOne({
-      where: {
-        employee: { id: createLeaveBalanceDto.employeeId },
-        leavePolicy: { id: createLeaveBalanceDto.leavePolicyId },
-        year,
-      },
-    });
-
-    if (existingBalance) {
-      throw new ConflictException('Leave balance already exists for this year');
-    }
-
-    const balance = this.leaveBalanceRepository.create({
-      ...createLeaveBalanceDto,
-      employee,
-      leavePolicy,
-      year,
-    });
-
-    return this.leaveBalanceRepository.save(balance);
-  }
-
-  async getLeaveBalance(
-    employeeId: string,
-    leavePolicyId: string,
-    year?: number
-  ): Promise<LeaveBalance | null> {
-    const currentYear = year || new Date().getFullYear();
-
-    return this.leaveBalanceRepository.findOne({
-      where: {
-        employee: { id: employeeId },
-        leavePolicy: { id: leavePolicyId },
-        year: currentYear,
-      },
-      relations: ['employee', 'leavePolicy'],
-    });
-  }
-
-  async getEmployeeLeaveBalances(
-    employeeId: string,
-    year?: number
-  ): Promise<LeaveBalance[]> {
-    const currentYear = year || new Date().getFullYear();
-
-    return this.leaveBalanceRepository.find({
-      where: {
-        employee: { id: employeeId },
-        year: currentYear,
-      },
-      relations: ['employee', 'leavePolicy'],
-      order: { leavePolicy: { name: 'ASC' } },
-    });
-  }
-
-  async updateLeaveBalance(
-    id: string,
-    updateData: Partial<CreateLeaveBalanceDto>
-  ): Promise<LeaveBalance> {
-    await this.leaveBalanceRepository.update(id, updateData);
-    const balance = await this.leaveBalanceRepository.findOne({
-      where: { id },
-      relations: ['employee', 'leavePolicy'],
-    });
-
-    if (!balance) {
-      throw new NotFoundException('Leave balance not found');
-    }
+  async createLeaveBalance(createLeaveBalanceDto: CreateLeaveBalanceDto) {
+    const [balance] = await db
+      .insert(leaveBalances)
+      .values({
+        ...createLeaveBalanceDto,
+        used: 0,
+        pending: 0,
+        carriedForward: createLeaveBalanceDto.carriedForward || 0,
+        year: createLeaveBalanceDto.year || new Date().getFullYear(),
+      })
+      .returning();
 
     return balance;
   }
 
-  async getLeaveCalendar(
-    startDate: string,
-    endDate: string
-  ): Promise<LeaveApplication[]> {
-    return this.leaveApplicationRepository.find({
-      where: {
-        status: LeaveStatus.APPROVED,
-        startDate: Between(new Date(startDate), new Date(endDate)),
-      },
-      relations: ['employee', 'leavePolicy'],
-      order: { startDate: 'ASC' },
-    });
+  async getLeaveBalance(employeeId: string, year?: number) {
+    const currentYear = year || new Date().getFullYear();
+    
+    return await db
+      .select()
+      .from(leaveBalances)
+      .where(
+        and(
+          eq(leaveBalances.employeeId, employeeId),
+          eq(leaveBalances.year, currentYear)
+        )
+      );
   }
 
-  async getLeaveStats(employeeId?: string, year?: number): Promise<any> {
-    const currentYear = year || new Date().getFullYear();
-    let query = this.leaveApplicationRepository
-      .createQueryBuilder('application')
-      .leftJoinAndSelect('application.employee', 'employee')
-      .leftJoinAndSelect('application.leavePolicy', 'policy')
-      .where('EXTRACT(YEAR FROM application.startDate) = :year', {
-        year: currentYear,
-      });
+  async getLeaveStats(employeeId?: string) {
+    let query = db.select().from(leaveRequests);
 
     if (employeeId) {
-      query = query.andWhere('employee.id = :employeeId', { employeeId });
+      query = query.where(eq(leaveRequests.employeeId, employeeId));
     }
 
-    const applications = await query.getMany();
+    const applications = await query;
 
     const stats = {
-      totalApplications: applications.length,
-      approved: applications.filter(a => a.status === LeaveStatus.APPROVED)
-        .length,
-      pending: applications.filter(a => a.status === LeaveStatus.PENDING)
-        .length,
-      rejected: applications.filter(a => a.status === LeaveStatus.REJECTED)
-        .length,
-      cancelled: applications.filter(a => a.status === LeaveStatus.CANCELLED)
-        .length,
-      totalDaysRequested: applications.reduce(
-        (sum, a) => sum + a.daysRequested,
-        0
-      ),
-      totalDaysApproved: applications
-        .filter(a => a.status === LeaveStatus.APPROVED)
-        .reduce((sum, a) => sum + a.daysRequested, 0),
-      byLeaveType: {},
+      total: applications.length,
+      pending: applications.filter(app => app.status === LeaveStatus.PENDING).length,
+      approved: applications.filter(app => app.status === LeaveStatus.APPROVED).length,
+      rejected: applications.filter(app => app.status === LeaveStatus.REJECTED).length,
+      cancelled: applications.filter(app => app.status === LeaveStatus.CANCELLED).length,
     };
-
-    // Group by leave type
-    applications.forEach(app => {
-      const type = app.leavePolicy.leaveType;
-      if (!stats.byLeaveType[type]) {
-        stats.byLeaveType[type] = {
-          total: 0,
-          approved: 0,
-          pending: 0,
-          rejected: 0,
-        };
-      }
-
-      stats.byLeaveType[type].total += app.daysRequested;
-      if (app.status === LeaveStatus.APPROVED) {
-        stats.byLeaveType[type].approved += app.daysRequested;
-      } else if (app.status === LeaveStatus.PENDING) {
-        stats.byLeaveType[type].pending += app.daysRequested;
-      } else if (app.status === LeaveStatus.REJECTED) {
-        stats.byLeaveType[type].rejected += app.daysRequested;
-      }
-    });
 
     return stats;
   }

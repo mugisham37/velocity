@@ -356,14 +356,25 @@ export type WorkOrderTimeLog = InferSelectModel<typeof workOrderTimeLogs>;
 export type NewWorkOrderTimeLog = InferInsertModel<typeof workOrderTimeLogs>;
 // HR types
 import {
+  attendance,
+  attendanceShifts,
   departments,
   designations,
   employeeDocuments,
   employeeOnboarding,
   employeeOnboardingTasks,
   employees,
+  leaveBalances,
+  leavePolicies,
+  leaveRequests,
   onboardingTasks,
   onboardingTemplates,
+  payrollComponents,
+  payrollEntries,
+  payrollEntryComponents,
+  payrollRuns,
+  salaryStructureComponents,
+  salaryStructures,
 } from './hr';
 
 export type Employee = InferSelectModel<typeof employees>;
@@ -388,6 +399,34 @@ export type EmployeeOnboardingTask = InferSelectModel<
 export type NewEmployeeOnboardingTask = InferInsertModel<
   typeof employeeOnboardingTasks
 >;
+
+// Attendance types
+export type AttendanceShift = InferSelectModel<typeof attendanceShifts>;
+export type NewAttendanceShift = InferInsertModel<typeof attendanceShifts>;
+export type Attendance = InferSelectModel<typeof attendance>;
+export type NewAttendance = InferInsertModel<typeof attendance>;
+
+// Leave types
+export type LeavePolicy = InferSelectModel<typeof leavePolicies>;
+export type NewLeavePolicy = InferInsertModel<typeof leavePolicies>;
+export type LeaveRequest = InferSelectModel<typeof leaveRequests>;
+export type NewLeaveRequest = InferInsertModel<typeof leaveRequests>;
+export type LeaveBalance = InferSelectModel<typeof leaveBalances>;
+export type NewLeaveBalance = InferInsertModel<typeof leaveBalances>;
+
+// Payroll types
+export type PayrollComponent = InferSelectModel<typeof payrollComponents>;
+export type NewPayrollComponent = InferInsertModel<typeof payrollComponents>;
+export type SalaryStructure = InferSelectModel<typeof salaryStructures>;
+export type NewSalaryStructure = InferInsertModel<typeof salaryStructures>;
+export type SalaryStructureComponent = InferSelectModel<typeof salaryStructureComponents>;
+export type NewSalaryStructureComponent = InferInsertModel<typeof salaryStructureComponents>;
+export type PayrollRun = InferSelectModel<typeof payrollRuns>;
+export type NewPayrollRun = InferInsertModel<typeof payrollRuns>;
+export type PayrollEntry = InferSelectModel<typeof payrollEntries>;
+export type NewPayrollEntry = InferInsertModel<typeof payrollEntries>;
+export type PayrollEntryComponent = InferSelectModel<typeof payrollEntryComponents>;
+export type NewPayrollEntryComponent = InferInsertModel<typeof payrollEntryComponents>;
 // Asset Management types
 import {
   assetCategories,

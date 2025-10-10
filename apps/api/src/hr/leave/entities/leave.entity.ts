@@ -1,231 +1,161 @@
 import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import type { LeavePolicy as LeavePolicyType, LeaveRequest, LeaveBalance as LeaveBalanceType } from '@kiro/database';
+import { LeaveStatus, LeaveType, AccrualType } from '../../enums';
 import { Employee } from '../../employee/entities/employee.entity';
 
-export enum LeaveType {
-  ANNUAL = 'annual',
-  SICK = 'sick',
-  MATERNITY = 'maternity',
-  PATERNITY = 'paternity',
-  PERSONAL = 'personal',
-  EMERGENCY = 'emergency',
-  UNPAID = 'unpaid',
-  COMPENSATORY = 'compensatory',
-}
-
-export enum LeaveStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  CANCELLED = 'cancelled',
-}
-
-export enum AccrualType {
-  MONTHLY = 'monthly',
-  QUARTERLY = 'quarterly',
-  ANNUALLY = 'annually',
-  NONE = 'none',
-}
-
-registerEnumType(LeaveType, { name: 'LeaveType' });
 registerEnumType(LeaveStatus, { name: 'LeaveStatus' });
+registerEnumType(LeaveType, { name: 'LeaveType' });
 registerEnumType(AccrualType, { name: 'AccrualType' });
 
+// Export the enum for use in resolvers
+export { LeaveStatus };
+
 @ObjectType()
-@Entity('leave_policies')
-export class LeavePolicy {
+export class LeavePolicy implements LeavePolicyType {
   @Field(() => ID)
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Field()
-  @Column()
-  name: string;
-
-  @Field(() => LeaveType)
-  @Column({ type: 'enum', enum: LeaveType })
-  leaveType: LeaveType;
+  name!: string;
 
   @Field()
-  @Column({ type: 'decimal', precision: 5, scale: 2 })
-  annualAllocation: number;
-
-  @Field(() => AccrualType)
-  @Column({ type: 'enum', enum: AccrualType, default: AccrualType.MONTHLY })
-  accrualType: AccrualType;
+  leaveType!: string;
 
   @Field()
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-  maxCarryForward: number;
+  annualAllocation!: number;
 
   @Field()
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-  maxAccumulation: number;
-
-  @Field()
-  @Column({ default: false })
-  requiresApproval: boolean;
-
-  @Field()
-  @Column({ default: 0 })
-  minNoticeDays: number;
-
-  @Field()
-  @Column({ default: 0 })
-  maxConsecutiveDays: number;
-
-  @Field()
-  @Column({ default: true })
-  isActive: boolean;
+  accrualType!: string;
 
   @Field({ nullable: true })
-  @Column({ type: 'text', nullable: true })
-  description?: string;
+  maxCarryForward!: number | null;
+
+  @Field({ nullable: true })
+  maxAccumulation!: number | null;
+
+  @Field()
+  requiresApproval!: boolean | null;
+
+  @Field({ nullable: true })
+  minNoticeDays!: number | null;
+
+  @Field({ nullable: true })
+  maxConsecutiveDays!: number | null;
+
+  @Field({ nullable: true })
+  isActive!: boolean | null;
+
+  @Field()
+  companyId!: string;
 
   @Field(() => Date)
-  @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field(() => Date)
-  @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 @ObjectType()
-@Entity('leave_applications')
-export class LeaveApplication {
+export class LeaveApplication implements LeaveRequest {
   @Field(() => ID)
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Field(() => Employee)
-  @ManyToOne(() => Employee, { eager: true })
-  @JoinColumn({ name: 'employeeId' })
-  employee: Employee;
-
-  @Field(() => LeavePolicy)
-  @ManyToOne(() => LeavePolicy, { eager: true })
-  @JoinColumn({ name: 'leavePolicyId' })
-  leavePolicy: LeavePolicy;
+  id!: string;
 
   @Field()
-  @Column({ type: 'date' })
-  startDate: Date;
-
-  @Field()
-  @Column({ type: 'date' })
-  endDate: Date;
-
-  @Field()
-  @Column({ type: 'decimal', precision: 5, scale: 2 })
-  daysRequested: number;
-
-  @Field(() => LeaveStatus)
-  @Column({ type: 'enum', enum: LeaveStatus, default: LeaveStatus.PENDING })
-  status: LeaveStatus;
-
-  @Field()
-  @Column({ type: 'text' })
-  reason: string;
-
-  @Field({ nullable: true })
-  @Column({ type: 'text', nullable: true })
-  approverComments?: string;
+  employeeId!: string;
 
   @Field(() => Employee, { nullable: true })
-  @ManyToOne(() => Employee, { nullable: true })
-  @JoinColumn({ name: 'approvedById' })
-  approvedBy?: Employee;
-
-  @Field(() => Date, { nullable: true })
-  @Column({ type: 'timestamp', nullable: true })
-  approvedAt?: Date;
-
-  @Field({ nullable: true })
-  @Column({ nullable: true })
-  attachmentUrl?: string;
+  employee?: Employee;
 
   @Field()
-  @Column({ default: false })
-  isHalfDay: boolean;
+  leavePolicyId!: string;
+
+  @Field(() => LeavePolicy, { nullable: true })
+  leavePolicy?: LeavePolicy;
+
+  @Field()
+  startDate!: string;
+
+  @Field()
+  endDate!: string;
+
+  @Field()
+  daysRequested!: number;
+
+  @Field()
+  status!: string;
+
+  @Field()
+  reason!: string;
 
   @Field({ nullable: true })
-  @Column({ nullable: true })
-  halfDayPeriod?: string; // 'morning' or 'afternoon'
+  isHalfDay!: boolean | null;
+
+  @Field({ nullable: true })
+  halfDayPeriod!: string | null;
+
+  @Field()
+  appliedDate!: string;
+
+  @Field({ nullable: true })
+  approvedBy!: string | null;
+
+  @Field(() => Date, { nullable: true })
+  approvedAt!: Date | null;
+
+  @Field({ nullable: true })
+  rejectionReason!: string | null;
+
+  @Field({ nullable: true })
+  attachments!: any;
+
+  @Field()
+  companyId!: string;
 
   @Field(() => Date)
-  @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field(() => Date)
-  @UpdateDateColumn()
-  updatedAt: Date;
-
-  @Field({ nullable: true })
-  @Column({ nullable: true })
-  createdBy?: string;
-
-  @Field({ nullable: true })
-  @Column({ nullable: true })
-  updatedBy?: string;
+  updatedAt!: Date;
 }
 
 @ObjectType()
-@Entity('leave_balances')
-export class LeaveBalance {
+export class LeaveBalance implements LeaveBalanceType {
   @Field(() => ID)
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Field(() => Employee)
-  @ManyToOne(() => Employee, { eager: true })
-  @JoinColumn({ name: 'employeeId' })
-  employee: Employee;
-
-  @Field(() => LeavePolicy)
-  @ManyToOne(() => LeavePolicy, { eager: true })
-  @JoinColumn({ name: 'leavePolicyId' })
-  leavePolicy: LeavePolicy;
+  id!: string;
 
   @Field()
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-  allocated: number;
+  employeeId!: string;
+
+  @Field(() => Employee, { nullable: true })
+  employee?: Employee;
 
   @Field()
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-  used: number;
+  leavePolicyId!: string;
+
+  @Field(() => LeavePolicy, { nullable: true })
+  leavePolicy?: LeavePolicy;
 
   @Field()
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-  pending: number;
+  allocated!: number;
 
   @Field()
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-  carriedForward: number;
+  used!: number | null;
 
   @Field()
-  @Column({ type: 'int', default: new Date().getFullYear() })
-  year: number;
+  pending!: number | null;
+
+  @Field()
+  carriedForward!: number | null;
+
+  @Field()
+  year!: number;
+
+  @Field()
+  companyId!: string;
 
   @Field(() => Date)
-  @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field(() => Date)
-  @UpdateDateColumn()
-  updatedAt: Date;
-
-  // Computed field
-  @Field()
-  get available(): number {
-    return this.allocated + this.carriedForward - this.used - this.pending;
-  }
+  updatedAt!: Date;
 }
