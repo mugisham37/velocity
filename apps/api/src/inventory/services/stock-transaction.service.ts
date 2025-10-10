@@ -34,7 +34,7 @@ import {
   lte,
   or,
   sql,
-} from 'drizzle-orm';
+} from '@kiro/database';
 import {
   CreateStockEntryDto,
   CreateStockReconciliationDto,

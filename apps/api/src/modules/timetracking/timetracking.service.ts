@@ -21,7 +21,7 @@ import {
   UpdateTimesheet,
   UtilizationReport,
 } from '@packages/shared/types/timetracking';
-import { and, asc, between, desc, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, asc, between, desc, eq, gte, lte, sql } from '@kiro/database';
 
 @Injectable()
 export class TimeTrackingService {

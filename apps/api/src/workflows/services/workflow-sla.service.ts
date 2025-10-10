@@ -1,6 +1,6 @@
 import { DatabaseService, workflowApprovals, workflowInstances, workflowSteps } from '@kiro/database';
 import { Injectable } from '@nestjs/common';
-import { and, eq, lt, sql } from 'drizzle-orm';
+import { and, eq, lt, sql } from '@kiro/database';
 import { NotificationService } from '../../common/services/notification.service';
 import { ApprovalStatus, WorkflowStatus, WorkflowStepStatus } from '../dto/workflow.dto';
 import { WorkflowApprovalService } from './workflow-approval.service';

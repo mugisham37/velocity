@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { db } from '@velocity/database';
 import { NewWorkstation, Workstation, workstations } from '@velocity/datchema';
-import { and, desc, eq, like, or } from 'drizzle-orm';
+import { and, desc, eq, like, or } from '@kiro/database';
 import {
   CreateWorkstationDto,
   UpdateWorkstationDto,

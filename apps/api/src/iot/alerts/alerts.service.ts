@@ -5,7 +5,7 @@ import {
   type IoTAlert,
   type NewIoTAlert,
 } from '@velocity/database/schema';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from '@kiro/database';
 
 @Injectable()
 export class IoTAlertsService {

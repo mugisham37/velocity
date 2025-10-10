@@ -26,6 +26,46 @@ export const timescaleDb = drizzle(timescaleClient);
 export * from './database.module';
 export * from './database.service';
 export * from './schema';
+
+// Export drizzle-orm functions to ensure consistent types across the monorepo
+export {
+  and,
+  or,
+  not,
+  eq,
+  ne,
+  gt,
+  gte,
+  lt,
+  lte,
+  isNull,
+  isNotNull,
+  inArray,
+  notInArray,
+  exists,
+  notExists,
+  between,
+  notBetween,
+  like,
+  notLike,
+  ilike,
+  notIlike,
+  sql,
+  placeholder,
+  asc,
+  desc,
+} from 'drizzle-orm';
+
+// Create aggregate functions using sql template
+import { sql as sqlTemplate } from 'drizzle-orm';
+export const count = (column?: any) => sqlTemplate`COUNT(${column || sqlTemplate`*`})`;
+export const countDistinct = (column: any) => sqlTemplate`COUNT(DISTINCT ${column})`;
+export const avg = (column: any) => sqlTemplate`AVG(${column})`;
+export const sum = (column: any) => sqlTemplate`SUM(${column})`;
+export const max = (column: any) => sqlTemplate`MAX(${column})`;
+export const min = (column: any) => sqlTemplate`MIN(${column})`;
+
+export type { SQL } from 'drizzle-orm';
 export type Database = typeof db;
 export type TimescaleDatabase = typeof timescaleDb;
 

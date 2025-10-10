@@ -19,7 +19,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjsmmon';
-import { and, asc, eq, like, or } from 'drizzle-orm';
+import { and, asc, eq, like, or } from '@kiro/database';
 
 @Injectable()
 export class HRService {

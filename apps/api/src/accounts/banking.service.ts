@@ -14,7 +14,7 @@ import {
   reconciliationItems,
 } from '@kiro/database';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, eq, sql, sum } from 'drizzle-orm';
+import { and, eq, sql, sum } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
@@ -102,12 +102,12 @@ export interface ReconciliationSummary {
 
 @Injectable()
 export class BankingService extends BaseService<
-  typeof bankAccounts,
+  any, // Temporarily use any to avoid Drizzle type issues
   BankAccount,
   NewBankAccount,
   Partial<NewBankAccount>
 > {
-  protected table = bankAccounts;
+  protected table = bankAccounts as any;
   protected tableName = 'bank_accounts';
 
   constructor(
@@ -183,7 +183,7 @@ export class BankingService extends BaseService<
           currentBalance: data.currentBalance?.toString() || '0',
           availableBalance: data.currentBalance?.toString() || '0',
           reconciledBalance: '0',
-          glAccountId: data.glAccountId,
+          glAccountId: data.glAccountId ?? null,
           overdraftLimit: data.overdraftLimit?.toString() || null,
           interestRate: data.interestRate?.toString() || null,
           minimumBalance: data.minimumBalance?.toString() || null,
@@ -385,7 +385,7 @@ export class BankingService extends BaseService<
           )
         );
 
-      const bookBalance = parseFloat(bookBalanceResult?.balance || '0');
+      const bookBalance = parseFloat(bookBalanceResult?.balance?.toString() || '0');
 
       // Calculate reconciliation totals
       let totalDepositsInTransit = 0;
@@ -443,9 +443,9 @@ export class BankingService extends BaseService<
       // Create reconciliation items
       for (const item of data.reconciliationItems) {
         await tx.insert(reconciliationItems).values({
-          reconciliationId: reconciliation.id,
-          bankTransactionId: item.bankTransactionId,
-          glEntryId: item.glEntryId,
+          reconciliationId: reconciliation!.id,
+          bankTransactionId: item.bankTransactionId ?? null,
+          glEntryId: item.glEntryId ?? null,
           itemType: item.itemType,
           amount: item.amount.toString(),
           description: item.description,
@@ -481,14 +481,14 @@ export class BankingService extends BaseService<
       // Log audit trail
       await this.auditService.logAudit({
         entityType: 'bank_reconciliations',
-        entityId: reconciliation.id,
+        entityId: reconciliation!.id,
         action: 'CREATE',
         newValues: { ...reconciliation, items: data.reconciliationItems },
         companyId,
         userId,
       });
 
-      return reconciliation;
+      return reconciliation!;
     });
   }
 
@@ -518,7 +518,7 @@ export class BankingService extends BaseService<
         .insert(cashFlowForecasts)
         .values({
           forecastName: data.forecastName,
-          description: data.description,
+          description: data.description ?? null,
           startDate: data.startDate,
           endDate: data.endDate,
           currency: data.currency || 'USD',
@@ -536,14 +536,14 @@ export class BankingService extends BaseService<
       // Log audit trail
       await this.auditService.logAudit({
         entityType: 'cash_flow_forecasts',
-        entityId: forecast.id,
+        entityId: forecast!.id,
         action: 'CREATE',
         newValues: { ...forecast, items: data.forecastItems },
         companyId,
         userId,
       });
 
-      return forecast;
+      return forecast!;
     });
   }
 
@@ -587,15 +587,18 @@ export class BankingService extends BaseService<
           )
         );
 
-      summaries.push({
+      const summary: any = {
         bankAccountId: account.id,
         accountName: account.accountName,
-        lastReconciledDate: account.lastReconciled,
         reconciledBalance: parseFloat(account.reconciledBalance),
         currentBalance: parseFloat(account.currentBalance),
         unreconciledTransactions: unreconciledResult?.count || 0,
-        unreconciledAmount: parseFloat(unreconciledResult?.amount || '0'),
-      });
+        unreconciledAmount: parseFloat(unreconciledResult?.amount?.toString() || '0'),
+      };
+      if (account.lastReconciled) {
+        summary.lastReconciledDate = account.lastReconciled;
+      }
+      summaries.push(summary);
     }
 
     return summaries;
@@ -670,12 +673,18 @@ export class BankingService extends BaseService<
 
     switch (format) {
       case 'CSV':
-        const lines = fileContent.split('\n');
-        const headers = lines[0].split(',');
+        const lines = fileContent.split('\n').filter(line => line.trim());
+        if (lines.length === 0) break;
+        
+        // Parse headers (not used in this simple implementation)
+        // const headers = lines[0]?.split(',') || [];
 
         for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(',');
-          if (values.length >= 4) {
+          const line = lines[i];
+          if (!line) continue;
+          
+          const values = line.split(',');
+          if (values.length >= 4 && values[0] && values[1] && values[2]) {
             transactions.push({
               date: new Date(values[0]),
               description: values[1],

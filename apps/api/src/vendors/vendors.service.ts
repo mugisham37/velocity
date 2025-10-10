@@ -12,7 +12,7 @@ import {
 } from '@kiro/database';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { and, avg, desc, eq, like, sql } from 'drizzle-orm';
+import { and, avg, desc, eq, like, sql } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';

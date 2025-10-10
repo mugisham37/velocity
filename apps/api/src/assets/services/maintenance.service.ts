@@ -17,7 +17,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, count, desc, eq, ilike, or, sql, gte, lte } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, or, sql, gte, lte } from '@kiro/database';
 import {
   CreateMaintenanceScheduleDto,
   UpdateMaintenanceScheduleDto,

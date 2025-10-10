@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from '@kiro/database';
 import {
   CreateWorkflowInput,
   UpdateWorkflowInput,

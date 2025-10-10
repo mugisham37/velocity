@@ -21,7 +21,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, gte, isNull, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNull, lte, sql } from '@kiro/database';
 import {
   BatchNumberFilterDto,
   BatchQualityStatus,

@@ -9,7 +9,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from '@kiro/database';
 import { NotificationService } from '../../common/services/notification.service';
 import {
   CreateWorkflowInstanceInput,

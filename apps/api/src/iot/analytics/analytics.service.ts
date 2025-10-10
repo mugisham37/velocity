@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { db } from '@velocity/database';
 import { equipmentMetrics, iotSensorData } from '@velocity/database/schema';
-import { and, eq, gte, sql } from 'drizzle-orm';
+import { and, eq, gte, sql } from '@kiro/database';
 
 @Injectable()
 export class IoTAnalyticsService {

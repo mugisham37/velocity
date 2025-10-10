@@ -7,7 +7,7 @@ import {
   workflows,
 } from '@kiro/database';
 import { Injectable } from '@nestjs/common';
-import { and, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lte, sql } from '@kiro/database';
 import { WorkflowAnalyticsFilter, WorkflowMetrics } from '../dto/workflow.dto';
 
 @Injectable()

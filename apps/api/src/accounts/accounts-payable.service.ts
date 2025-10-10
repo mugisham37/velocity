@@ -12,11 +12,15 @@ import {
   vendorPaymentAllocations,
   vendorPayments,
   vendors,
+  and,
+  eq,
+  lte,
+  sql,
+  type SQL,
 } from '@kiro/database';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, eq, lte, sql } from 'drizzle-orm';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Logger } from 'winston';
+import type { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
 import { BaseService } from '../common/services/base.service';
 import { CacheService } from '../common/services/cache.service';
@@ -100,12 +104,12 @@ export interface ThreeWayMatchResult {
 
 @Injectable()
 export class AccountsPayableService extends BaseService<
-  typeof vendorBills,
+  any,
   VendorBill,
   NewVendorBill,
   Partial<NewVendorBill>
 > {
-  protected table = vendorBills;
+  protected table = vendorBills as any;
   protected tableName = 'vendor_bills';
 
   constructor(
@@ -202,6 +206,10 @@ export class AccountsPayableService extends BaseService<
         })
         .returning();
 
+      if (!bill) {
+        throw new BadRequestException('Failed to create vendor bill');
+      }
+
       // Create line items
       const lineItemPromises = processedLineItems.map(item =>
         tx.insert(billLineItems).values({
@@ -256,10 +264,6 @@ export class AccountsPayableService extends BaseService<
         companyId,
         userId,
       });
-
-      if (!bill) {
-        throw new BadRequestException('Failed to create vendor bill');
-      }
 
       return bill;
     });
@@ -431,7 +435,7 @@ export class AccountsPayableService extends BaseService<
     asOfDate?: Date
   ): Promise<VendorAgingReport[]> {
     const reportDate = asOfDate || new Date();
-    const conditions = [eq(vendorBills.companyId, companyId)];
+    const conditions: SQL[] = [eq(vendorBills.companyId, companyId)];
 
     if (vendorId) {
       conditions.push(eq(vendorBills.vendorId, vendorId));
@@ -579,7 +583,7 @@ export class AccountsPayableService extends BaseService<
    */
   async processScheduledPayments(
     companyId: string,
-    userId: string
+    _userId: string
   ): Promise<void> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -718,7 +722,7 @@ export class AccountsPayableService extends BaseService<
         )
       );
 
-    const nextNumber = result?.maxNumber ? parseInt(result.maxNumber) + 1 : 1;
+    const nextNumber = result && result['maxNumber'] ? parseInt(result['maxNumber'] as string) + 1 : 1;
     return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 
@@ -903,7 +907,7 @@ export class AccountsPayableService extends BaseService<
         )
       );
 
-    const nextNumber = result?.maxNumber ? parseInt(result.maxNumber) + 1 : 1;
+    const nextNumber = result && result['maxNumber'] ? parseInt(result['maxNumber'] as string) + 1 : 1;
     return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 

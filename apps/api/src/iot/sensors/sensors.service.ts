@@ -5,7 +5,7 @@ import {
   type IoTSensor,
   type NewIoTSensor,
 } from '@velocity/database/schema';
-import { and, eq } from 'drizzle-orm';
+import { and, eq } from '@kiro/database';
 
 @Injectable()
 export class IoTSensorsService {

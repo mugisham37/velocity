@@ -10,7 +10,7 @@ import {
   type IoTDevice,
   type NewIoTDevice,
 } from '@velocity/database/schema';
-import { and, asc, desc, eq, gte, ilike, or } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, ilike, or } from '@kiro/database';
 import { CreateIoTDeviceDto } from './dto/create-device.dto';
 import { DeviceQueryDto } from './dto/device-query.dto';
 import { UpdateIoTDeviceDto } from './dto/update-device.dto';

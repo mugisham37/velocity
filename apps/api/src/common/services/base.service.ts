@@ -1,12 +1,11 @@
-import { Database, db } from '@kiro/database';
+import { Database, db, SQL, and, asc, count, desc, eq, sql } from '@kiro/database';
 import {
   BadRequestException,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { SQL, and, asc, count, desc, eq, sql } from 'drizzle-orm';
-import { PgTable } from 'drizzle-orm/pg-core';
+import { PgTable, TableConfig } from 'drizzle-orm/pg-core';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { CacheService } from './cache.service';
@@ -38,7 +37,7 @@ export interface CacheOptions {
 
 @Injectable()
 export abstract class BaseService<
-  TTable extends PgTable,
+  TTable extends PgTable<TableConfig>,
   TSelect,
   TInsert,
   TUpdate = Partial<TInsert>,

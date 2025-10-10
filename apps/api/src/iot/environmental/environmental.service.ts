@@ -5,7 +5,7 @@ import {
   type EnvironmentalMonitoring,
   type NewEnvironmentalMonitoring,
 } from '@velocity/database/schema';
-import { and, desc, eq, gte } from 'drizzle-orm';
+import { and, desc, eq, gte } from '@kiro/database';
 
 @Injectable()
 export class EnvironmentalMonitoringService {

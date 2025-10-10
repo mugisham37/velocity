@@ -1,6 +1,6 @@
 import { Database, db } from '@kiro/database';
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import { sql } from 'drizzle-orm';
+import { sql } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 

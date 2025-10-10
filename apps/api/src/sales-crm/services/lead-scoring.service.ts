@@ -5,7 +5,7 @@ import {
   leadScoringRules,
 } from '@kiro/database';
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { BaseService } from '../../common/services/base.service';

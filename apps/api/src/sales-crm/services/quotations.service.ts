@@ -16,7 +16,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { SQL, and, desc, eq, gte, ilike, inArray, lte, or } from 'drizzle-orm';
+import { SQL, and, desc, eq, gte, ilike, inArray, lte, or } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import {

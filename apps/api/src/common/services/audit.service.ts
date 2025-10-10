@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { auditLogs, dataRetentionPolicies, db } from '@kiro/database';
-import { and, desc, eq, gte, lte } from 'drizzle-orm';
+import { and, desc, eq, gte, lte } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 

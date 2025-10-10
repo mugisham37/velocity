@@ -8,7 +8,7 @@ import {
   opportunities,
 } from '@kiro/database';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, gte, like, lte, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, like, lte, or, sql } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../../common/services/audit.service';

@@ -5,7 +5,7 @@ import {
   type EnergyConsumption,
   type NewEnergyConsumption,
 } from '@velocity/database/schema';
-import { and, desc, eq, gte, sum } from 'drizzle-orm';
+import { and, desc, eq, gte, sum } from '@kiro/database';
 
 @Injectable()
 export class EnergyMonitoringService {

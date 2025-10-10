@@ -5,32 +5,33 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PaginationArgs } from '../common/dto/pagination.dto';
 import { AccountsReceivableService } from './accounts-receivable.service';
 import {
-    AgingReportFilterDto,
-    CreateCreditLimitDto,
-    CreateInvoiceDto,
-    CreateInvoiceTemplateDto,
-    CreateNumberingSeriesDto,
-    CreatePaymentDto,
-    CreditLimitCheckDto,
-    CustomerStatementFilterDto,
-    InvoiceFilterDto,
-    PaymentFilterDto,
-    UpdateCreditLimitDto,
-    UpdateInvoiceDto,
-    UpdateInvoiceTemplateDto,
-    UpdateNumberingSeriesDto,
+  AgingReportFilterDto,
+  CreateCreditLimitDto,
+  CreateInvoiceDto,
+  CreateInvoiceTemplateDto,
+  CreateNumberingSeriesDto,
+  CreatePaymentDto,
+  CreditLimitCheckDto,
+  CustomerStatementFilterDto,
+  InvoiceFilterDto,
+  PaymentAllocationDto,
+  PaymentFilterDto,
+  UpdateCreditLimitDto,
+  UpdateInvoiceDto,
+  UpdateInvoiceTemplateDto,
+  UpdateNumberingSeriesDto,
 } from './dto/accounts-receivable.dto';
 import {
-    CreditLimitCheckResult,
-    CustomerAgingReport,
-    CustomerCreditLimit,
-    CustomerPayment,
-    CustomerStatementData,
-    Invoice,
-    InvoiceNumberingSeries,
-    InvoiceTemplate,
+  CreditLimitCheckResult,
+  CustomerAgingReport,
+  CustomerCreditLimit,
+  CustomerPayment,
+  CustomerStatementData,
+  Invoice,
+  InvoiceNumberingSeries,
+  InvoiceTemplate,
 } from './entities/accounts-receivable.entity';
-import { User } from '../auth/interfaces/user.interface';
+import type { User } from '../auth/interfaces/user.interface';
 
 @Resolver(() => Invoice)
 @UseGuards(JwtAuthGuard)
@@ -42,15 +43,18 @@ export class AccountsReceivableResolver {
   // Invoice Queries
   @Query(() => [Invoice])
   async invoices(
-    @Args('filter', { nullable: true }) filter?: InvoiceFilterDto,
-    @Args() pagination?: PaginationArgs,
+    @Args('filter', { nullable: true }) _filter?: InvoiceFilterDto,
+    @Args() _pagination?: PaginationArgs,
     @CurrentUser() user?: User
   ): Promise<Invoice[]> {
     if (!user) {
       throw new Error('User not authenticated');
     }
     // TODO: Implement filtering and pagination
-    const result = await this.accountsReceivableService.findAll({}, user.companyId);
+    const result = await this.accountsReceivableService.findAll(
+      {},
+      user.companyId
+    );
     return result.data as Invoice[];
   }
 
@@ -59,7 +63,10 @@ export class AccountsReceivableResolver {
     @Args('id', { type: () => ID }) id: string,
     @CurrentUser() user: User
   ): Promise<Invoice> {
-    const result = await this.accountsReceivableService.findByIdOrFail(id, user.companyId);
+    const result = await this.accountsReceivableService.findByIdOrFail(
+      id,
+      user.companyId
+    );
     return result as Invoice;
   }
 
@@ -112,27 +119,37 @@ export class AccountsReceivableResolver {
     @Args('input') input: CreateInvoiceDto,
     @CurrentUser() user: User
   ): Promise<Invoice> {
-    const result = await this.accountsReceivableService.createInvoice(
-      {
-        customerId: input.customerId,
-        invoiceDate: new Date(input.invoiceDate),
-        dueDate: new Date(input.dueDate),
-        currency: input.currency,
-        exchangeRate: input.exchangeRate,
-        terms: input.terms,
-        notes: input.notes,
-        templateId: input.templateId,
-        salesOrderId: input.salesOrderId,
-        lineItems: input.lineItems.map(item => ({
-          itemCode: item.itemCode || undefined,
+    const invoiceData: any = {
+      customerId: input.customerId,
+      invoiceDate: new Date(input.invoiceDate),
+      dueDate: new Date(input.dueDate),
+      lineItems: input.lineItems.map(item => {
+        const lineItem: any = {
           description: item.description,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          discountPercent: item.discountPercent || undefined,
-          taxPercent: item.taxPercent || undefined,
-          accountId: item.accountId || undefined,
-        })),
-      },
+        };
+        if (item.itemCode !== undefined) lineItem.itemCode = item.itemCode;
+        if (item.discountPercent !== undefined)
+          lineItem.discountPercent = item.discountPercent;
+        if (item.taxPercent !== undefined)
+          lineItem.taxPercent = item.taxPercent;
+        if (item.accountId !== undefined) lineItem.accountId = item.accountId;
+        return lineItem;
+      }),
+    };
+    if (input.currency !== undefined) invoiceData.currency = input.currency;
+    if (input.exchangeRate !== undefined)
+      invoiceData.exchangeRate = input.exchangeRate;
+    if (input.terms !== undefined) invoiceData.terms = input.terms;
+    if (input.notes !== undefined) invoiceData.notes = input.notes;
+    if (input.templateId !== undefined)
+      invoiceData.templateId = input.templateId;
+    if (input.salesOrderId !== undefined)
+      invoiceData.salesOrderId = input.salesOrderId;
+
+    const result = await this.accountsReceivableService.createInvoice(
+      invoiceData,
       user.companyId,
       user.id
     );
@@ -152,7 +169,11 @@ export class AccountsReceivableResolver {
     if (input.notes !== undefined) updateData.notes = input.notes;
     if (input.status) updateData.status = input.status;
 
-    const result = await this.accountsReceivableService.update(id, updateData, user.companyId);
+    const result = await this.accountsReceivableService.update(
+      id,
+      updateData,
+      user.companyId
+    );
     return result as Invoice;
   }
 
@@ -193,21 +214,28 @@ export class AccountsReceivableResolver {
     @CurrentUser() user: User
   ): Promise<CustomerPayment> {
     const result = await this.accountsReceivableService.recordPayment(
-      {
-        customerId: input.customerId,
-        paymentDate: new Date(input.paymentDate),
-        amount: input.amount,
-        currency: input.currency || 'USD',
-        exchangeRate: input.exchangeRate,
-        paymentMethod: input.paymentMethod,
-        reference: input.reference,
-        bankAccountId: input.bankAccountId,
-        notes: input.notes,
-        allocations: input.allocations?.map(alloc => ({
-          invoiceId: alloc.invoiceId,
-          amount: alloc.amount,
-        })),
-      },
+      (() => {
+        const paymentData: any = {
+          customerId: input.customerId,
+          paymentDate: new Date(input.paymentDate),
+          amount: input.amount,
+          currency: input.currency || 'USD',
+          exchangeRate: input.exchangeRate || 1.0,
+          paymentMethod: input.paymentMethod,
+        };
+        if (input.reference !== undefined)
+          paymentData.reference = input.reference;
+        if (input.bankAccountId !== undefined)
+          paymentData.bankAccountId = input.bankAccountId;
+        if (input.notes !== undefined) paymentData.notes = input.notes;
+        if (input.allocations !== undefined) {
+          paymentData.allocations = input.allocations.map(alloc => ({
+            invoiceId: alloc.invoiceId,
+            amount: alloc.amount,
+          }));
+        }
+        return paymentData;
+      })(),
       user.companyId,
       user.id
     );
@@ -217,7 +245,8 @@ export class AccountsReceivableResolver {
   // Credit Limit Queries
   @Query(() => [CustomerCreditLimit])
   async customerCreditLimits(
-    @Args('customerId', { type: () => ID, nullable: true }) _customerId?: string,
+    @Args('customerId', { type: () => ID, nullable: true })
+    _customerId?: string,
     @CurrentUser() _user?: User
   ): Promise<CustomerCreditLimit[]> {
     // TODO: Implement credit limit retrieval
@@ -313,10 +342,11 @@ export class AccountsReceivableResolver {
 
   // Utility Mutations
   @Mutation(() => Boolean)
-  async processDunning(
-    @CurrentUser() user: User
-  ): Promise<boolean> {
-    await this.accountsReceivableService.processDunning(user.companyId, user.id);
+  async processDunning(@CurrentUser() user: User): Promise<boolean> {
+    await this.accountsReceivableService.processDunning(
+      user.companyId,
+      user.id
+    );
     return true;
   }
 

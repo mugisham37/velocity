@@ -5,7 +5,7 @@ import {
   opportunityTemplateStages,
   opportunityTemplates,
 } from '@kiro/database';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { BaseService } from '../../common/services/base.service';

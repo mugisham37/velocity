@@ -30,7 +30,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, gte, like, lte, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, like, lte, or, sql } from '@kiro/database';
 import {
   ActionRequired,
   CapacityPlanFilterDto,

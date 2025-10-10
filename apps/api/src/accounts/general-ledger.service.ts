@@ -15,7 +15,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, between, desc, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, asc, between, desc, eq, gte, lte, sql } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
@@ -170,7 +170,7 @@ export class GeneralLedgerService {
           )
         );
 
-      if (unpostedEntries[0]?.count > 0) {
+      if ((unpostedEntries[0]?.count ?? 0) > 0) {
         throw new BadRequestException(
           'Cannot close period with unposted journal entries'
         );
@@ -552,7 +552,7 @@ export class GeneralLedgerService {
       startDate,
       endDate,
       includeClosingEntries = true,
-      groupBy = 'date',
+      groupBy: _groupBy = 'date',
       sortBy = 'date',
       sortOrder = 'asc',
     } = options;
@@ -702,9 +702,9 @@ export class GeneralLedgerService {
 
   private async createJournalEntryFromTemplate(
     templateId: string,
-    entryData: { reference?: string; description?: string; postingDate: Date },
-    companyId: string,
-    userId: string
+    _entryData: { reference?: string; description?: string; postingDate: Date },
+    _companyId: string,
+    _userId: string
   ): Promise<any> {
     // Get template and lines
     const template = await db
@@ -752,7 +752,7 @@ export class GeneralLedgerService {
 
   private async updateAccountBalancesForReversal(
     originalGLEntries: any[],
-    companyId: string,
+    _companyId: string,
     tx: any
   ): Promise<void> {
     for (const entry of originalGLEntries) {

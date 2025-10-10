@@ -8,7 +8,7 @@ import {
   type PredictiveMaintenanceModel,
   type PredictiveMaintenancePrediction,
 } from '@velocity/database/schema';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from '@kiro/database';
 import { PredictMaintenanceDto } from './dto/create-model.dto';
 import { MachineLearningService } from './machine-learning.service';
 

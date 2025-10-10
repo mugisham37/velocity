@@ -17,7 +17,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, count, desc, eq, gte, ilike, lte, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, ilike, lte, or } from '@kiro/database';
 import {
   AssetFilterDto,
   AssetStatus,

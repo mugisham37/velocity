@@ -8,7 +8,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq } from '@kiro/database';
 import { NotificationService } from '../../common/services/notification.service';
 import {
   ApprovalStatus,
@@ -352,4 +352,4 @@ export class WorkflowApprovalService {
 }
 
 // Import sql function
-import { sql } from 'drizzle-orm';
+import { sql } from '@kiro/database';
