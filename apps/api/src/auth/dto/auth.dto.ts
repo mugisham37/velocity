@@ -11,12 +11,12 @@ import {
 export class LoginInput {
   @Field()
   @IsEmail()
-  email: string;
+  email!: string;
 
   @Field()
   @IsString()
   @MinLength(6)
-  password: string;
+  password!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -29,7 +29,7 @@ export class LoginInput {
 export class RefreshTokenInput {
   @Field()
   @IsString()
-  refreshToken: string;
+  refreshToken!: string;
 }
 
 @InputType()
@@ -37,7 +37,7 @@ export class EnableMfaInput {
   @Field()
   @IsString()
   @Length(6, 6)
-  token: string;
+  token!: string;
 }
 
 @InputType()
@@ -45,7 +45,7 @@ export class DisableMfaInput {
   @Field()
   @IsString()
   @Length(6, 8)
-  token: string;
+  token!: string;
 }
 
 @InputType()
@@ -53,46 +53,46 @@ export class RegenerateBackupCodesInput {
   @Field()
   @IsString()
   @Length(6, 8)
-  token: string;
+  token!: string;
 }
 
 @ObjectType()
 export class UserType {
   @Field()
-  id: string;
+  id!: string;
 
   @Field()
-  email: string;
+  email!: string;
+
+  @Field({ nullable: true })
+  firstName?: string | null;
+
+  @Field({ nullable: true })
+  lastName?: string | null;
 
   @Field()
-  firstName: string;
+  isActive!: boolean;
 
   @Field()
-  lastName: string;
+  companyId!: string;
 
   @Field()
-  isActive: boolean;
+  createdAt!: Date;
 
   @Field()
-  companyId: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 @ObjectType()
 export class AuthPayload {
   @Field(() => UserType)
-  user: UserType;
+  user!: UserType;
 
   @Field()
-  accessToken: string;
+  accessToken!: string;
 
   @Field()
-  refreshToken: string;
+  refreshToken!: string;
 
   @Field({ nullable: true })
   requiresMfa?: boolean;
@@ -101,17 +101,17 @@ export class AuthPayload {
 @ObjectType()
 export class MfaSetupPayload {
   @Field()
-  secret: string;
+  secret!: string;
 
   @Field()
-  qrCodeUrl: string;
+  qrCodeUrl!: string;
 
   @Field(() => [String])
-  backupCodes: string[];
+  backupCodes!: string[];
 }
 
 @ObjectType()
 export class BackupCodesPayload {
   @Field(() => [String])
-  backupCodes: string[];
+  backupCodes!: string[];
 }

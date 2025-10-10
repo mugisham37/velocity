@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { AuthService, JwtPayload } from '../auth.service';
+import { AuthService, type JwtPayload } from '../auth.service';
 import { jwtConfig } from '@kiro/config';
 
 @Injectable()

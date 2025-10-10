@@ -55,7 +55,6 @@ export class MfaService {
     const isValid = authenticator.verify({
       token,
       secret: user.mfaSecret,
-      window: 2, // Allow 2 time steps (60 seconds) tolerance
     });
 
     if (!isValid) {
@@ -83,7 +82,6 @@ export class MfaService {
     return authenticator.verify({
       token,
       secret: user.mfaSecret,
-      window: 2,
     });
   }
 

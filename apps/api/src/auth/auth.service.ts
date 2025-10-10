@@ -75,7 +75,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       companyId: user.companyId,
-      roles: roles.map(role => role.name),
+      roles: roles.map((role: { name: string }) => role.name),
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -118,7 +118,7 @@ export class AuthService {
     }
   }
 
-  async logout(userId: string, accessToken: string): Promise<void> {
+  async logout(_userId: string, accessToken: string): Promise<void> {
     await this.usersService.revokeSession(accessToken);
   }
 

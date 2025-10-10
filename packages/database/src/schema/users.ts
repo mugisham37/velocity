@@ -1,6 +1,7 @@
 import { pgTable, uuid, varchar, timestamp, boolean, text } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { companies } from './companies';
+import { rolePermissions } from './permissions';
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -14,6 +15,7 @@ export const users = pgTable('users', {
   isEmailVerified: boolean('is_email_verified').default(false).notNull(),
   mfaEnabled: boolean('mfa_enabled').default(false).notNull(),
   mfaSecret: varchar('mfa_secret', { length: 32 }),
+  mfaBackupCodes: text('mfa_backup_codes'),
   lastLoginAt: timestamp('last_login_at'),
   companyId: uuid('company_id').references(() => companies.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -34,7 +36,8 @@ export const roles = pgTable('roles', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 100 }).notNull(),
   description: text('description'),
-  permissions: text('permissions').array(),
+  parentRoleId: uuid('parent_role_id').references(() => roles.id),
+  isSystemRole: boolean('is_system_role').default(false).notNull(),
   companyId: uuid('company_id').references(() => companies.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -45,7 +48,12 @@ export const rolesRelations = relations(roles, ({ one, many }) => ({
     fields: [roles.companyId],
     references: [companies.id],
   }),
+  parentRole: one(roles, {
+    fields: [roles.parentRoleId],
+    references: [roles.id],
+  }),
   users: many(userRoles),
+  permissions: many(rolePermissions),
 }));
 
 export const userRoles = pgTable('user_roles', {

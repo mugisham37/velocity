@@ -14,6 +14,7 @@ export * from './items';
 export * from './maintenance';
 export * from './manufacturing';
 export * from './notifications';
+export * from './permissions';
 export * from './sales-crm';
 export * from './security';
 export * from './serial-batch-tracking';
@@ -61,6 +62,8 @@ import {
   items,
   journalEntries,
   oauthAccounts,
+  permissions,
+  rolePermissions,
   roles,
   stockLevels,
   userRoles,
@@ -105,6 +108,12 @@ export type UserSession = InferSelectModel<typeof userSessions>;
 export type NewUserSession = InferInsertModel<typeof userSessions>;
 export type OAuthAccount = InferSelectModel<typeof oauthAccounts>;
 export type NewOAuthAccount = InferInsertModel<typeof oauthAccounts>;
+
+// Permission types
+export type Permission = InferSelectModel<typeof permissions>;
+export type NewPermission = InferInsertModel<typeof permissions>;
+export type RolePermission = InferSelectModel<typeof rolePermissions>;
+export type NewRolePermission = InferInsertModel<typeof rolePermissions>;
 
 // Account types
 export type Account = InferSelectModel<typeof accounts>;

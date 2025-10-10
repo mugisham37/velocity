@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, VerifyCallback } from 'passport-google-oauth20';
+import { Strategy, type VerifyCallback } from 'passport-google-oauth20';
 import { oauthConfig } from '@kiro/config';
 
 @Injectable()

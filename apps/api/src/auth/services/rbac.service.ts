@@ -6,20 +6,23 @@ export interface Permission {
   name: string;
   resource: string;
   action: string;
-  conditions?: Record<string, any>;
+  conditions?: Record<string, any> | null;
 }
 
-export interface Role {
+interface RoleWithPermissions {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   permissions: Permission[];
-  parentRoleId?: string;
+  parentRoleId?: string | null;
   isSystemRole: boolean;
+  companyId: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface RoleHierarchy {
-  role: Role;
+  role: RoleWithPermissions;
   children: RoleHierarchy[];
 }
 
@@ -33,7 +36,7 @@ export class RbacService {
 
     // Collect permissions from all roles (including inherited)
     for (const role of userRoles) {
-      const rolePermissions = await this.getRolePermissions(role.id);
+      const rolePermissions = await this.getRolePermissions((role as { id: string }).id);
       for (const permission of rolePermissions) {
         allPermissions.set(permission.id, permission);
       }
@@ -111,13 +114,13 @@ export class RbacService {
     name: string,
     description: string,
     permissionIds: string[],
-    parentRoleId?: string
-  ): Promise<Role> {
+    parentRoleId?: string | undefined
+  ): Promise<RoleWithPermissions> {
     return this.usersService.createRole({
       name,
       description,
       permissionIds,
-      parentRoleId,
+      parentRoleId: parentRoleId || undefined,
       isSystemRole: false,
     });
   }
@@ -130,7 +133,7 @@ export class RbacService {
       permissionIds: string[];
       parentRoleId: string;
     }>
-  ): Promise<Role> {
+  ): Promise<RoleWithPermissions> {
     return this.usersService.updateRole(roleId, updates);
   }
 
@@ -145,7 +148,7 @@ export class RbacService {
 
   async getRoleHierarchy(companyId: string): Promise<RoleHierarchy[]> {
     const roles = await this.usersService.getCompanyRoles(companyId);
-    const roleMap = new Map<string, Role>();
+    const roleMap = new Map<string, RoleWithPermissions>();
     const rootRoles: RoleHierarchy[] = [];
 
     // Build role map
@@ -164,8 +167,8 @@ export class RbacService {
   }
 
   private buildRoleHierarchy(
-    role: Role,
-    roleMap: Map<string, Role>
+    role: RoleWithPermissions,
+    roleMap: Map<string, RoleWithPermissions>
   ): RoleHierarchy {
     const children: RoleHierarchy[] = [];
 

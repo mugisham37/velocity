@@ -3,7 +3,17 @@ import { UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Resolver } from '@nestjs/graphql';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { AuthPayload, LoginInput, RefreshTokenInput } from './dto/auth.dto';
+import { 
+  AuthPayload, 
+  LoginInput, 
+  RefreshTokenInput,
+  MfaSetupPayload,
+  EnableMfaInput,
+  DisableMfaInput,
+  BackupCodesPayload,
+  RegenerateBackupCodesInput,
+  UserType
+} from './dto/auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { MfaService } from './services/mfa.service';
@@ -18,14 +28,26 @@ export class AuthResolver {
   @Mutation(() => AuthPayload)
   @UseGuards(LocalAuthGuard)
   async login(
-    @Args('input') input: LoginInput,
+    @Args('input') _input: LoginInput,
     @Context() context: any
   ): Promise<AuthPayload> {
     const user = context.user;
     const result = await this.authService.login(user);
 
+    // Transform database user to UserType
+    const userType: UserType = {
+      id: result.user.id,
+      email: result.user.email,
+      firstName: result.user.firstName,
+      lastName: result.user.lastName,
+      isActive: result.user.isActive,
+      companyId: result.user.companyId,
+      createdAt: result.user.createdAt,
+      updatedAt: result.user.updatedAt,
+    };
+
     return {
-      user: result.user,
+      user: userType,
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
     };
@@ -37,8 +59,20 @@ export class AuthResolver {
   ): Promise<AuthPayload> {
     const result = await this.authService.refreshToken(input.refreshToken);
 
+    // Transform database user to UserType
+    const userType: UserType = {
+      id: result.user.id,
+      email: result.user.email,
+      firstName: result.user.firstName,
+      lastName: result.user.lastName,
+      isActive: result.user.isActive,
+      companyId: result.user.companyId,
+      createdAt: result.user.createdAt,
+      updatedAt: result.user.updatedAt,
+    };
+
     return {
-      user: result.user,
+      user: userType,
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
     };
