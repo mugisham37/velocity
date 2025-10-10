@@ -94,6 +94,10 @@ export class GeneralLedgerService {
         })
         .returning();
 
+      if (!fiscalYear) {
+        throw new BadRequestException('Failed to create fiscal year');
+      }
+
       // Generate monthly periods
       const periods = this.generateMonthlyPeriods(data.startDate, data.endDate);
 
@@ -166,7 +170,7 @@ export class GeneralLedgerService {
           )
         );
 
-      if (unpostedEntries[0].count > 0) {
+      if (unpostedEntries[0]?.count > 0) {
         throw new BadRequestException(
           'Cannot close period with unposted journal entries'
         );
@@ -207,6 +211,10 @@ export class GeneralLedgerService {
             createdBy: userId,
           })
           .returning();
+
+        if (!closingJournalEntry) {
+          throw new BadRequestException('Failed to create closing journal entry');
+        }
 
         // Create GL entries for closing
         const closingGLEntries = data.closingEntries.map(entry => ({
@@ -266,18 +274,22 @@ export class GeneralLedgerService {
         .insert(journalEntryTemplates)
         .values({
           name: data.name,
-          description: data.description,
+          description: data.description || null,
           companyId,
         })
         .returning();
+
+      if (!template) {
+        throw new BadRequestException('Failed to create journal template');
+      }
 
       // Create template lines
       const templateLines = data.lines.map((line, index) => ({
         templateId: template.id,
         accountId: line.accountId,
-        debitFormula: line.debitFormula,
-        creditFormula: line.creditFormula,
-        description: line.description,
+        debitFormula: line.debitFormula || null,
+        creditFormula: line.creditFormula || null,
+        description: line.description || null,
         sequence: line.sequence || ((index + 1) * 10).toString(),
         companyId,
       }));
@@ -335,11 +347,15 @@ export class GeneralLedgerService {
         templateId: data.templateId,
         frequency: data.frequency,
         startDate: data.startDate,
-        endDate: data.endDate,
+        endDate: data.endDate || null,
         nextRunDate,
         companyId,
       })
       .returning();
+
+    if (!recurringEntry) {
+      throw new BadRequestException('Failed to create recurring entry');
+    }
 
     // Log audit trail
     await this.auditService.logAudit({
@@ -480,6 +496,10 @@ export class GeneralLedgerService {
           createdBy: userId,
         })
         .returning();
+
+      if (!reversalEntry) {
+        throw new BadRequestException('Failed to create reversal entry');
+      }
 
       // Create reversal GL entries (swap debit and credit)
       const reversalGLEntries = originalGLEntries.map(entry => ({
@@ -676,7 +696,7 @@ export class GeneralLedgerService {
         )
       );
 
-    const nextNumber = result.maxNumber ? parseInt(result.maxNumber) + 1 : 1;
+    const nextNumber = result?.maxNumber ? parseInt(result.maxNumber) + 1 : 1;
     return `${entryPrefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 

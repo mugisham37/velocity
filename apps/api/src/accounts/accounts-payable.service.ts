@@ -1,7 +1,7 @@
 import {
-  NewVendorBill,
-  VendorBill,
-  VendorPayment,
+  type NewVendorBill,
+  type VendorBill,
+  type VendorPayment,
   accounts,
   billLineItems,
   billNumberingSeries,
@@ -19,6 +19,8 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
 import { BaseService } from '../common/services/base.service';
+import { CacheService } from '../common/services/cache.service';
+import { PerformanceMonitorService } from '../common/services/performance-monitor.service';
 
 export interface CreateVendorBillDto {
   vendorId: string;
@@ -109,9 +111,11 @@ export class AccountsPayableService extends BaseService<
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
     logger: Logger,
-    private readonly auditService: AuditService
+    private readonly auditService: AuditService,
+    protected override readonly cacheService: CacheService,
+    protected override readonly performanceMonitor: PerformanceMonitorService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -171,7 +175,7 @@ export class AccountsPayableService extends BaseService<
         .insert(vendorBills)
         .values({
           billNumber,
-          vendorBillNumber: data.vendorBillNumber,
+          vendorBillNumber: data.vendorBillNumber || null,
           vendorId: data.vendorId,
           billDate: data.billDate,
           dueDate: data.dueDate,
@@ -184,11 +188,11 @@ export class AccountsPayableService extends BaseService<
           outstandingAmount: totalAmount.toString(),
           status: 'submitted',
           approvalStatus: 'pending',
-          terms: data.terms,
-          notes: data.notes,
-          templateId: data.templateId,
-          purchaseOrderId: data.purchaseOrderId,
-          receiptId: data.receiptId,
+          terms: data.terms || null,
+          notes: data.notes || null,
+          templateId: data.templateId || null,
+          purchaseOrderId: data.purchaseOrderId || null,
+          receiptId: data.receiptId || null,
           matchingStatus:
             data.purchaseOrderId && data.receiptId
               ? 'unmatched'
@@ -202,7 +206,7 @@ export class AccountsPayableService extends BaseService<
       const lineItemPromises = processedLineItems.map(item =>
         tx.insert(billLineItems).values({
           billId: bill.id,
-          itemCode: item.itemCode,
+          itemCode: item.itemCode || null,
           description: item.description,
           quantity: item.quantity.toString(),
           unitPrice: item.unitPrice.toString(),
@@ -211,9 +215,9 @@ export class AccountsPayableService extends BaseService<
           taxPercent: (item.taxPercent || 0).toString(),
           taxAmount: item.taxAmount.toString(),
           lineTotal: item.lineTotal.toString(),
-          accountId: item.accountId,
-          purchaseOrderLineId: item.purchaseOrderLineId,
-          receiptLineId: item.receiptLineId,
+          accountId: item.accountId || null,
+          purchaseOrderLineId: item.purchaseOrderLineId || null,
+          receiptLineId: item.receiptLineId || null,
           companyId,
         })
       );
@@ -252,6 +256,10 @@ export class AccountsPayableService extends BaseService<
         companyId,
         userId,
       });
+
+      if (!bill) {
+        throw new BadRequestException('Failed to create vendor bill');
+      }
 
       return bill;
     });
@@ -298,19 +306,23 @@ export class AccountsPayableService extends BaseService<
           currency: data.currency || 'USD',
           exchangeRate: data.exchangeRate?.toString() || '1.0000',
           paymentMethod: data.paymentMethod,
-          reference: data.reference,
-          bankAccountId: data.bankAccountId,
-          checkNumber: data.checkNumber,
+          reference: data.reference || null,
+          bankAccountId: data.bankAccountId || null,
+          checkNumber: data.checkNumber || null,
           status: data.scheduledDate ? 'scheduled' : 'completed',
-          scheduledDate: data.scheduledDate,
-          processedDate: data.scheduledDate ? undefined : data.paymentDate,
-          notes: data.notes,
+          scheduledDate: data.scheduledDate || null,
+          processedDate: data.scheduledDate ? null : data.paymentDate,
+          notes: data.notes || null,
           allocatedAmount: totalAllocated.toString(),
           unallocatedAmount: unallocatedAmount.toString(),
           companyId,
           createdBy: userId,
         })
         .returning();
+
+      if (!payment) {
+        throw new BadRequestException('Failed to create payment');
+      }
 
       // Create allocations if provided
       if (data.allocations && data.allocations.length > 0) {
@@ -620,7 +632,7 @@ export class AccountsPayableService extends BaseService<
 
         this.logger.error('Failed to process scheduled payment', {
           paymentId: payment.id,
-          error: error.message,
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
@@ -657,6 +669,12 @@ export class AccountsPayableService extends BaseService<
           companyId,
         })
         .returning();
+
+      if (!newSeries) {
+        throw new BadRequestException(
+          'Failed to create default numbering series'
+        );
+      }
 
       const billNumber = `${newSeries.prefix}${newSeries.currentNumber
         .toString()
@@ -700,7 +718,7 @@ export class AccountsPayableService extends BaseService<
         )
       );
 
-    const nextNumber = result.maxNumber ? parseInt(result.maxNumber) + 1 : 1;
+    const nextNumber = result?.maxNumber ? parseInt(result.maxNumber) + 1 : 1;
     return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 
@@ -885,7 +903,7 @@ export class AccountsPayableService extends BaseService<
         )
       );
 
-    const nextNumber = result.maxNumber ? parseInt(result.maxNumber) + 1 : 1;
+    const nextNumber = result?.maxNumber ? parseInt(result.maxNumber) + 1 : 1;
     return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 
@@ -909,7 +927,10 @@ export class AccountsPayableService extends BaseService<
     return account;
   }
 
-  private async getCashAccount(companyId: string, bankAccountId?: string) {
+  private async getCashAccount(
+    companyId: string,
+    bankAccountId?: string | null
+  ) {
     let account;
 
     if (bankAccountId) {

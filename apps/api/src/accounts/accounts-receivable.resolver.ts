@@ -30,7 +30,7 @@ import {
     InvoiceNumberingSeries,
     InvoiceTemplate,
 } from './entities/accounts-receivable.entity';
-importUser } from '../auth/interfaces/user.interface';
+import { User } from '../auth/interfaces/user.interface';
 
 @Resolver(() => Invoice)
 @UseGuards(JwtAuthGuard)
@@ -46,8 +46,12 @@ export class AccountsReceivableResolver {
     @Args() pagination?: PaginationArgs,
     @CurrentUser() user?: User
   ): Promise<Invoice[]> {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
     // TODO: Implement filtering and pagination
-    return this.accountsReceivableService.findAll(user!.companyId);
+    const result = await this.accountsReceivableService.findAll({}, user.companyId);
+    return result.data as Invoice[];
   }
 
   @Query(() => Invoice)
@@ -55,7 +59,8 @@ export class AccountsReceivableResolver {
     @Args('id', { type: () => ID }) id: string,
     @CurrentUser() user: User
   ): Promise<Invoice> {
-    return this.accountsReceivableService.findByIdOrFail(id, user.companyId);
+    const result = await this.accountsReceivableService.findByIdOrFail(id, user.companyId);
+    return result as Invoice;
   }
 
   @Query(() => [CustomerAgingReport])
@@ -63,9 +68,12 @@ export class AccountsReceivableResolver {
     @Args('filter', { nullable: true }) filter?: AgingReportFilterDto,
     @CurrentUser() user?: User
   ): Promise<CustomerAgingReport[]> {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
     const asOfDate = filter?.asOfDate ? new Date(filter.asOfDate) : undefined;
     return this.accountsReceivableService.generateAgingReport(
-      user!.companyId,
+      user.companyId,
       filter?.customerId,
       asOfDate
     );
@@ -104,7 +112,7 @@ export class AccountsReceivableResolver {
     @Args('input') input: CreateInvoiceDto,
     @CurrentUser() user: User
   ): Promise<Invoice> {
-    return this.accountsReceivableService.createInvoice(
+    const result = await this.accountsReceivableService.createInvoice(
       {
         customerId: input.customerId,
         invoiceDate: new Date(input.invoiceDate),
@@ -116,18 +124,19 @@ export class AccountsReceivableResolver {
         templateId: input.templateId,
         salesOrderId: input.salesOrderId,
         lineItems: input.lineItems.map(item => ({
-          itemCode: item.itemCode,
+          itemCode: item.itemCode || undefined,
           description: item.description,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          discountPercent: item.discountPercent,
-          taxPercent: item.taxPercent,
-          accountId: item.accountId,
+          discountPercent: item.discountPercent || undefined,
+          taxPercent: item.taxPercent || undefined,
+          accountId: item.accountId || undefined,
         })),
       },
       user.companyId,
       user.id
     );
+    return result as Invoice;
   }
 
   @Mutation(() => Invoice)
@@ -143,7 +152,8 @@ export class AccountsReceivableResolver {
     if (input.notes !== undefined) updateData.notes = input.notes;
     if (input.status) updateData.status = input.status;
 
-    return this.accountsReceivableService.update(id, updateData, user.companyId);
+    const result = await this.accountsReceivableService.update(id, updateData, user.companyId);
+    return result as Invoice;
   }
 
   @Mutation(() => Boolean)
@@ -158,9 +168,9 @@ export class AccountsReceivableResolver {
   // Payment Queries
   @Query(() => [CustomerPayment])
   async customerPayments(
-    @Args('filter', { nullable: true }) filter?: PaymentFilterDto,
-    @Args() pagination?: PaginationArgs,
-    @CurrentUser() user?: User
+    @Args('filter', { nullable: true }) _filter?: PaymentFilterDto,
+    @Args() _pagination?: PaginationArgs,
+    @CurrentUser() _user?: User
   ): Promise<CustomerPayment[]> {
     // TODO: Implement filtering and pagination
     // For now, return empty array as payment service methods need to be implemented
@@ -169,8 +179,8 @@ export class AccountsReceivableResolver {
 
   @Query(() => CustomerPayment)
   async customerPayment(
-    @Args('id', { type: () => ID }) id: string,
-    @CurrentUser() user: User
+    @Args('id', { type: () => ID }) _id: string,
+    @CurrentUser() _user: User
   ): Promise<CustomerPayment> {
     // TODO: Implement payment retrieval
     throw new Error('Not implemented');
@@ -182,12 +192,12 @@ export class AccountsReceivableResolver {
     @Args('input') input: CreatePaymentDto,
     @CurrentUser() user: User
   ): Promise<CustomerPayment> {
-    return this.accountsReceivableService.recordPayment(
+    const result = await this.accountsReceivableService.recordPayment(
       {
         customerId: input.customerId,
         paymentDate: new Date(input.paymentDate),
         amount: input.amount,
-        currency: input.currency,
+        currency: input.currency || 'USD',
         exchangeRate: input.exchangeRate,
         paymentMethod: input.paymentMethod,
         reference: input.reference,
@@ -201,13 +211,14 @@ export class AccountsReceivableResolver {
       user.companyId,
       user.id
     );
+    return result as CustomerPayment;
   }
 
   // Credit Limit Queries
   @Query(() => [CustomerCreditLimit])
   async customerCreditLimits(
-    @Args('customerId', { type: () => ID, nullable: true }) customerId?: string,
-    @CurrentUser() user?: User
+    @Args('customerId', { type: () => ID, nullable: true }) _customerId?: string,
+    @CurrentUser() _user?: User
   ): Promise<CustomerCreditLimit[]> {
     // TODO: Implement credit limit retrieval
     return [];
@@ -216,8 +227,8 @@ export class AccountsReceivableResolver {
   // Credit Limit Mutations
   @Mutation(() => CustomerCreditLimit)
   async createCreditLimit(
-    @Args('input') input: CreateCreditLimitDto,
-    @CurrentUser() user: User
+    @Args('input') _input: CreateCreditLimitDto,
+    @CurrentUser() _user: User
   ): Promise<CustomerCreditLimit> {
     // TODO: Implement credit limit creation
     throw new Error('Not implemented');
@@ -225,9 +236,9 @@ export class AccountsReceivableResolver {
 
   @Mutation(() => CustomerCreditLimit)
   async updateCreditLimit(
-    @Args('id', { type: () => ID }) id: string,
-    @Args('input') input: UpdateCreditLimitDto,
-    @CurrentUser() user: User
+    @Args('id', { type: () => ID }) _id: string,
+    @Args('input') _input: UpdateCreditLimitDto,
+    @CurrentUser() _user: User
   ): Promise<CustomerCreditLimit> {
     // TODO: Implement credit limit update
     throw new Error('Not implemented');
@@ -236,7 +247,7 @@ export class AccountsReceivableResolver {
   // Template Queries
   @Query(() => [InvoiceTemplate])
   async invoiceTemplates(
-    @CurrentUser() user: User
+    @CurrentUser() _user: User
   ): Promise<InvoiceTemplate[]> {
     // TODO: Implement template retrieval
     return [];
@@ -244,8 +255,8 @@ export class AccountsReceivableResolver {
 
   @Query(() => InvoiceTemplate)
   async invoiceTemplate(
-    @Args('id', { type: () => ID }) id: string,
-    @CurrentUser() user: User
+    @Args('id', { type: () => ID }) _id: string,
+    @CurrentUser() _user: User
   ): Promise<InvoiceTemplate> {
     // TODO: Implement template retrieval
     throw new Error('Not implemented');
@@ -254,8 +265,8 @@ export class AccountsReceivableResolver {
   // Template Mutations
   @Mutation(() => InvoiceTemplate)
   async createInvoiceTemplate(
-    @Args('input') input: CreateInvoiceTemplateDto,
-    @CurrentUser() user: User
+    @Args('input') _input: CreateInvoiceTemplateDto,
+    @CurrentUser() _user: User
   ): Promise<InvoiceTemplate> {
     // TODO: Implement template creation
     throw new Error('Not implemented');
@@ -263,9 +274,9 @@ export class AccountsReceivableResolver {
 
   @Mutation(() => InvoiceTemplate)
   async updateInvoiceTemplate(
-    @Args('id', { type: () => ID }) id: string,
-    @Args('input') input: UpdateInvoiceTemplateDto,
-    @CurrentUser() user: User
+    @Args('id', { type: () => ID }) _id: string,
+    @Args('input') _input: UpdateInvoiceTemplateDto,
+    @CurrentUser() _user: User
   ): Promise<InvoiceTemplate> {
     // TODO: Implement template update
     throw new Error('Not implemented');
@@ -274,7 +285,7 @@ export class AccountsReceivableResolver {
   // Numbering Series Queries
   @Query(() => [InvoiceNumberingSeries])
   async invoiceNumberingSeries(
-    @CurrentUser() user: User
+    @CurrentUser() _user: User
   ): Promise<InvoiceNumberingSeries[]> {
     // TODO: Implement numbering series retrieval
     return [];
@@ -283,8 +294,8 @@ export class AccountsReceivableResolver {
   // Numbering Series Mutations
   @Mutation(() => InvoiceNumberingSeries)
   async createNumberingSeries(
-    @Args('input') input: CreateNumberingSeriesDto,
-    @CurrentUser() user: User
+    @Args('input') _input: CreateNumberingSeriesDto,
+    @CurrentUser() _user: User
   ): Promise<InvoiceNumberingSeries> {
     // TODO: Implement numbering series creation
     throw new Error('Not implemented');
@@ -292,9 +303,9 @@ export class AccountsReceivableResolver {
 
   @Mutation(() => InvoiceNumberingSeries)
   async updateNumberingSeries(
-    @Args('id', { type: () => ID }) id: string,
-    @Args('input') input: UpdateNumberingSeriesDto,
-    @CurrentUser() user: User
+    @Args('id', { type: () => ID }) _id: string,
+    @Args('input') _input: UpdateNumberingSeriesDto,
+    @CurrentUser() _user: User
   ): Promise<InvoiceNumberingSeries> {
     // TODO: Implement numbering series update
     throw new Error('Not implemented');

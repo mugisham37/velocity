@@ -1,7 +1,7 @@
 import {
-  Account,
-  JournalEntry,
-  NewAccount,
+  type Account,
+  type JournalEntry,
+  type NewAccount,
   accounts,
   glEntries,
   journalEntries,
@@ -12,6 +12,8 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
 import { BaseService } from '../common/services/base.service';
+import { CacheService } from '../common/services/cache.service';
+import { PerformanceMonitorService } from '../common/services/performance-monitor.service';
 
 export interface CreateAccountDto {
   accountCode?: string;
@@ -80,9 +82,11 @@ export class AccountsService extends BaseService<
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
     logger: Logger,
-    private readonly auditService: AuditService
+    private readonly auditService: AuditService,
+    protected override readonly cacheService: CacheService,
+    protected override readonly performanceMonitor: PerformanceMonitorService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -139,25 +143,28 @@ export class AccountsService extends BaseService<
           accountCode: data.accountCode,
           accountName: data.accountName,
           accountType: data.accountType,
-          parentAccountId: data.parentAccountId,
+          parentAccountId: data.parentAccountId || null,
           currency: data.currency || 'USD',
           isGroup: data.isGroup || false,
-          description: data.description,
+          description: data.description || null,
           balance: '0',
           isActive: true,
-        },
+          companyId,
+        } as any,
         companyId
       );
 
       // Log audit trail
-      await this.auditService.logAudit({
-        entityType: 'accounts',
-        entityId: account.id,
-        action: 'CREATE',
-        newValues: account,
-        companyId,
-        userId,
-      });
+      if (userId) {
+        await this.auditService.logAudit({
+          entityType: 'accounts',
+          entityId: account.id,
+          action: 'CREATE',
+          newValues: account,
+          companyId,
+          userId,
+        });
+      }
 
       return account;
     } catch (error) {
@@ -215,15 +222,17 @@ export class AccountsService extends BaseService<
     const updatedAccount = await this.update(id, data, companyId);
 
     // Log audit trail
-    await this.auditService.logAudit({
-      entityType: 'accounts',
-      entityId: id,
-      action: 'UPDATE',
-      oldValues: oldAccount,
-      newValues: updatedAccount,
-      companyId,
-      userId,
-    });
+    if (userId) {
+      await this.auditService.logAudit({
+        entityType: 'accounts',
+        entityId: id,
+        action: 'UPDATE',
+        oldValues: oldAccount,
+        newValues: updatedAccount,
+        companyId,
+        userId,
+      });
+    }
 
     return updatedAccount;
   }
@@ -379,8 +388,8 @@ export class AccountsService extends BaseService<
         .values({
           entryNumber,
           postingDate: data.postingDate,
-          reference: data.reference,
-          description: data.description,
+          reference: data.reference || null,
+          description: data.description || null,
           totalDebit: totalDebit.toString(),
           totalCredit: totalCredit.toString(),
           isPosted: true,
@@ -389,6 +398,10 @@ export class AccountsService extends BaseService<
         })
         .returning();
 
+      if (!journalEntry) {
+        throw new BadRequestException('Failed to create journal entry');
+      }
+
       // Create GL entries
       const glEntryPromises = data.entries.map(entry =>
         tx.insert(glEntries).values({
@@ -396,8 +409,8 @@ export class AccountsService extends BaseService<
           accountId: entry.accountId,
           debit: entry.debit?.toString() || '0',
           credit: entry.credit?.toString() || '0',
-          description: entry.description,
-          reference: entry.reference,
+          description: entry.description || null,
+          reference: entry.reference || null,
           companyId,
         })
       );
@@ -526,7 +539,7 @@ export class AccountsService extends BaseService<
           accountCode: accountData.code,
           accountName: accountData.name,
           accountType: accountData.type,
-          parentAccountId,
+          parentAccountId: parentAccountId || undefined,
           isGroup: accountData.isGroup,
         },
         companyId,
@@ -561,7 +574,7 @@ export class AccountsService extends BaseService<
         )
       );
 
-    const nextNumber = result.maxCode ? parseInt(result.maxCode) + 1 : 1;
+    const nextNumber = result?.maxCode ? parseInt(result.maxCode) + 1 : 1;
     return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
   }
 
@@ -598,7 +611,7 @@ export class AccountsService extends BaseService<
         )
       );
 
-    const nextNumber = result.maxNumber ? parseInt(result.maxNumber) + 1 : 1;
+    const nextNumber = result?.maxNumber ? parseInt(result.maxNumber) + 1 : 1;
     return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 

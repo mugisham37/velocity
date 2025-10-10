@@ -1,11 +1,12 @@
 import {
-  BankAccount,
-  BankReconciliation,
-  NewBankAccount,
+  type BankAccount,
+  type BankReconciliation,
+  type NewBankAccount,
   accounts,
   bankAccounts,
   bankReconciliations,
   bankStatementImports,
+  bankTransactions,
   cashFlowForecasts,
   glEntries,
   onlinePayments,
@@ -18,6 +19,8 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
 import { BaseService } from '../common/services/base.service';
+import { CacheService } from '../common/services/cache.service';
+import { PerformanceMonitorService } from '../common/services/performance-monitor.service';
 
 export interface CreateBankAccountDto {
   accountName: string;
@@ -110,9 +113,11 @@ export class BankingService extends BaseService<
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
     logger: Logger,
-    private readonly auditService: AuditService
+    private readonly auditService: AuditService,
+    protected override readonly cacheService: CacheService,
+    protected override readonly performanceMonitor: PerformanceMonitorService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -170,23 +175,27 @@ export class BankingService extends BaseService<
         .values({
           accountName: data.accountName,
           accountNumber: data.accountNumber,
-          routingNumber: data.routingNumber,
+          routingNumber: data.routingNumber || null,
           bankName: data.bankName,
-          bankAddress: data.bankAddress,
+          bankAddress: data.bankAddress || null,
           accountType: data.accountType,
           currency: data.currency || 'USD',
           currentBalance: data.currentBalance?.toString() || '0',
           availableBalance: data.currentBalance?.toString() || '0',
           reconciledBalance: '0',
           glAccountId: data.glAccountId,
-          overdraftLimit: data.overdraftLimit?.toString(),
-          interestRate: data.interestRate?.toString(),
-          minimumBalance: data.minimumBalance?.toString(),
-          monthlyFee: data.monthlyFee?.toString(),
-          notes: data.notes,
+          overdraftLimit: data.overdraftLimit?.toString() || null,
+          interestRate: data.interestRate?.toString() || null,
+          minimumBalance: data.minimumBalance?.toString() || null,
+          monthlyFee: data.monthlyFee?.toString() || null,
+          notes: data.notes || null,
           companyId,
         })
         .returning();
+
+      if (!bankAccount) {
+        throw new BadRequestException('Failed to create bank account');
+      }
 
       // Log audit trail
       await this.auditService.logAudit({
@@ -299,7 +308,7 @@ export class BankingService extends BaseService<
           imported++;
         } catch (error) {
           errors.push(
-            `Transaction ${transaction.description}: ${error.message}`
+            `Transaction ${transaction.description}: ${error instanceof Error ? error.message : 'Unknown error'}`
           );
         }
       }
@@ -315,7 +324,7 @@ export class BankingService extends BaseService<
           status: 'completed',
           errorLog: errors.length > 0 ? errors.join('\n') : null,
         })
-        .where(eq(bankStatementImports.id, importRecord.id));
+        .where(eq(bankStatementImports.id, importRecord!.id));
 
       // Update bank account balance if provided
       if (transactions.length > 0) {
@@ -642,7 +651,7 @@ export class BankingService extends BaseService<
 
         this.logger.error('Failed to process online payment', {
           paymentId: payment.id,
-          error: error.message,
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }

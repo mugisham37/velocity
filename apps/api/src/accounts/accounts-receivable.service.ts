@@ -1,7 +1,7 @@
 import {
-  CustomerPayment,
-  Invoice,
-  NewInvoice,
+  type CustomerPayment,
+  type Invoice,
+  type NewInvoice,
   accounts,
   customerCreditLimits,
   customerPayments,
@@ -17,9 +17,11 @@ import {
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, gte, lte, sql, sum } from 'drizzle-orm';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Logger } from 'wins';
+import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
 import { BaseService } from '../common/services/base.service';
+import { CacheService } from '../common/services/cache.service';
+import { PerformanceMonitorService } from '../common/services/performance-monitor.service';
 
 export interface CreateInvoiceDto {
   customerId: string;
@@ -105,9 +107,11 @@ export class AccountsReceivableService extends BaseService<
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
     logger: Logger,
-    private readonly auditService: AuditService
+    private readonly auditService: AuditService,
+    protected override readonly cacheService: CacheService,
+    protected override readonly performanceMonitor: PerformanceMonitorService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -195,20 +199,24 @@ export class AccountsReceivableService extends BaseService<
           totalAmount: totalAmount.toString(),
           outstandingAmount: totalAmount.toString(),
           status: 'submitted',
-          terms: data.terms,
-          notes: data.notes,
-          templateId: data.templateId,
-          salesOrderId: data.salesOrderId,
+          terms: data.terms || null,
+          notes: data.notes || null,
+          templateId: data.templateId || null,
+          salesOrderId: data.salesOrderId || null,
           companyId,
           createdBy: userId,
         })
         .returning();
 
+      if (!invoice) {
+        throw new BadRequestException('Failed to create invoice');
+      }
+
       // Create line items
       const lineItemPromises = processedLineItems.map(item =>
         tx.insert(invoiceLineItems).values({
           invoiceId: invoice.id,
-          itemCode: item.itemCode,
+          itemCode: item.itemCode || null,
           description: item.description,
           quantity: item.quantity.toString(),
           unitPrice: item.unitPrice.toString(),
@@ -217,7 +225,7 @@ export class AccountsReceivableService extends BaseService<
           taxPercent: (item.taxPercent || 0).toString(),
           taxAmount: item.taxAmount.toString(),
           lineTotal: item.lineTotal.toString(),
-          accountId: item.accountId,
+          accountId: item.accountId || null,
           companyId,
         })
       );
@@ -291,16 +299,20 @@ export class AccountsReceivableService extends BaseService<
           currency: data.currency || 'USD',
           exchangeRate: data.exchangeRate?.toString() || '1.0000',
           paymentMethod: data.paymentMethod,
-          reference: data.reference,
-          bankAccountId: data.bankAccountId,
+          reference: data.reference || null,
+          bankAccountId: data.bankAccountId || null,
           status: 'completed',
-          notes: data.notes,
+          notes: data.notes || null,
           allocatedAmount: totalAllocated.toString(),
           unallocatedAmount: unallocatedAmount.toString(),
           companyId,
           createdBy: userId,
         })
         .returning();
+
+      if (!payment) {
+        throw new BadRequestException('Failed to create payment');
+      }
 
       // Create allocations if provided
       if (data.allocations && data.allocations.length > 0) {
@@ -423,7 +435,7 @@ export class AccountsReceivableService extends BaseService<
         invoiceId: invoices.id,
         invoiceNumber: invoices.invoiceNumber,
         customerId: invoices.customerId,
-        customerName: customers.name,
+        customerName: customers.customerName,
         invoiceDate: invoices.invoiceDate,
         dueDate: invoices.dueDate,
         totalAmount: invoices.totalAmount,
@@ -438,7 +450,7 @@ export class AccountsReceivableService extends BaseService<
           lte(invoices.invoiceDate, reportDate)
         )
       )
-      .orderBy(customers.name, invoices.dueDate);
+      .orderBy(customers.customerName, invoices.dueDate);
 
     // Group by customer and calculate aging buckets
     const customerMap = new Map<string, CustomerAgingReport>();
@@ -626,15 +638,15 @@ export class AccountsReceivableService extends BaseService<
 
     const openingBalance = parseFloat(openingBalanceResult?.balance || '0');
 
-    // Get transactions in period
-    const transactions = await this.database
+    // Get invoice transactions in period
+    const invoiceTransactions = await this.database
       .select({
         date: invoices.invoiceDate,
-        type: sql`'invoice'`,
+        type: sql<string>`'invoice'`,
         reference: invoices.invoiceNumber,
-        description: sql`'Invoice'`,
+        description: sql<string>`'Invoice'`,
         debit: invoices.totalAmount,
-        credit: sql`0`,
+        credit: sql<string>`'0'`,
         balance: invoices.outstandingAmount,
       })
       .from(invoices)
@@ -645,38 +657,41 @@ export class AccountsReceivableService extends BaseService<
           gte(invoices.invoiceDate, fromDate),
           lte(invoices.invoiceDate, toDate)
         )
-      )
-      .union(
-        this.database
-          .select({
-            date: customerPayments.paymentDate,
-            type: sql`'payment'`,
-            reference: customerPayments.paymentNumber,
-            description: sql`'Payment'`,
-            debit: sql`0`,
-            credit: customerPayments.amount,
-            balance: sql`0`,
-          })
-          .from(customerPayments)
-          .where(
-            and(
-              eq(customerPayments.customerId, customerId),
-              eq(customerPayments.companyId, companyId),
-              gte(customerPayments.paymentDate, fromDate),
-              lte(customerPayments.paymentDate, toDate)
-            )
-          )
-      )
-      .orderBy(sql`date`);
+      );
+
+    // Get payment transactions in period
+    const paymentTransactions = await this.database
+      .select({
+        date: customerPayments.paymentDate,
+        type: sql<string>`'payment'`,
+        reference: customerPayments.paymentNumber,
+        description: sql<string>`'Payment'`,
+        debit: sql<string>`'0'`,
+        credit: customerPayments.amount,
+        balance: sql<string>`'0'`,
+      })
+      .from(customerPayments)
+      .where(
+        and(
+          eq(customerPayments.customerId, customerId),
+          eq(customerPayments.companyId, companyId),
+          gte(customerPayments.paymentDate, fromDate),
+          lte(customerPayments.paymentDate, toDate)
+        )
+      );
+
+    // Combine and sort transactions
+    const transactions = [...invoiceTransactions, ...paymentTransactions]
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
 
     // Calculate closing balance
     const totalInvoices = transactions
-      .filter(t => t.type === 'invoice')
-      .reduce((sum, t) => sum + parseFloat(t.debit), 0);
+      .filter((t: any) => t.type === 'invoice')
+      .reduce((sum: number, t: any) => sum + parseFloat(t.debit), 0);
 
     const totalPayments = transactions
-      .filter(t => t.type === 'payment')
-      .reduce((sum, t) => sum + parseFloat(t.credit), 0);
+      .filter((t: any) => t.type === 'payment')
+      .reduce((sum: number, t: any) => sum + parseFloat(t.credit), 0);
 
     const closingBalance = openingBalance + totalInvoices - totalPayments;
 
@@ -802,6 +817,10 @@ export class AccountsReceivableService extends BaseService<
         })
         .returning();
 
+      if (!newSeries) {
+        throw new BadRequestException('Failed to create default numbering series');
+      }
+
       const invoiceNumber = `${newSeries.prefix}${newSeries.currentNumber
         .toString()
         .padStart(newSeries.padLength, '0')}${newSeries.suffix || ''}`;
@@ -844,7 +863,7 @@ export class AccountsReceivableService extends BaseService<
         )
       );
 
-    const nextNumber = result.maxNumber ? parseInt(result.maxNumber) + 1 : 1;
+    const nextNumber = result?.maxNumber ? parseInt(result.maxNumber) + 1 : 1;
     return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 
@@ -1023,7 +1042,7 @@ export class AccountsReceivableService extends BaseService<
         )
       );
 
-    const nextNumber = result.maxNumber ? parseInt(result.maxNumber) + 1 : 1;
+    const nextNumber = result?.maxNumber ? parseInt(result.maxNumber) + 1 : 1;
     return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 
@@ -1047,7 +1066,7 @@ export class AccountsReceivableService extends BaseService<
     return account;
   }
 
-  private async getCashAccount(companyId: string, bankAccountId?: string) {
+  private async getCashAccount(companyId: string, bankAccountId?: string | null) {
     let account;
 
     if (bankAccountId) {
