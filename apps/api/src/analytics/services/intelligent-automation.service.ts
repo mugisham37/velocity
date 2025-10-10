@@ -5,7 +5,7 @@ import { SmartCategorizationService } from './smart-categorization.service';
 export interface AutomationSuggestion {
   type: string;
   description: string;
-  potentialSangs: number;
+  potentialSavings: number;
   implementationEffort: 'low' | 'medium' | 'high';
   priority: 'low' | 'medium' | 'high';
   category: 'process' | 'document' | 'notification' | 'reconciliation';
@@ -106,7 +106,7 @@ export class IntelligentAutomationService {
   }
 
   async automateReconciliation(
-    accountId: string,
+    _accountId: string,
     transactionData: any[]
   ): Promise<{
     matchedTransactions: number;
@@ -114,10 +114,10 @@ export class IntelligentAutomationService {
     suggestedMatches: any[];
     confidence: number;
   }> {
-    this.logger.log(`Automating reconciliation for account ${accountId}`);
+    this.logger.log(`Automating reconciliation for account ${_accountId}`);
 
     // Get existing transactions
-    const existingTransactions = await this.getExistingTransactions(accountId);
+    const existingTransactions = await this.getExistingTransactions(_accountId);
 
     // Pattern matching algorithm
     const matchResults = this.performPatternMatching(
@@ -133,15 +133,15 @@ export class IntelligentAutomationService {
     };
   }
 
-  async generateSmartNotifications(userId: string): Promise<{
+  async generateSmartNotifications(_userId: string): Promise<{
     notifications: any[];
     priority: 'low' | 'medium' | 'high';
     contextualRelevance: number;
   }> {
-    this.logger.log(`Generating smart notifications for user ${userId}`);
+    this.logger.log(`Generating smart notifications for user ${_userId}`);
 
     // Analyze user behavior and preferences
-    const userContext = await this.analyzeUserContext(userId);
+    const userContext = await this.analyzeUserContext(_userId);
 
     // Generate contextual notifications
     const notifications =
@@ -154,11 +154,11 @@ export class IntelligentAutomationService {
     };
   }
 
-  async optimizeProcess(processName: string): Promise<ProcessOptimization> {
-    this.logger.log(`Optimizing process: ${processName}`);
+  async optimizeProcess(_processName: string): Promise<ProcessOptimization> {
+    this.logger.log(`Optimizing process: ${_processName}`);
 
     // Analyze current process performance
-    const processData = await this.analyzeProcessPerformance(processName);
+    const processData = await this.analyzeProcessPerformance(_processName);
 
     // Identify bottlenecks
     const bottlenecks = this.identifyBottlenecks(processData);
@@ -170,7 +170,7 @@ export class IntelligentAutomationService {
     );
 
     return {
-      processName,
+      processName: _processName,
       currentEfficiency: processData.efficiency,
       potentialEfficiency: processData.efficiency * 1.3, // 30% improvement potential
       bottlenecks,
@@ -179,8 +179,8 @@ export class IntelligentAutomationService {
   }
 
   private async generateDocumentAutomationSuggestions(
-    entityType: string,
-    entityId: string
+    _entityType: string,
+    _entityId: string
   ): Promise<AutomationSuggestion[]> {
     const suggestions: AutomationSuggestion[] = [];
 
@@ -206,7 +206,7 @@ export class IntelligentAutomationService {
     });
 
     // Contract analysis
-    if (entityType === 'vendor' || entityType === 'customer') {
+    if (_entityType === 'vendor' || _entityType === 'customer') {
       suggestions.push({
         type: 'contract_analysis',
         description: 'Automatically extract key terms and dates from contracts',
@@ -221,8 +221,8 @@ export class IntelligentAutomationService {
   }
 
   private async generateProcessOptimizationSuggestions(
-    entityType: string,
-    entityId: string
+    _entityType: string,
+    _entityId: string
   ): Promise<AutomationSuggestion[]> {
     const suggestions: AutomationSuggestion[] = [];
 
@@ -237,7 +237,7 @@ export class IntelligentAutomationService {
     });
 
     // Inventory reorder automation
-    if (entityType === 'product' || entityType === 'warehouse') {
+    if (_entityType === 'product' || _entityType === 'warehouse') {
       suggestions.push({
         type: 'inventory_reorder_automation',
         description:
@@ -250,7 +250,7 @@ export class IntelligentAutomationService {
     }
 
     // Customer onboarding automation
-    if (entityType === 'customer') {
+    if (_entityType === 'customer') {
       suggestions.push({
         type: 'customer_onboarding_automation',
         description: 'Automate customer onboarding workflow and documentation',
@@ -265,8 +265,8 @@ export class IntelligentAutomationService {
   }
 
   private async generateNotificationAutomationSuggestions(
-    entityType: string,
-    entityId: string
+    _entityType: string,
+    _entityId: string
   ): Promise<AutomationSuggestion[]> {
     const suggestions: AutomationSuggestion[] = [];
 
@@ -282,7 +282,7 @@ export class IntelligentAutomationService {
     });
 
     // Predictive maintenance alerts
-    if (entityType === 'equipment' || entityType === 'asset') {
+    if (_entityType === 'equipment' || _entityType === 'asset') {
       suggestions.push({
         type: 'predictive_maintenance_alerts',
         description:
@@ -298,13 +298,13 @@ export class IntelligentAutomationService {
   }
 
   private async generateReconciliationSuggestions(
-    entityType: string,
-    entityId: string
+    _entityType: string,
+    _entityId: string
   ): Promise<AutomationSuggestion[]> {
     const suggestions: AutomationSuggestion[] = [];
 
     // Bank reconciliation automation
-    if (entityType === 'bank_account') {
+    if (_entityType === 'bank_account') {
       suggestions.push({
         type: 'bank_reconciliation_automation',
         description:
@@ -444,31 +444,40 @@ export class IntelligentAutomationService {
   }
 
   private levenshteinDistance(str1: string, str2: string): number {
-    const matrix = [];
+    const rows = str2.length + 1;
+    const cols = str1.length + 1;
+    const matrix: number[][] = [];
 
-    for (let i = 0; i <= str2.length; i++) {
-      matrix[i] = [i];
+    // Initialize matrix
+    for (let i = 0; i < rows; i++) {
+      matrix[i] = new Array(cols).fill(0);
     }
 
-    for (let j = 0; j <= str1.length; j++) {
-      matrix[0][j] = j;
+    // Initialize first row and column
+    for (let i = 0; i < rows; i++) {
+      matrix[i]![0] = i;
     }
 
-    for (let i = 1; i <= str2.length; i++) {
-      for (let j = 1; j <= str1.length; j++) {
+    for (let j = 0; j < cols; j++) {
+      matrix[0]![j] = j;
+    }
+
+    // Fill the matrix
+    for (let i = 1; i < rows; i++) {
+      for (let j = 1; j < cols; j++) {
         if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1][j - 1];
+          matrix[i]![j] = matrix[i - 1]![j - 1]!;
         } else {
-          matrix[i][j] = Math.min(
-            matrix[i - 1][j - 1] + 1,
-            matrix[i][j - 1] + 1,
-            matrix[i - 1][j] + 1
+          matrix[i]![j] = Math.min(
+            matrix[i - 1]![j - 1]! + 1,
+            matrix[i]![j - 1]! + 1,
+            matrix[i - 1]![j]! + 1
           );
         }
       }
     }
 
-    return matrix[str2.length][str1.length];
+    return matrix[str2.length]![str1.length]!;
   }
 
   private generateMatchSuggestion(
@@ -493,7 +502,7 @@ export class IntelligentAutomationService {
     return null;
   }
 
-  private async analyzeUserContext(userId: string) {
+  private async analyzeUserContext(_userId: string) {
     // Mock user context analysis
     return {
       preferences: {
@@ -505,7 +514,7 @@ export class IntelligentAutomationService {
     };
   }
 
-  private async generateContextualNotifications(userContext: any) {
+  private async generateContextualNotifications(_userContext: any) {
     // Mock contextual notification generation
     return [
       {
@@ -537,7 +546,7 @@ export class IntelligentAutomationService {
     return 'low';
   }
 
-  private async analyzeProcessPerformance(processName: string) {
+  private async analyzeProcessPerformance(_processName: string) {
     // Mock process performance analysis
     return {
       efficiency: 0.7 + Math.random() * 0.2,
@@ -592,7 +601,7 @@ export class IntelligentAutomationService {
     return 12500; // Hours saved
   }
 
-  private async getExistingTransactions(accountId: string): Promise<any[]> {
+  private async getExistingTransactions(_accountId: string): Promise<any[]> {
     // Mock existing transactions
     return [
       {

@@ -35,7 +35,7 @@ export interface InvoiceData {
 export class OCRService {
   private readonly logger = new Logger(OCRService.name);
 
-  async extractInvoiceData(documentBuffer: Buffer): Promise<OCRResult> {
+  async extractInvoiceData(_documentBuffer: Buffer): Promise<OCRResult> {
     this.logger.log('Extracting invoice data using OCR');
 
     const startTime = Date.now();
@@ -53,10 +53,10 @@ export class OCRService {
       },
       invoice: {
         number: `INV-${Math.floor(Math.random() * 10000)}`,
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0] || new Date().toISOString(),
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
           .toISOString()
-          .split('T')[0],
+          .split('T')[0] || new Date().toISOString(),
         amount: Math.round((Math.random() * 5000 + 100) * 100) / 100,
         tax: Math.round((Math.random() * 500 + 10) * 100) / 100,
         currency: 'USD',
@@ -75,7 +75,7 @@ export class OCRService {
     };
   }
 
-  async extractReceiptData(documentBuffer: Buffer): Promise<OCRResult> {
+  async extractReceiptData(_documentBuffer: Buffer): Promise<OCRResult> {
     this.logger.log('Extracting receipt data using OCR');
 
     const startTime = Date.now();
@@ -111,7 +111,7 @@ export class OCRService {
     };
   }
 
-  async extractContractData(documentBuffer: Buffer): Promise<OCRResult> {
+  async extractContractData(_documentBuffer: Buffer): Promise<OCRResult> {
     this.logger.log('Extracting contract data using OCR');
 
     const startTime = Date.now();
@@ -154,7 +154,7 @@ export class OCRService {
     };
   }
 
-  async extractBankStatementData(documentBuffer: Buffer): Promise<OCRResult> {
+  async extractBankStatementData(_documentBuffer: Buffer): Promise<OCRResult> {
     this.logger.log('Extracting bank statement data using OCR');
 
     const startTime = Date.now();
@@ -250,8 +250,8 @@ export class OCRService {
   }
 
   async improveOCRAccuracy(
-    documentBuffer: Buffer,
-    feedback: {
+    _documentBuffer: Buffer,
+    _feedback: {
       correctData: any;
       originalResult: OCRResult;
     }
@@ -294,7 +294,7 @@ export class OCRService {
 
       items.push({
         description:
-          descriptions[Math.floor(Math.random() * descriptions.length)],
+          descriptions[Math.floor(Math.random() * descriptions.length)] || 'Unknown Item',
         quantity,
         unitPrice,
         total,
@@ -362,7 +362,7 @@ export class OCRService {
     }
 
     return transactions.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      (a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime()
     );
   }
 

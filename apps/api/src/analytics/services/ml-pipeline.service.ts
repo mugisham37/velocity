@@ -16,7 +16,7 @@ export interface TrainingData {
 }
 
 @Injectable()
-export class MineService {
+export class MLPipelineService {
   private readonly logger = new Logger(MLPipelineService.name);
   private models: Map<string, MLModel> = new Map();
 
@@ -49,7 +49,7 @@ export class MineService {
     return model;
   }
 
-  async predict(modelId: string, features: Record<string, any>): Promise<any> {
+  async predict(modelId: string, _features: Record<string, any>): Promise<any> {
     const model = this.models.get(modelId);
     if (!model) {
       throw new Error(`Model ${modelId} not found`);
@@ -84,7 +84,7 @@ export class MineService {
 
   async evaluateModel(
     modelId: string,
-    testData: TrainingData
+    _testData: TrainingData
   ): Promise<{
     accuracy: number;
     precision: number;

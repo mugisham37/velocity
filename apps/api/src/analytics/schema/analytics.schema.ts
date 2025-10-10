@@ -3,34 +3,34 @@ import { Field, Float, ObjectType } from '@nestjs/graphql';
 @ObjectType()
 export class MLModelInfo {
   @Field()
-  id: string;
+  id!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field()
-  type: string;
+  type!: string;
 
   @Field(() => Float)
-  accuracy: number;
+  accuracy!: number;
 
   @Field()
-  lastTrained: string;
+  lastTrained!: string;
 
   @Field(() => [String])
-  features: string[];
+  features!: string[];
 }
 
 @ObjectType()
 export class ForecastResult {
   @Field(() => Float)
-  value: number;
+  value!: number;
 
   @Field(() => Float)
-  confidence: number;
+  confidence!: number;
 
   @Field()
-  trend: string;
+  trend!: string;
 
   @Field({ nullable: true })
   seasonalityPattern?: string;
@@ -42,65 +42,65 @@ export class ForecastResult {
 @ObjectType()
 export class AnomalyAlert {
   @Field()
-  id: string;
+  id!: string;
 
   @Field()
-  type: string;
+  type!: string;
 
   @Field()
-  severity: string;
+  severity!: string;
 
   @Field()
-  description: string;
+  description!: string;
 
   @Field(() => Float)
-  value: number;
+  value!: number;
 
   @Field(() => Float)
-  expectedValue: number;
+  expectedValue!: number;
 
   @Field(() => Float)
-  deviation: number;
+  deviation!: number;
 
   @Field()
-  timestamp: string;
+  timestamp!: string;
 
   @Field()
-  entityType: string;
+  entityType!: string;
 
   @Field()
-  entityId: string;
+  entityId!: string;
 }
 
 @ObjectType()
 export class CategorySuggestion {
   @Field()
-  category: string;
+  category!: string;
 
   @Field(() => Float)
-  confidence: number;
+  confidence!: number;
 
   @Field({ nullable: true })
   subcategory?: string;
 
   @Field(() => [String])
-  reasoning: string[];
+  reasoning!: string[];
 }
 
 @ObjectType()
 export class ProcessOptimization {
   @Field()
-  processName: string;
+  processName!: string;
 
   @Field(() => Float)
-  currentEfficiency: number;
+  currentEfficiency!: number;
 
   @Field(() => Float)
-  potentialEfficiency: number;
+  potentialEfficiency!: number;
 
   @Field(() => [String])
-  bottlenecks: string[];
+  bottlenecks!: string[];
 
   @Field(() => [String])
-  recommendations: string[];
+  recommendations!: string[];
 }

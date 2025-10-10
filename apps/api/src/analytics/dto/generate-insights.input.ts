@@ -6,10 +6,10 @@ export class GenerateInsightsInput {
   @Field()
   @IsString()
   @IsNotEmpty()
-  entityType: string;
+  entityType!: string;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  entityId: string;
+  entityId!: string;
 }

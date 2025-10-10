@@ -91,7 +91,7 @@ export class AnomalyDetectionService {
 
     for (const anomaly of revenueAnomalies) {
       anomalies.push({
-        id: `fin_rev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `fin_rev_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         type: 'financial',
         severity: this.calculateSeverity(anomaly.deviation),
         description: `Unusual revenue pattern detected: ${anomaly.value.toFixed(2)} vs expected ${anomaly.expectedValue.toFixed(2)}`,
@@ -114,7 +114,7 @@ export class AnomalyDetectionService {
 
     for (const anomaly of expenseAnomalies) {
       anomalies.push({
-        id: `fin_exp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `fin_exp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         type: 'financial',
         severity: this.calculateSeverity(anomaly.deviation),
         description: `Unusual expense pattern detected: ${anomaly.value.toFixed(2)} vs expected ${anomaly.expectedValue.toFixed(2)}`,
@@ -166,7 +166,7 @@ export class AnomalyDetectionService {
 
       for (const anomaly of productionAnomalies) {
         anomalies.push({
-          id: `op_prod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `op_prod_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
           type: 'operational',
           severity: this.calculateSeverity(anomaly.deviation),
           description: `Production anomaly detected: ${anomaly.value.toFixed(0)} units vs expected ${anomaly.expectedValue.toFixed(0)}`,
@@ -259,7 +259,7 @@ export class AnomalyDetectionService {
 
   private detectStatisticalAnomalies(
     data: number[],
-    metric: string,
+    _metric: string,
     config: AnomalyDetectionConfig
   ): Array<{
     value: number;
@@ -278,10 +278,12 @@ export class AnomalyDetectionService {
 
     for (let i = config.windowSize; i < data.length; i++) {
       const value = data[i];
+      if (value === undefined) continue;
+
       const windowMean =
         data
           .slice(i - config.windowSize, i)
-          .reduce((sum, val) => sum + val, 0) / config.windowSize;
+          .reduce((sum, val) => sum + (val || 0), 0) / config.windowSize;
       const deviation = Math.abs(value - windowMean);
 
       if (deviation > threshold * config.sensitivity) {
@@ -299,7 +301,7 @@ export class AnomalyDetectionService {
 
   private detectCashFlowAnomalies(
     cashFlow: number[],
-    config: AnomalyDetectionConfig
+    _config: AnomalyDetectionConfig
   ): Anomaly[] {
     const anomalies: Anomaly[] = [];
 
@@ -309,12 +311,14 @@ export class AnomalyDetectionService {
       const previous = cashFlow[i - 1];
 
       if (
+        current !== undefined &&
+        previous !== undefined &&
         current < 0 &&
         previous > 0 &&
         Math.abs(current - previous) > previous * 0.5
       ) {
         anomalies.push({
-          id: `cf_spike_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `cf_spike_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
           type: 'financial',
           severity: 'high',
           description: `Significant cash flow drop detected: ${current.toFixed(2)} from ${previous.toFixed(2)}`,
@@ -334,7 +338,7 @@ export class AnomalyDetectionService {
 
   private detectQualityAnomalies(
     quality: number[],
-    config: AnomalyDetectionConfig
+    _config: AnomalyDetectionConfig
   ): Anomaly[] {
     const anomalies: Anomaly[] = [];
 
@@ -342,16 +346,17 @@ export class AnomalyDetectionService {
     const mean = quality.reduce((sum, val) => sum + val, 0) / quality.length;
 
     for (let i = 0; i < quality.length; i++) {
-      if (quality[i] < mean * 0.8) {
+      const currentQuality = quality[i];
+      if (currentQuality !== undefined && currentQuality < mean * 0.8) {
         // Quality drop of more than 20%
         anomalies.push({
-          id: `qual_drop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `qual_drop_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
           type: 'operational',
-          severity: quality[i] < mean * 0.6 ? 'critical' : 'high',
-          description: `Quality drop detected: ${(quality[i] * 100).toFixed(1)}% vs expected ${(mean * 100).toFixed(1)}%`,
-          value: quality[i],
+          severity: currentQuality < mean * 0.6 ? 'critical' : 'high',
+          description: `Quality drop detected: ${(currentQuality * 100).toFixed(1)}% vs expected ${(mean * 100).toFixed(1)}%`,
+          value: currentQuality,
           expectedValue: mean,
-          deviation: (mean - quality[i]) / mean,
+          deviation: (mean - currentQuality) / mean,
           timestamp: new Date(),
           entityType: '',
           entityId: '',
@@ -365,7 +370,7 @@ export class AnomalyDetectionService {
 
   private detectEquipmentAnomalies(
     equipment: any[],
-    config: AnomalyDetectionConfig
+    _config: AnomalyDetectionConfig
   ): Anomaly[] {
     const anomalies: Anomaly[] = [];
 
@@ -373,7 +378,7 @@ export class AnomalyDetectionService {
     for (const eq of equipment) {
       if (eq.temperature > eq.maxTemperature * 0.9) {
         anomalies.push({
-          id: `eq_temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `eq_temp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
           type: 'operational',
           severity: eq.temperature > eq.maxTemperature ? 'critical' : 'high',
           description: `Equipment temperature anomaly: ${eq.temperature}°C (max: ${eq.maxTemperature}°C)`,
@@ -394,16 +399,16 @@ export class AnomalyDetectionService {
   }
 
   private detectActivityAnomalies(
-    activity: any[],
-    config: AnomalyDetectionConfig
+    _activity: any[],
+    _config: AnomalyDetectionConfig
   ): Anomaly[] {
     // Mock activity anomaly detection
     return [];
   }
 
   private detectTransactionAnomalies(
-    transactions: any[],
-    config: AnomalyDetectionConfig
+    _transactions: any[],
+    _config: AnomalyDetectionConfig
   ): Anomaly[] {
     // Mock transaction anomaly detection
     return [];
@@ -422,7 +427,7 @@ export class AnomalyDetectionService {
   }
 
   // Mock data getters
-  private async getFinancialData(entityType: string, entityId: string) {
+  private async getFinancialData(_entityType: string, _entityId: string) {
     return {
       revenue: Array.from({ length: 30 }, () => 10000 + Math.random() * 5000),
       expenses: Array.from({ length: 30 }, () => 7000 + Math.random() * 3000),
@@ -433,7 +438,7 @@ export class AnomalyDetectionService {
     };
   }
 
-  private async getOperationalData(entityType: string, entityId: string) {
+  private async getOperationalData(_entityType: string, _entityId: string) {
     return {
       production: Array.from({ length: 30 }, () => 100 + Math.random() * 50),
       quality: Array.from({ length: 30 }, () => 0.85 + Math.random() * 0.1),
@@ -444,7 +449,7 @@ export class AnomalyDetectionService {
     };
   }
 
-  private async getBehavioralData(entityType: string, entityId: string) {
+  private async getBehavioralData(_entityType: string, _entityId: string) {
     return {
       userActivity: [],
       transactions: [],

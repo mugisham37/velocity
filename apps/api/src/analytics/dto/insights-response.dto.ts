@@ -3,47 +3,47 @@ import { Field, ObjectType } from '@nestjs/graphql';
 @ObjectType()
 export class Prediction {
   @Field()
-  type: string;
+  type!: string;
 
   @Field()
-  value: number;
+  value!: number;
 
   @Field()
-  confidence: number;
+  confidence!: number;
 
   @Field()
-  description: string;
+  description!: string;
 }
 
 @ObjectType()
 export class AutomationSuggestion {
   @Field()
-  type: string;
+  type!: string;
 
   @Field()
-  description: string;
+  description!: string;
 
   @Field()
-  potentialSavings: number;
+  potentialSavings!: number;
 
   @Field()
-  implementationEffort: string;
+  implementationEffort!: string;
 }
 
 @ObjectType()
 export class InsightsResponse {
   @Field(() => [Prediction])
-  predictions: Prediction[];
+  predictions!: Prediction[];
 
   @Field(() => [AutomationSuggestion])
-  automationSuggestions: AutomationSuggestion[];
+  automationSuggestions!: AutomationSuggestion[];
 
   @Field()
-  entityType: string;
+  entityType!: string;
 
   @Field()
-  entityId: string;
+  entityId!: string;
 
   @Field()
-  generatedAt: string;
+  generatedAt!: string;
 }

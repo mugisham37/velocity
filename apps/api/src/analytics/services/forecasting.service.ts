@@ -120,7 +120,7 @@ export class ForecastingService {
     return {
       forecast,
       confidence,
-      totalDemand: forecast.reduce((sum, value) => sum + value, 0),
+      totalDemand: forecast.reduce((sum: number, value: number) => sum + value, 0),
     };
   }
 
@@ -176,7 +176,7 @@ export class ForecastingService {
     };
   }
 
-  private async getHistoricalSalesData(entityType: string, entityId: string) {
+  private async getHistoricalSalesData(_entityType: string, _entityId: string) {
     // Mock historical sales data
     const sales = Array.from(
       { length: 24 },
@@ -191,7 +191,7 @@ export class ForecastingService {
     };
   }
 
-  private async getInventoryData(entityType: string, entityId: string) {
+  private async getInventoryData(_entityType: string, _entityId: string) {
     // Mock inventory data
     return {
       currentLevel: Math.floor(Math.random() * 1000) + 100,
@@ -202,7 +202,7 @@ export class ForecastingService {
     };
   }
 
-  private async getProductDemandHistory(productId: string): Promise<number[]> {
+  private async getProductDemandHistory(_productId: string): Promise<number[]> {
     // Mock demand history
     return Array.from(
       { length: 24 },
@@ -210,7 +210,7 @@ export class ForecastingService {
     );
   }
 
-  private async getEquipmentData(equipmentId: string) {
+  private async getEquipmentData(_equipmentId: string) {
     // Mock equipment data
     return {
       daysSinceLastMaintenance: Math.floor(Math.random() * 90),
@@ -267,7 +267,7 @@ export class ForecastingService {
     }
 
     return {
-      pattern: bestPattern.name,
+      pattern: bestPattern?.name || 'weekly',
       strength: maxStrength,
     };
   }
@@ -282,7 +282,10 @@ export class ForecastingService {
     for (let i = period; i < data.length; i++) {
       const currentValue = data[i];
       const previousPeriodValue = data[i - period];
-      const overallMean = data.reduce((sum, val) => sum + val, 0) / data.length;
+      
+      if (currentValue === undefined || previousPeriodValue === undefined) continue;
+      
+      const overallMean = data.reduce((sum, val) => sum + (val || 0), 0) / data.length;
 
       totalVariation += Math.abs(currentValue - overallMean);
       seasonalVariation += Math.abs(currentValue - previousPeriodValue);

@@ -10,7 +10,7 @@ export interface CategoryPrediction {
 export interface ExpenseCategory {
   id: string;
   name: string;
-  keywords: str;
+  keywords: string[];
   rules: CategoryRule[];
   parentCategory?: string;
 }
@@ -88,7 +88,7 @@ export class SmartCategorizationService {
   async learnFromFeedback(
     originalData: any,
     correctCategory: string,
-    userFeedback: string
+    _userFeedback: string
   ): Promise<void> {
     this.logger.log(`Learning from feedback: ${correctCategory}`);
 
@@ -98,7 +98,7 @@ export class SmartCategorizationService {
     // 3. Update keyword associations
 
     // Mock learning process
-    await this.updateCategoryRules(originalData, correctCategory, userFeedback);
+    await this.updateCategoryRules(originalData, correctCategory, _userFeedback);
 
     this.logger.log('Category model updated with feedback');
   }
@@ -131,12 +131,18 @@ export class SmartCategorizationService {
 
       if (confidence > 0.1) {
         // Only include predictions with some confidence
-        predictions.push({
+        const subcategory = this.getSubcategory(features, category);
+        const prediction: CategoryPrediction = {
           category: category.name,
           confidence,
-          subcategory: this.getSubcategory(features, category),
           reasoning: this.generateReasoning(features, category, confidence),
-        });
+        };
+        
+        if (subcategory !== undefined) {
+          prediction.subcategory = subcategory;
+        }
+        
+        predictions.push(prediction);
       }
     }
 
@@ -305,7 +311,7 @@ export class SmartCategorizationService {
 
     // Keyword matching
     const keywordMatches = category.keywords.filter(
-      keyword =>
+      (keyword: string) =>
         features.description.includes(keyword.toLowerCase()) ||
         features.vendor.includes(keyword.toLowerCase())
     );
@@ -426,7 +432,7 @@ export class SmartCategorizationService {
     const reasoning: string[] = [];
 
     // Keyword matches
-    const keywordMatches = category.keywords.filter(keyword =>
+    const keywordMatches = category.keywords.filter((keyword: string) =>
       features.description.includes(keyword.toLowerCase())
     );
 
@@ -450,7 +456,7 @@ export class SmartCategorizationService {
     // Vendor reasoning
     if (
       features.vendor &&
-      category.keywords.some(k => features.vendor.includes(k))
+      category.keywords.some((k: string) => features.vendor.includes(k))
     ) {
       reasoning.push('Vendor name matches category');
     }
@@ -470,7 +476,7 @@ export class SmartCategorizationService {
   private async updateCategoryRules(
     originalData: any,
     correctCategory: string,
-    userFeedback: string
+    _userFeedback: string
   ): Promise<void> {
     // Mock rule update process
     const category = this.expenseCategories.find(

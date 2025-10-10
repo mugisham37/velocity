@@ -221,7 +221,7 @@ Pre-configured expense categories:
 
 ### AI/ML Dependencies
 
-- `tesseract.js`: OCR processing
+- `tesseract.js`: OCR processing (Tesseract OCR engine)
 - `sharp`: Image processing
 - `pdf-parse`: PDF document parsing
 - `natural`: Natural language processing
@@ -266,7 +266,7 @@ npm run test apps/api/src/analytics
 - **Encryption**: All ML training data encrypted at rest
 - **Access Control**: Role-based access to analytics features
 - **Audit Logging**: All ML operations logged for compliance
-- **Data Anonymization**: PII removed from ML training datasets
+- **Data Anonymization**: Personally Identifiable Information (PII) removed from ML training datasets
 
 ### Model Security
 
