@@ -21,7 +21,18 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, gte, isNull, lte, sql } from '@kiro/database';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  isNull,
+  lte,
+  sql,
+  count,
+  sum,
+} from '@kiro/database';
 import {
   BatchNumberFilterDto,
   BatchQualityStatus,
@@ -57,7 +68,7 @@ export class SerialBatchTrackingService {
   ): Promise<SerialNumber> {
     try {
       // Check if serial number already exists for this company
-      const existing = await this.db
+      const existing = await this.db.db
         .select()
         .from(serialNumbers)
         .where(
@@ -75,7 +86,7 @@ export class SerialBatchTrackingService {
       }
 
       // Verify item exists and has serial number tracking enabled
-      const item = await this.db
+      const item = await this.db.db
         .select()
         .from(items)
         .where(
@@ -93,13 +104,23 @@ export class SerialBatchTrackingService {
         );
       }
 
-      const [newSerialNumber] = await this.db
+      // Convert data types for database insertion
+      const insertData = {
+        ...createDto,
+        companyId,
+        purchaseDate: createDto.purchaseDate ? new Date(createDto.purchaseDate) : null,
+        purchaseRate: createDto.purchaseRate?.toString() || null,
+        warrantyExpiryDate: createDto.warrantyExpiryDate ? new Date(createDto.warrantyExpiryDate) : null,
+      };
+
+      const [newSerialNumber] = await this.db.db
         .insert(serialNumbers)
-        .values({
-          ...createDto,
-          companyId,
-        })
+        .values(insertData)
         .returning();
+
+      if (!newSerialNumber) {
+        throw new Error('Failed to create serial number');
+      }
 
       // Create history entry
       await this.createSerialNumberHistory({
@@ -117,7 +138,9 @@ export class SerialBatchTrackingService {
       this.logger.log(`Created serial number: ${createDto.serialNumber}`);
       return newSerialNumber;
     } catch (error) {
-      this.logger.error(`Failed to create serial number: ${error.message}`);
+      this.logger.error(
+        `Failed to create serial number: ${(error as Error).message}`
+      );
       throw error;
     }
   }
@@ -129,7 +152,7 @@ export class SerialBatchTrackingService {
     userId: string
   ): Promise<SerialNumber> {
     try {
-      const existing = await this.db
+      const existing = await this.db.db
         .select()
         .from(serialNumbers)
         .where(
@@ -141,14 +164,28 @@ export class SerialBatchTrackingService {
         throw new NotFoundException('Serial number not found');
       }
 
-      const [updated] = await this.db
+      if (!existing[0]) {
+        throw new NotFoundException('Serial number not found');
+      }
+
+      // Convert data types for database update
+      const updateData = {
+        ...updateDto,
+        deliveryDate: updateDto.deliveryDate ? new Date(updateDto.deliveryDate) : null,
+        maintenanceDueDate: updateDto.maintenanceDueDate ? new Date(updateDto.maintenanceDueDate) : null,
+        lastMaintenanceDate: updateDto.lastMaintenanceDate ? new Date(updateDto.lastMaintenanceDate) : null,
+        updatedAt: new Date(),
+      };
+
+      const [updated] = await this.db.db
         .update(serialNumbers)
-        .set({
-          ...updateDto,
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(serialNumbers.id, id))
         .returning();
+
+      if (!updated) {
+        throw new Error('Failed to update serial number');
+      }
 
       // Create history entry for significant changes
       if (
@@ -178,7 +215,9 @@ export class SerialBatchTrackingService {
       this.logger.log(`Updated serial number: ${id}`);
       return updated;
     } catch (error) {
-      this.logger.error(`Failed to update serial number: ${error.message}`);
+      this.logger.error(
+        `Failed to update serial number: ${(error as Error).message}`
+      );
       throw error;
     }
   }
@@ -224,7 +263,7 @@ export class SerialBatchTrackingService {
         );
       }
 
-      return await this.db
+      return await this.db.db
         .select()
         .from(serialNumbers)
         .where(and(...conditions))
@@ -232,7 +271,9 @@ export class SerialBatchTrackingService {
         .limit(limit)
         .offset(offset);
     } catch (error) {
-      this.logger.error(`Failed to get serial numbers: ${error.message}`);
+      this.logger.error(
+        `Failed to get serial numbers: ${(error as Error).message}`
+      );
       throw error;
     }
   }
@@ -245,7 +286,7 @@ export class SerialBatchTrackingService {
   ): Promise<BatchNumber> {
     try {
       // Check if batch number already exists for this item and company
-      const existing = await this.db
+      const existing = await this.db.db
         .select()
         .from(batchNumbers)
         .where(
@@ -264,7 +305,7 @@ export class SerialBatchTrackingService {
       }
 
       // Verify item exists and has batch tracking enabled
-      const item = await this.db
+      const item = await this.db.db
         .select()
         .from(items)
         .where(
@@ -282,23 +323,33 @@ export class SerialBatchTrackingService {
         );
       }
 
-      const [newBatch] = await this.db
+      // Convert data types for database insertion
+      const insertData = {
+        ...createDto,
+        manufacturingDate: createDto.manufacturingDate ? new Date(createDto.manufacturingDate) : null,
+        expiryDate: createDto.expiryDate ? new Date(createDto.expiryDate) : null,
+        totalQty: createDto.totalQty.toString(),
+        availableQty: createDto.totalQty.toString(),
+        companyId,
+      };
+
+      const [newBatch] = await this.db.db
         .insert(batchNumbers)
-        .values({
-          ...createDto,
-          availableQty: createDto.totalQty,
-          companyId,
-        })
+        .values(insertData)
         .returning();
+
+      if (!newBatch) {
+        throw new Error('Failed to create batch number');
+      }
 
       // Create history entry
       await this.createBatchHistory({
         batchId: newBatch.id,
         transactionType: 'Receipt',
         transactionDate: new Date(),
-        qtyChange: createDto.totalQty,
-        qtyBefore: 0,
-        qtyAfter: createDto.totalQty,
+        qtyChange: createDto.totalQty.toString(),
+        qtyBefore: '0',
+        qtyAfter: createDto.totalQty.toString(),
         reason: 'Batch created',
         notes: 'Initial batch receipt',
         createdBy: userId,
@@ -308,7 +359,9 @@ export class SerialBatchTrackingService {
       this.logger.log(`Created batch number: ${createDto.batchNumber}`);
       return newBatch;
     } catch (error) {
-      this.logger.error(`Failed to create batch number: ${error.message}`);
+      this.logger.error(
+        `Failed to create batch number: ${(error as Error).message}`
+      );
       throw error;
     }
   }
@@ -320,7 +373,7 @@ export class SerialBatchTrackingService {
     userId: string
   ): Promise<BatchNumber> {
     try {
-      const existing = await this.db
+      const existing = await this.db.db
         .select()
         .from(batchNumbers)
         .where(
@@ -332,26 +385,43 @@ export class SerialBatchTrackingService {
         throw new NotFoundException('Batch number not found');
       }
 
-      const [updated] = await this.db
+      if (!existing[0]) {
+        throw new NotFoundException('Batch number not found');
+      }
+
+      // Convert data types for database update
+      const updateData = {
+        ...updateDto,
+        availableQty: updateDto.availableQty?.toString() || null,
+        reservedQty: updateDto.reservedQty?.toString() || null,
+        consumedQty: updateDto.consumedQty?.toString() || null,
+        qualityInspectionDate: updateDto.qualityInspectionDate ? new Date(updateDto.qualityInspectionDate) : null,
+        updatedAt: new Date(),
+      };
+
+      const [updated] = await this.db.db
         .update(batchNumbers)
-        .set({
-          ...updateDto,
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(batchNumbers.id, id))
         .returning();
 
+      if (!updated) {
+        throw new Error('Failed to update batch number');
+      }
+
       // Create history entry for quantity changes
       if (updateDto.availableQty !== undefined) {
-        const qtyChange = updateDto.availableQty - existing[0].availableQty;
+        const qtyChange =
+          updateDto.availableQty -
+          parseFloat(existing[0].availableQty?.toString() || '0');
         if (qtyChange !== 0) {
           await this.createBatchHistory({
             batchId: id,
             transactionType: qtyChange > 0 ? 'Adjustment' : 'Issue',
             transactionDate: new Date(),
-            qtyChange,
-            qtyBefore: existing[0].availableQty,
-            qtyAfter: updateDto.availableQty,
+            qtyChange: qtyChange.toString(),
+            qtyBefore: existing[0].availableQty?.toString() || '0',
+            qtyAfter: updateDto.availableQty.toString(),
             reason: 'Batch quantity adjustment',
             notes: 'Batch updated',
             createdBy: userId,
@@ -363,7 +433,9 @@ export class SerialBatchTrackingService {
       this.logger.log(`Updated batch number: ${id}`);
       return updated;
     } catch (error) {
-      this.logger.error(`Failed to update batch number: ${error.message}`);
+      this.logger.error(
+        `Failed to update batch number: ${(error as Error).message}`
+      );
       throw error;
     }
   }
@@ -411,7 +483,7 @@ export class SerialBatchTrackingService {
         conditions.push(eq(batchNumbers.supplierId, filter.supplierId));
       }
 
-      return await this.db
+      return await this.db.db
         .select()
         .from(batchNumbers)
         .where(and(...conditions))
@@ -419,19 +491,20 @@ export class SerialBatchTrackingService {
         .limit(limit)
         .offset(offset);
     } catch (error) {
-      this.logger.error(`Failed to get batch numbers: ${error.message}`);
+      this.logger.error(
+        `Failed to get batch numbers: ${(error as Error).message}`
+      );
       throw error;
     }
   }
 
   // Batch Location Management
   async createBatchLocation(
-    createDto: CreateBatchLocationDto,
-    companyId: string
+    createDto: CreateBatchLocationDto
   ): Promise<BatchLocation> {
     try {
       // Check if batch location already exists
-      const existing = await this.db
+      const existing = await this.db.db
         .select()
         .from(batchLocations)
         .where(
@@ -445,34 +518,49 @@ export class SerialBatchTrackingService {
         )
         .limit(1);
 
-      if (existing.length > 0) {
+      if (existing.length > 0 && existing[0]) {
         // Update existing location
-        const [updated] = await this.db
+        const [updated] = await this.db.db
           .update(batchLocations)
           .set({
-            qty: sql`${batchLocations.qty} + ${createDto.qty}`,
-            reservedQty: createDto.reservedQty || existing[0].reservedQty,
+            qty: sql`${batchLocations.qty} + ${createDto.qty.toString()}`,
+            reservedQty: createDto.reservedQty?.toString() || existing[0].reservedQty,
             lastTransactionDate: new Date(),
             updatedAt: new Date(),
           })
           .where(eq(batchLocations.id, existing[0].id))
           .returning();
 
+        if (!updated) {
+          throw new Error('Failed to update batch location');
+        }
+
         return updated;
       }
 
-      const [newLocation] = await this.db
+      // Convert data types for database insertion
+      const insertData = {
+        ...createDto,
+        qty: createDto.qty.toString(),
+        reservedQty: createDto.reservedQty?.toString() || null,
+        lastTransactionDate: new Date(),
+      };
+
+      const [newLocation] = await this.db.db
         .insert(batchLocations)
-        .values({
-          ...createDto,
-          lastTransactionDate: new Date(),
-        })
+        .values(insertData)
         .returning();
+
+      if (!newLocation) {
+        throw new Error('Failed to create batch location');
+      }
 
       this.logger.log(`Created batch location for batch: ${createDto.batchId}`);
       return newLocation;
     } catch (error) {
-      this.logger.error(`Failed to create batch location: ${error.message}`);
+      this.logger.error(
+        `Failed to create batch location: ${(error as Error).message}`
+      );
       throw error;
     }
   }
@@ -485,7 +573,7 @@ export class SerialBatchTrackingService {
   ): Promise<ProductRecall> {
     try {
       // Check if recall number already exists
-      const existing = await this.db
+      const existing = await this.db.db
         .select()
         .from(productRecalls)
         .where(
@@ -502,14 +590,26 @@ export class SerialBatchTrackingService {
         );
       }
 
-      const [newRecall] = await this.db
+      // Convert data types for database insertion
+      const insertData = {
+        ...createDto,
+        recallDate: new Date(createDto.recallDate),
+        effectiveDate: new Date(createDto.effectiveDate),
+        expiryDate: createDto.expiryDate ? new Date(createDto.expiryDate) : null,
+        dateRangeFrom: createDto.dateRangeFrom ? new Date(createDto.dateRangeFrom) : null,
+        dateRangeTo: createDto.dateRangeTo ? new Date(createDto.dateRangeTo) : null,
+        createdBy: userId,
+        companyId,
+      };
+
+      const [newRecall] = await this.db.db
         .insert(productRecalls)
-        .values({
-          ...createDto,
-          createdBy: userId,
-          companyId,
-        })
+        .values(insertData)
         .returning();
+
+      if (!newRecall) {
+        throw new Error('Failed to create product recall');
+      }
 
       // Create recall items for affected items
       if (createDto.affectedItems.length > 0) {
@@ -525,7 +625,9 @@ export class SerialBatchTrackingService {
       this.logger.log(`Created product recall: ${createDto.recallNumber}`);
       return newRecall;
     } catch (error) {
-      this.logger.error(`Failed to create product recall: ${error.message}`);
+      this.logger.error(
+        `Failed to create product recall: ${(error as Error).message}`
+      );
       throw error;
     }
   }
@@ -537,7 +639,7 @@ export class SerialBatchTrackingService {
     userId: string
   ): Promise<ProductRecall> {
     try {
-      const existing = await this.db
+      const existing = await this.db.db
         .select()
         .from(productRecalls)
         .where(
@@ -552,20 +654,36 @@ export class SerialBatchTrackingService {
         throw new NotFoundException('Product recall not found');
       }
 
-      const [updated] = await this.db
+      if (!existing[0]) {
+        throw new NotFoundException('Product recall not found');
+      }
+
+      // Convert data types for database update
+      const updateData = {
+        ...updateDto,
+        recoveredQty: updateDto.recoveredQty?.toString() || null,
+        destroyedQty: updateDto.destroyedQty?.toString() || null,
+        returnedQty: updateDto.returnedQty?.toString() || null,
+        updatedBy: userId,
+        updatedAt: new Date(),
+      };
+
+      const [updated] = await this.db.db
         .update(productRecalls)
-        .set({
-          ...updateDto,
-          updatedBy: userId,
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(productRecalls.id, id))
         .returning();
+
+      if (!updated) {
+        throw new Error('Failed to update product recall');
+      }
 
       this.logger.log(`Updated product recall: ${id}`);
       return updated;
     } catch (error) {
-      this.logger.error(`Failed to update product recall: ${error.message}`);
+      this.logger.error(
+        `Failed to update product recall: ${(error as Error).message}`
+      );
       throw error;
     }
   }
@@ -599,7 +717,7 @@ export class SerialBatchTrackingService {
         );
       }
 
-      return await this.db
+      return await this.db.db
         .select()
         .from(productRecalls)
         .where(and(...conditions))
@@ -607,7 +725,9 @@ export class SerialBatchTrackingService {
         .limit(limit)
         .offset(offset);
     } catch (error) {
-      this.logger.error(`Failed to get product recalls: ${error.message}`);
+      this.logger.error(
+        `Failed to get product recalls: ${(error as Error).message}`
+      );
       throw error;
     }
   }
@@ -619,7 +739,7 @@ export class SerialBatchTrackingService {
   ): Promise<QualityInspection> {
     try {
       // Check if inspection number already exists
-      const existing = await this.db
+      const existing = await this.db.db
         .select()
         .from(qualityInspections)
         .where(
@@ -636,13 +756,23 @@ export class SerialBatchTrackingService {
         );
       }
 
-      const [newInspection] = await this.db
+      // Convert data types for database insertion
+      const insertData = {
+        ...createDto,
+        inspectionDate: new Date(createDto.inspectionDate),
+        sampleSize: createDto.sampleSize?.toString() || null,
+        totalQtyInspected: createDto.totalQtyInspected?.toString() || null,
+        companyId,
+      };
+
+      const [newInspection] = await this.db.db
         .insert(qualityInspections)
-        .values({
-          ...createDto,
-          companyId,
-        })
+        .values(insertData)
         .returning();
+
+      if (!newInspection) {
+        throw new Error('Failed to create quality inspection');
+      }
 
       this.logger.log(
         `Created quality inspection: ${createDto.inspectionNumber}`
@@ -650,7 +780,7 @@ export class SerialBatchTrackingService {
       return newInspection;
     } catch (error) {
       this.logger.error(
-        `Failed to create quality inspection: ${error.message}`
+        `Failed to create quality inspection: ${(error as Error).message}`
       );
       throw error;
     }
@@ -662,7 +792,7 @@ export class SerialBatchTrackingService {
     companyId: string
   ): Promise<QualityInspection> {
     try {
-      const existing = await this.db
+      const existing = await this.db.db
         .select()
         .from(qualityInspections)
         .where(
@@ -677,14 +807,28 @@ export class SerialBatchTrackingService {
         throw new NotFoundException('Quality inspection not found');
       }
 
-      const [updated] = await this.db
+      if (!existing[0]) {
+        throw new NotFoundException('Quality inspection not found');
+      }
+
+      // Convert data types for database update
+      const updateData = {
+        ...updateDto,
+        passedQty: updateDto.passedQty?.toString() || null,
+        failedQty: updateDto.failedQty?.toString() || null,
+        approvedAt: updateDto.approvedAt ? new Date(updateDto.approvedAt) : null,
+        updatedAt: new Date(),
+      };
+
+      const [updated] = await this.db.db
         .update(qualityInspections)
-        .set({
-          ...updateDto,
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(qualityInspections.id, id))
         .returning();
+
+      if (!updated) {
+        throw new Error('Failed to update quality inspection');
+      }
 
       // Update batch quality status if inspection is for a batch
       if (existing[0].batchId && updateDto.overallStatus) {
@@ -699,7 +843,7 @@ export class SerialBatchTrackingService {
       return updated;
     } catch (error) {
       this.logger.error(
-        `Failed to update quality inspection: ${error.message}`
+        `Failed to update quality inspection: ${(error as Error).message}`
       );
       throw error;
     }
@@ -713,8 +857,8 @@ export class SerialBatchTrackingService {
     try {
       const report: TraceabilityReportDto = {
         itemId: query.itemId,
-        serialNumber: query.serialNumber,
-        batchNumber: query.batchNumber,
+        serialNumber: query.serialNumber || '',
+        batchNumber: query.batchNumber || '',
         forwardTrace: [],
         backwardTrace: [],
         affectedCustomers: [],
@@ -766,7 +910,9 @@ export class SerialBatchTrackingService {
 
       return report;
     } catch (error) {
-      this.logger.error(`Failed to get traceability report: ${error.message}`);
+      this.logger.error(
+        `Failed to get traceability report: ${(error as Error).message}`
+      );
       throw error;
     }
   }
@@ -774,13 +920,13 @@ export class SerialBatchTrackingService {
   // Analytics and Reporting
   async getRecallAnalytics(companyId: string): Promise<RecallAnalyticsDto> {
     try {
-      const totalRecalls = await this.db
-        .select({ count: sql<number>`count(*)` })
+      const totalRecalls = await this.db.db
+        .select({ count: count() })
         .from(productRecalls)
         .where(eq(productRecalls.companyId, companyId));
 
-      const activeRecalls = await this.db
-        .select({ count: sql<number>`count(*)` })
+      const activeRecalls = await this.db.db
+        .select({ count: count() })
         .from(productRecalls)
         .where(
           and(
@@ -789,8 +935,8 @@ export class SerialBatchTrackingService {
           )
         );
 
-      const completedRecalls = await this.db
-        .select({ count: sql<number>`count(*)` })
+      const completedRecalls = await this.db.db
+        .select({ count: count() })
         .from(productRecalls)
         .where(
           and(
@@ -799,38 +945,39 @@ export class SerialBatchTrackingService {
           )
         );
 
-      const totalAffectedItems = await this.db
-        .select({ count: sql<number>`count(*)` })
+      const totalAffectedItems = await this.db.db
+        .select({ count: count() })
         .from(recallItems)
         .innerJoin(productRecalls, eq(recallItems.recallId, productRecalls.id))
         .where(eq(productRecalls.companyId, companyId));
 
-      const recoveryStats = await this.db
+      const recoveryStats = await this.db.db
         .select({
-          totalRecovered: sql<number>`sum(${productRecalls.recoveredQty})`,
-          totalAffected: sql<number>`sum(${productRecalls.totalAffectedQty})`,
+          totalRecovered: sum(productRecalls.recoveredQty),
+          totalAffected: sum(productRecalls.totalAffectedQty),
         })
         .from(productRecalls)
         .where(eq(productRecalls.companyId, companyId));
 
+      const totalRecoveredNum = Number(recoveryStats[0]?.totalRecovered) || 0;
+      const totalAffectedNum = Number(recoveryStats[0]?.totalAffected) || 0;
       const recoveryRate =
-        recoveryStats[0].totalAffected > 0
-          ? (recoveryStats[0].totalRecovered / recoveryStats[0].totalAffected) *
-            100
-          : 0;
+        totalAffectedNum > 0 ? (totalRecoveredNum / totalAffectedNum) * 100 : 0;
 
       return {
-        totalRecalls: totalRecalls[0].count,
-        activeRecalls: activeRecalls[0].count,
-        completedRecalls: completedRecalls[0].count,
-        totalAffectedItems: totalAffectedItems[0].count,
-        totalRecoveredQty: recoveryStats[0].totalRecovered || 0,
+        totalRecalls: Number(totalRecalls[0]?.count) || 0,
+        activeRecalls: Number(activeRecalls[0]?.count) || 0,
+        completedRecalls: Number(completedRecalls[0]?.count) || 0,
+        totalAffectedItems: Number(totalAffectedItems[0]?.count) || 0,
+        totalRecoveredQty: totalRecoveredNum,
         recoveryRate,
         recallsBySeverity: [],
         recallsByType: [],
       };
     } catch (error) {
-      this.logger.error(`Failed to get recall analytics: ${error.message}`);
+      this.logger.error(
+        `Failed to get recall analytics: ${(error as Error).message}`
+      );
       throw error;
     }
   }
@@ -843,7 +990,7 @@ export class SerialBatchTrackingService {
       const expiryDate = new Date();
       expiryDate.setDate(expiryDate.getDate() + daysAhead);
 
-      const expiringBatches = await this.db
+      const expiringBatches = await this.db.db
         .select({
           batchId: batchNumbers.id,
           batchNumber: batchNumbers.batchNumber,
@@ -859,12 +1006,12 @@ export class SerialBatchTrackingService {
             eq(batchNumbers.companyId, companyId),
             eq(batchNumbers.isActive, true),
             lte(batchNumbers.expiryDate, expiryDate),
-            gte(batchNumbers.availableQty, 0)
+            gte(batchNumbers.availableQty, '0')
           )
         )
         .orderBy(asc(batchNumbers.expiryDate));
 
-      return expiringBatches.map(batch => ({
+      return expiringBatches.map((batch: any) => ({
         batchId: batch.batchId,
         batchNumber: batch.batchNumber,
         itemId: batch.itemId,
@@ -874,34 +1021,44 @@ export class SerialBatchTrackingService {
           (new Date(batch.expiryDate || '').getTime() - new Date().getTime()) /
             (1000 * 60 * 60 * 24)
         ),
-        availableQty: parseFloat(batch.availableQty.toString()),
+        availableQty: parseFloat(batch.availableQty?.toString() || '0'),
         warehouseLocations: [], // TODO: Get warehouse locations
       }));
     } catch (error) {
-      this.logger.error(`Failed to get expiry alerts: ${error.message}`);
+      this.logger.error(
+        `Failed to get expiry alerts: ${(error as Error).message}`
+      );
       throw error;
     }
   }
 
   // Private helper methods
   private async createSerialNumberHistory(data: any): Promise<void> {
-    await this.db.insert(serialNumberHistory).values(data);
+    await this.db.db.insert(serialNumberHistory).values(data);
   }
 
   private async createBatchHistory(data: any): Promise<void> {
-    await this.db.insert(batchHistory).values(data);
+    await this.db.db.insert(batchHistory).values(data);
   }
 
   private async createRecallItemsForAffectedItems(
     recallId: string,
     affectedItems: string[],
-    affectedBatches?: string[],
-    affectedSerials?: string[],
+    affectedBatches: string[] | undefined,
+    affectedSerials: string[] | undefined,
     companyId: string
   ): Promise<void> {
     // Implementation for creating recall items
     // This would involve querying serial numbers and batches for affected items
     // and creating recall item records
+    // For now, this is a placeholder
+    console.log('Creating recall items for:', {
+      recallId,
+      affectedItems,
+      affectedBatches,
+      affectedSerials,
+      companyId,
+    });
   }
 
   private async updateBatchQualityStatus(
@@ -925,7 +1082,7 @@ export class SerialBatchTrackingService {
         qualityStatus = BatchQualityStatus.PENDING;
     }
 
-    await this.db
+    await this.db.db
       .update(batchNumbers)
       .set({
         qualityStatus,
@@ -943,6 +1100,13 @@ export class SerialBatchTrackingService {
     toDate?: string
   ): Promise<any[]> {
     // Implementation for serial number forward traceability
+    // For now, return empty array as placeholder
+    console.log('Getting forward trace for serial:', {
+      serialNumber,
+      companyId,
+      fromDate,
+      toDate,
+    });
     return [];
   }
 
@@ -954,6 +1118,14 @@ export class SerialBatchTrackingService {
     toDate?: string
   ): Promise<any[]> {
     // Implementation for batch number forward traceability
+    // For now, return empty array as placeholder
+    console.log('Getting forward trace for batch:', {
+      batchNumber,
+      itemId,
+      companyId,
+      fromDate,
+      toDate,
+    });
     return [];
   }
 
@@ -964,6 +1136,13 @@ export class SerialBatchTrackingService {
     toDate?: string
   ): Promise<any[]> {
     // Implementation for serial number backward traceability
+    // For now, return empty array as placeholder
+    console.log('Getting backward trace for serial:', {
+      serialNumber,
+      companyId,
+      fromDate,
+      toDate,
+    });
     return [];
   }
 
@@ -975,6 +1154,14 @@ export class SerialBatchTrackingService {
     toDate?: string
   ): Promise<any[]> {
     // Implementation for batch number backward traceability
+    // For now, return empty array as placeholder
+    console.log('Getting backward trace for batch:', {
+      batchNumber,
+      itemId,
+      companyId,
+      fromDate,
+      toDate,
+    });
     return [];
   }
 }

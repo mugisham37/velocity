@@ -7,9 +7,9 @@ import {
   Resolver,
   Subscription,
 } from '@nestjs/graphql';
-import { PubSub } from 'graphql-subscriptions';
+import { PubSub } from '../../collaboration/utils/pubsub';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
-import { User } from '../../auth/entities/user.entity';
+import type { User } from '../../auth/entities/user.entity';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
   CreateStockEntryDto,

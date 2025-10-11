@@ -7,7 +7,7 @@ import {
   Resolver,
   Subscription,
 } from '@nestjs/graphql';
-import { PubSub } from 'graphql-subscriptions';
+import { PubSub } from '../../collaboration/utils/pubsub';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { AuditInterceptor } from '../../common/interceptors/audit.interceptor';
 import {

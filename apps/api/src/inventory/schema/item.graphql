@@ -228,7 +228,7 @@ type ItemPricingTier {
   rate: Float!
   discountPercent: Float!
   validFrom: DateTime!
-  validUpto: DateTime
+  validUpTo: DateTime
   isActive: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -421,7 +421,7 @@ input CreateItemPricingTierInput {
   rate: Float!
   discountPercent: Float = 0
   validFrom: DateTime!
-  validUpto: DateTime
+  validUpTo: DateTime
   isActive: Boolean = true
 }
 
