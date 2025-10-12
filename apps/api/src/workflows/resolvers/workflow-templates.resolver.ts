@@ -7,7 +7,7 @@ import {
   Workflow,
   WorkflowTemplate,
 } from '../dto/workflow.dto';
-import { WorkflowTemplateService } from '../services/workate.service';
+import { WorkflowTemplateService } from '../services/workflow-template.service';
 
 @Resolver(() => WorkflowTemplate)
 @UseGuards(JwtAuthGuard)
@@ -33,13 +33,13 @@ export class WorkflowTemplatesResolver {
     @Args('offset', { nullable: true }) offset?: number
   ): Promise<WorkflowTemplate[]> {
     return this.templateService.findAll({
-      category,
-      industry,
-      isPublic,
-      search,
-      tags,
-      limit,
-      offset,
+      ...(category && { category }),
+      ...(industry && { industry }),
+      ...(isPublic !== undefined && { isPublic }),
+      ...(search && { search }),
+      ...(tags && { tags }),
+      ...(limit && { limit }),
+      ...(offset && { offset }),
     });
   }
 
@@ -74,17 +74,17 @@ export class WorkflowTemplatesResolver {
   @Mutation(() => Workflow)
   async useWorkflowTemplate(
     @Args('templateId', { type: () => ID }) templateId: string,
+    @CurrentUser() user: any,
     @Args('name', { nullable: true }) name?: string,
-    @Args('description', { nullable: true }) description?: string,
-    @CurrentUser() user: any
+    @Args('description', { nullable: true }) description?: string
   ): Promise<Workflow> {
     return this.templateService.useTemplate(
       templateId,
       user.companyId,
       user.id,
       {
-        name,
-        description,
+        ...(name && { name }),
+        ...(description && { description }),
       }
     );
   }
@@ -117,11 +117,11 @@ export class WorkflowTemplatesResolver {
     @Args('workflowId', { type: () => ID }) workflowId: string,
     @Args('name') name: string,
     @Args('category') category: string,
+    @CurrentUser() user: any,
     @Args('description', { nullable: true }) description?: string,
     @Args('industry', { nullable: true }) industry?: string,
     @Args('tags', { type: () => [String], nullable: true }) tags?: string[],
-    @Args('isPublic', { nullable: true }) isPublic?: boolean,
-    @CurrentUser() user: any
+    @Args('isPublic', { nullable: true }) isPublic?: boolean
   ): Promise<WorkflowTemplate> {
     return this.templateService.createFromWorkflow(
       workflowId,
@@ -129,11 +129,11 @@ export class WorkflowTemplatesResolver {
       user.id,
       {
         name,
-        description,
+        ...(description && { description }),
         category,
-        industry,
-        tags,
-        isPublic,
+        ...(industry && { industry }),
+        ...(tags && { tags }),
+        ...(isPublic !== undefined && { isPublic }),
       }
     );
   }
@@ -152,9 +152,9 @@ export class WorkflowTemplatesResolver {
     @Args('tags', { type: () => [String], nullable: true }) tags?: string[]
   ): Promise<WorkflowTemplate[]> {
     return this.templateService.searchTemplates(query, {
-      category,
-      industry,
-      tags,
+      ...(category && { category }),
+      ...(industry && { industry }),
+      ...(tags && { tags }),
     });
   }
 }

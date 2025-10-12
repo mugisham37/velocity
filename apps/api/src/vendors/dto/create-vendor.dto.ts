@@ -16,11 +16,11 @@ import {
 export class VendorContactInput {
   @Field()
   @IsString()
-  firstName: string;
+  firstName!: string;
 
   @Field()
   @IsString()
-  lastName: string;
+  lastName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -52,7 +52,7 @@ export class VendorContactInput {
 export class CreateVendorInput {
   @Field()
   @IsString()
-  vendorName: string;
+  vendorName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -127,7 +127,7 @@ export class CreateVendorInput {
 }
 
 @InputType()
-export class UpdateVendorInput {
+export class UpdateVendorInput implements Record<string, unknown> {
   @Field({ nullable: true })
   @IsOptional()
   @IsString()
@@ -195,21 +195,23 @@ export class UpdateVendorInput {
   @IsOptional()
   @IsBoolean()
   isBlocked?: boolean;
+
+  [key: string]: unknown;
 }
 
 @InputType()
 export class CreateVendorContactInput {
   @Field(() => ID)
   @IsString()
-  vendorId: string;
+  vendorId!: string;
 
   @Field()
   @IsString()
-  firstName: string;
+  firstName!: string;
 
   @Field()
   @IsString()
-  lastName: string;
+  lastName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -241,7 +243,7 @@ export class CreateVendorContactInput {
 export class CreateVendorCategoryInput {
   @Field()
   @IsString()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -258,15 +260,15 @@ export class CreateVendorCategoryInput {
 export class CreateVendorEvaluationInput {
   @Field(() => ID)
   @IsString()
-  vendorId: string;
+  vendorId!: string;
 
   @Field()
   @IsDateString()
-  evaluationDate: string;
+  evaluationDate!: string;
 
   @Field()
   @IsNumber()
-  overallScore: number;
+  overallScore!: number;
 
   @Field({ nullable: true })
   @IsOptional()

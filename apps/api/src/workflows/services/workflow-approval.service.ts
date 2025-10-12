@@ -8,12 +8,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq } from '@kiro/database';
+import { and, eq, sql } from '@kiro/database';
 import { NotificationService } from '../../common/services/notification.service';
 import {
   ApprovalStatus,
   WorkflowApproval,
   WorkflowApprovalInput,
+  WorkflowStepStatus,
 } from '../dto/workflow.dto';
 
 @Injectable()
@@ -60,8 +61,8 @@ export class WorkflowApprovalService {
           .set({
             status: ApprovalStatus.DELEGATED,
             delegatedTo: input.delegatedTo,
-            delegationReason: input.delegationReason,
-            comments: input.comments,
+            delegationReason: input.delegationReason || null,
+            comments: input.comments || null,
             respondedAt: new Date(),
             updatedAt: new Date(),
           })
@@ -80,8 +81,8 @@ export class WorkflowApprovalService {
 
         // Notify delegated user
         await this.notificationService.sendNotification({
-          userId: input.delegatedTo,
-          type: 'workflow_approval_delegated',
+          recipientId: input.delegatedTo,
+          type: 'INFO',
           title: 'Approval Delegated to You',
           message: `An approval has been delegated to you: ${approval.stepId}`,
           data: { stepId: approval.stepId, instanceId: approval.instanceId },
@@ -100,8 +101,8 @@ export class WorkflowApprovalService {
           .set({
             status: newStatus,
             decision: input.decision,
-            comments: input.comments,
-            reason: input.reason,
+            comments: input.comments || null,
+            reason: input.reason || null,
             respondedAt: new Date(),
             updatedAt: new Date(),
           })
@@ -115,7 +116,7 @@ export class WorkflowApprovalService {
       return this.mapToDto(updatedApproval);
     } catch (error) {
       throw new BadRequestException(
-        `Failed to process approval: ${error.message}`
+        `Failed to process approval: ${(error as Error).message}`
       );
     }
   }
@@ -124,20 +125,12 @@ export class WorkflowApprovalService {
     userId: string,
     companyId?: string
   ): Promise<WorkflowApproval[]> {
-    let query = this.db.db
-      .select()
-      .from(workflowApprovals)
-      .where(
-        and(
-          eq(workflowApprovals.approverId, userId),
-          eq(workflowApprovals.status, ApprovalStatus.PENDING)
-        )
-      );
-
     // If company filter is provided, join with workflow instances
     if (companyId) {
       const { workflowInstances } = await import('@kiro/database');
-      query = query
+      const approvals = await this.db.db
+        .select()
+        .from(workflowApprovals)
         .innerJoin(
           workflowInstances,
           eq(workflowInstances.id, workflowApprovals.instanceId)
@@ -148,10 +141,23 @@ export class WorkflowApprovalService {
             eq(workflowApprovals.status, ApprovalStatus.PENDING),
             eq(workflowInstances.companyId, companyId)
           )
-        );
+        )
+        .orderBy(workflowApprovals.requestedAt);
+      
+      return approvals.map(approval => this.mapToDto(approval.workflow_approvals));
     }
 
-    const approvals = await query.orderBy(workflowApprovals.requestedAt);
+    const approvals = await this.db.db
+      .select()
+      .from(workflowApprovals)
+      .where(
+        and(
+          eq(workflowApprovals.approverId, userId),
+          eq(workflowApprovals.status, ApprovalStatus.PENDING)
+        )
+      )
+      .orderBy(workflowApprovals.requestedAt);
+
     return approvals.map(this.mapToDto);
   }
 
@@ -203,7 +209,7 @@ export class WorkflowApprovalService {
       approverId: escalatedTo,
       status: ApprovalStatus.PENDING,
       requestedAt: new Date(),
-      dueDate: approval.dueDate,
+      dueDate: approval.dueDate || null,
     });
 
     // Mark original as escalated (using delegated status for now)
@@ -220,8 +226,8 @@ export class WorkflowApprovalService {
 
     // Notify escalated user
     await this.notificationService.sendNotification({
-      userId: escalatedTo,
-      type: 'workflow_approval_escalated',
+      recipientId: escalatedTo,
+      type: 'INFO',
       title: 'Approval Escalated to You',
       message: `An approval has been escalated to you: ${approval.stepId}`,
       data: { stepId: approval.stepId, instanceId: approval.instanceId },
@@ -241,14 +247,14 @@ export class WorkflowApprovalService {
           {
             approvalId,
             decision: 'approve',
-            comments,
+            comments: comments || '',
           },
           userId
         );
         results.push(result);
       } catch (error) {
         // Log error but continue with other approvals
-        console.error(`Failed to approve ${approvalId}:`, error.message);
+        console.error(`Failed to approve ${approvalId}:`, (error as Error).message);
       }
     }
 
@@ -257,7 +263,7 @@ export class WorkflowApprovalService {
 
   async getApprovalMetrics(
     userId: string,
-    companyId?: string
+    _companyId?: string
   ): Promise<{
     pending: number;
     approved: number;
@@ -266,11 +272,6 @@ export class WorkflowApprovalService {
     overdue: number;
   }> {
     const conditions = [eq(workflowApprovals.approverId, userId)];
-
-    if (companyId) {
-      const { workflowInstances } = await import('@kiro/database');
-      // This would need a proper join - simplified for now
-    }
 
     const [metrics] = await this.db.db
       .select({
@@ -284,11 +285,11 @@ export class WorkflowApprovalService {
       .where(and(...conditions));
 
     return {
-      pending: Number(metrics.pending) || 0,
-      approved: Number(metrics.approved) || 0,
-      rejected: Number(metrics.rejected) || 0,
-      delegated: Number(metrics.delegated) || 0,
-      overdue: Number(metrics.overdue) || 0,
+      pending: Number(metrics?.pending) || 0,
+      approved: Number(metrics?.approved) || 0,
+      rejected: Number(metrics?.rejected) || 0,
+      delegated: Number(metrics?.delegated) || 0,
+      overdue: Number(metrics?.overdue) || 0,
     };
   }
 
@@ -351,5 +352,4 @@ export class WorkflowApprovalService {
   }
 }
 
-// Import sql function
-import { sql } from '@kiro/database';
+

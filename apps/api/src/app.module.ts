@@ -1,8 +1,6 @@
 import { rateLimitConfig } from '@kiro/config';
-import {
-  ApolloFederationDriver,
-  ApolloFederationDriverConfig,
-} from '@nestjs/apollo';
+import { ApolloFederationDriver } from '@nestjs/apollo';
+import type { ApolloFederationDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
@@ -13,6 +11,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { AssetsModule } from './assets/assets.module';
 import { AuthModule } from './auth/auth.module';
 import { CollaborationModule } from './collaboration/collaboration.module';
+import { CommonModule } from './common/common.module';
 import { createWinstonLogger } from './common/logger/winston.config';
 import { CustomersModule } from './customers/customers.module';
 import { HealthModule } from './health/health.module';
@@ -21,7 +20,9 @@ import { InventoryModule } from './inventory/inventory.module';
 import { IoTModule } from './iot/iot.module';
 import { ManufacturingModule } from './manufacturing/manufacturing.module';
 import { PerformanceModule } from './performance/performance.module';
+import { ReportsModule } from './reports/reports.module';
 import { SalesCRMModule } from './sales-crm/sales-crm.module';
+import { SecurityModule } from './security/security.module';
 import { VendorsModule } from './vendors/vendors.module';
 import { WorkflowsModule } from './workflows/workflows.module';
 
@@ -52,24 +53,27 @@ import { WorkflowsModule } from './workflows/workflows.module';
       autoSchemaFile: {
         federation: 2,
       },
-      playground: process.env.NODE_ENV === 'development',
-      introspection: process.env.NODE_ENV === 'development',
-      context: ({ request, reply }) => ({ request, reply }),
-      formatError: error => {
+      playground: process.env['NODE_ENV'] === 'development',
+      introspection: process.env['NODE_ENV'] === 'development',
+      context: ({ request, reply }: { request: any; reply: any }) => ({
+        request,
+        reply,
+      }),
+      formatError: (formattedError, error) => {
         // Log GraphQL errors
         console.error('GraphQL Error:', error);
         return {
-          message: error.message,
-          code: error.extensions?.code,
+          message: formattedError.message,
+          code: formattedError.extensions?.['code'],
           timestamp: new Date().toISOString(),
-          path: error.path,
+          path: formattedError.path || [],
         };
       },
       plugins: [],
     }),
 
     // Performance and Infrastructure
-    CommonPerformanceModule,
+    CommonModule,
     PerformanceModule,
 
     // Feature Modules

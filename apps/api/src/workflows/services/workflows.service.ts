@@ -27,10 +27,10 @@ export class WorkflowsService {
         .values({
           companyId,
           name: input.name,
-          description: input.description,
+          description: input.description || null,
           category: input.category,
           definition: input.definition as any,
-          tags: input.tags,
+          tags: input.tags || null,
           permissions: input.permissions,
           isTemplate: input.isTemplate || false,
           createdBy: userId,
@@ -107,7 +107,8 @@ export class WorkflowsService {
     companyId: string,
     userId: string
   ): Promise<Workflow> {
-    const existing = await this.findById(id, companyId);
+    // Verify workflow exists before updating
+    await this.findById(id, companyId);
 
     try {
       const [updated] = await this.db.db
@@ -124,7 +125,7 @@ export class WorkflowsService {
       return this.mapToDto(updated);
     } catch (error) {
       throw new BadRequestException(
-        `Failed to update workflow: ${error.message}`
+        `Failed to update workflow: ${(error as Error).message}`
       );
     }
   }
@@ -152,7 +153,7 @@ export class WorkflowsService {
       .delete(workflows)
       .where(and(eq(workflows.id, id), eq(workflows.companyId, companyId)));
 
-    return result.rowCount > 0;
+    return result.length > 0;
   }
 
   async duplicate(
@@ -165,10 +166,10 @@ export class WorkflowsService {
 
     const duplicateData = {
       name: newName || `${original.name} (Copy)`,
-      description: original.description,
+      description: original.description || '',
       category: original.category,
       definition: original.definition,
-      tags: original.tags,
+      tags: original.tags || [],
       permissions: original.permissions,
       isTemplate: original.isTemplate,
     };
@@ -191,11 +192,11 @@ export class WorkflowsService {
       .values({
         companyId,
         name: original.name,
-        description: original.description,
+        description: original.description || null,
         category: original.category,
         version: newVersion,
         definition: original.definition as any,
-        tags: original.tags,
+        tags: original.tags || null,
         permissions: original.permissions,
         isTemplate: original.isTemplate,
         createdBy: userId,

@@ -1,6 +1,6 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { JwtAuthGuard } from '../../aards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import {
   CreateWorkflowInstanceInput,
@@ -50,9 +50,9 @@ export class WorkflowInstancesResolver {
       workflowId,
       user.companyId,
       {
-        status,
-        limit,
-        offset,
+        ...(status && { status }),
+        ...(limit && { limit }),
+        ...(offset && { offset }),
       }
     );
   }
@@ -60,8 +60,8 @@ export class WorkflowInstancesResolver {
   @Mutation(() => WorkflowStep)
   async executeWorkflowStep(
     @Args('stepId', { type: () => ID }) stepId: string,
-    @Args('data', { nullable: true }) data?: any,
-    @CurrentUser() user: any
+    @CurrentUser() user: any,
+    @Args('data', { nullable: true }) data?: any
   ): Promise<WorkflowStep> {
     return this.executionService.executeStep(stepId, user.id, data);
   }
@@ -69,8 +69,8 @@ export class WorkflowInstancesResolver {
   @Mutation(() => Boolean)
   async completeWorkflowStep(
     @Args('stepId', { type: () => ID }) stepId: string,
-    @Args('data', { nullable: true }) data?: any,
-    @CurrentUser() user: any
+    @CurrentUser() user: any,
+    @Args('data', { nullable: true }) data?: any
   ): Promise<boolean> {
     await this.executionService.completeStep(stepId, user.id, data);
     return true;
@@ -111,8 +111,8 @@ export class WorkflowInstancesResolver {
   @Mutation(() => [WorkflowApproval])
   async bulkApprove(
     @Args('approvalIds', { type: () => [ID] }) approvalIds: string[],
-    @Args('comments', { nullable: true }) comments?: string,
-    @CurrentUser() user: any
+    @CurrentUser() user: any,
+    @Args('comments', { nullable: true }) comments?: string
   ): Promise<WorkflowApproval[]> {
     return this.approvalService.bulkApprove(approvalIds, user.id, comments);
   }

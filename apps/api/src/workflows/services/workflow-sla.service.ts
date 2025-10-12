@@ -1,11 +1,19 @@
-import { DatabaseService, workflowApprovals, workflowInstances, workflowSteps } from '@kiro/database';
+import {
+  DatabaseService,
+  workflowApprovals,
+  workflowInstances,
+  workflowSteps,
+} from '@kiro/database';
 import { Injectable } from '@nestjs/common';
 import { and, eq, lt, sql } from '@kiro/database';
 import { NotificationService } from '../../common/services/notification.service';
-import { ApprovalStatus, WorkflowStatus, WorkflowStepStatus } from '../dto/workflow.dto';
-import { WorkflowApprovalService } from './workflow-approval.service';
+import {
+  ApprovalStatus,
+  WorkflowStatus,
+  WorkflowStepStatus,
+} from '../dto/workflow.dto';
 
-export interfaconfiguration {
+export interface SlaConfiguration {
   instanceDueDays?: number;
   stepDueDays?: number;
   approvalDueDays?: number;
@@ -29,8 +37,7 @@ export interface NotificationRule {
 export class WorkflowSlaService {
   constructor(
     private readonly db: DatabaseService,
-    private readonly notificationService: NotificationService,
-    private readonly approvalService: WorkflowApprovalService,
+    private readonly notificationService: NotificationService
   ) {}
 
   async checkSlaBreaches(): Promise<void> {
@@ -92,7 +99,7 @@ export class WorkflowSlaService {
 
   async setSlaForInstance(
     instanceId: string,
-    slaConfig: SlaConfiguration,
+    slaConfig: SlaConfiguration
   ): Promise<void> {
     if (slaConfig.instanceDueDays) {
       const dueDate = new Date();
@@ -129,7 +136,9 @@ export class WorkflowSlaService {
     // Set SLA for approvals
     if (slaConfig.approvalDueDays) {
       const approvalDueDate = new Date();
-      approvalDueDate.setDate(approvalDueDate.getDate() + slaConfig.approvalDueDays);
+      approvalDueDate.setDate(
+        approvalDueDate.getDate() + slaConfig.approvalDueDays
+      );
 
       await this.db.db
         .update(workflowApprovals)
@@ -146,7 +155,10 @@ export class WorkflowSlaService {
     }
   }
 
-  async getSlaMetrics(companyId: string, period: 'day' | 'week' | 'month' = 'day'): Promise<{
+  async getSlaMetrics(
+    companyId: string,
+    period: 'day' | 'week' | 'month' = 'day'
+  ): Promise<{
     totalInstances: number;
     onTimeCompletions: number;
     slaBreaches: number;
@@ -170,14 +182,13 @@ export class WorkflowSlaService {
         )
       );
 
-    const totalInstances = Number(metrics.totalInstances) || 0;
-    const onTimeCompletions = Number(metrics.onTimeCompletions) || 0;
-    const slaBreaches = Number(metrics.slaBreaches) || 0;
-    const averageCompletionTime = Number(metrics.averageCompletionTime) || 0;
+    const totalInstances = Number(metrics?.totalInstances) || 0;
+    const onTimeCompletions = Number(metrics?.onTimeCompletions) || 0;
+    const slaBreaches = Number(metrics?.slaBreaches) || 0;
+    const averageCompletionTime = Number(metrics?.averageCompletionTime) || 0;
 
-    const slaComplianceRate = totalInstances > 0
-      ? (onTimeCompletions / totalInstances) * 100
-      : 0;
+    const slaComplianceRate =
+      totalInstances > 0 ? (onTimeCompletions / totalInstances) * 100 : 0;
 
     return {
       totalInstances,
@@ -210,7 +221,10 @@ export class WorkflowSlaService {
     const overdueSteps = await this.db.db
       .select()
       .from(workflowSteps)
-      .innerJoin(workflowInstances, eq(workflowInstances.id, workflowSteps.instanceId))
+      .innerJoin(
+        workflowInstances,
+        eq(workflowInstances.id, workflowSteps.instanceId)
+      )
       .where(
         and(
           eq(workflowInstances.companyId, companyId),
@@ -223,7 +237,10 @@ export class WorkflowSlaService {
     const overdueApprovals = await this.db.db
       .select()
       .from(workflowApprovals)
-      .innerJoin(workflowInstances, eq(workflowInstances.id, workflowApprovals.instanceId))
+      .innerJoin(
+        workflowInstances,
+        eq(workflowInstances.id, workflowApprovals.instanceId)
+      )
       .where(
         and(
           eq(workflowInstances.companyId, companyId),
@@ -286,13 +303,16 @@ export class WorkflowSlaService {
       .where(eq(workflowInstances.id, instance.id));
 
     // Send breach notification
-    await this.notificationService.sendNotification({
-      userId: instance.initiatedBy,
-      type: 'workflow_sla_breach',
-      title: 'Workflow SLA Breach',
-      message: `Workflow "${instance.name}" has breached its SLA deadline`,
-      data: { instanceId: instance.id, type: 'instance' },
-    });
+    await this.notificationService.sendNotification(
+      {
+        recipientId: instance.initiatedBy,
+        type: 'INFO',
+        title: 'Workflow SLA Breach',
+        message: `Workflow "${instance.name}" has breached its SLA deadline`,
+        data: { instanceId: instance.id, type: 'instance' },
+      },
+      instance.companyId
+    );
 
     // Log the breach for analytics
     await this.logSlaEvent(instance.id, 'instance_breach', {
@@ -304,13 +324,16 @@ export class WorkflowSlaService {
   private async handleStepSlaBreach(step: any): Promise<void> {
     // Send breach notification to assigned user
     if (step.assignedTo) {
-      await this.notificationService.sendNotification({
-        userId: step.assignedTo,
-        type: 'workflow_step_sla_breach',
-        title: 'Step SLA Breach',
-        message: `Step "${step.name}" has breached its SLA deadline`,
-        data: { stepId: step.id, instanceId: step.instanceId, type: 'step' },
-      });
+      await this.notificationService.sendNotification(
+        {
+          recipientId: step.assignedTo,
+          type: 'INFO',
+          title: 'Step SLA Breach',
+          message: `Step "${step.name}" has breached its SLA deadline`,
+          data: { stepId: step.id, instanceId: step.instanceId, type: 'step' },
+        },
+        step.companyId
+      );
     }
 
     // Log the breach
@@ -323,13 +346,20 @@ export class WorkflowSlaService {
 
   private async handleApprovalSlaBreach(approval: any): Promise<void> {
     // Send breach notification to approver
-    await this.notificationService.sendNotification({
-      userId: approval.approverId,
-      type: 'workflow_approval_sla_breach',
-      title: 'Approval SLA Breach',
-      message: 'An approval request has breached its SLA deadline',
-      data: { approvalId: approval.id, instanceId: approval.instanceId, type: 'approval' },
-    });
+    await this.notificationService.sendNotification(
+      {
+        recipientId: approval.approverId,
+        type: 'INFO',
+        title: 'Approval SLA Breach',
+        message: 'An approval request has breached its SLA deadline',
+        data: {
+          approvalId: approval.id,
+          instanceId: approval.instanceId,
+          type: 'approval',
+        },
+      },
+      approval.companyId
+    );
 
     // Auto-escalate if configured
     // This would need escalation rules configuration
@@ -341,7 +371,10 @@ export class WorkflowSlaService {
     });
   }
 
-  private async sendReminderNotification(item: any, type: 'instance' | 'approval'): Promise<void> {
+  private async sendReminderNotification(
+    item: any,
+    type: 'instance' | 'approval'
+  ): Promise<void> {
     let userId: string;
     let title: string;
     let message: string;
@@ -356,16 +389,23 @@ export class WorkflowSlaService {
       message = 'An approval request is due soon';
     }
 
-    await this.notificationService.sendNotification({
-      userId,
-      type: 'workflow_reminder',
-      title,
-      message,
-      data: { itemId: item.id, type },
-    });
+    await this.notificationService.sendNotification(
+      {
+        recipientId: userId,
+        type: 'INFO',
+        title,
+        message,
+        data: { itemId: item.id, type },
+      },
+      item.companyId
+    );
   }
 
-  private async logSlaEvent(instanceId: string, eventType: string, data: any): Promise<void> {
+  private async logSlaEvent(
+    instanceId: string,
+    eventType: string,
+    data: any
+  ): Promise<void> {
     // This would typically go to an analytics/audit table
     // For now, we'll just log to console
     console.log(`SLA Event: ${eventType}`, {
@@ -384,7 +424,11 @@ export class WorkflowSlaService {
       case 'week':
         const weekStart = new Date(now);
         weekStart.setDate(now.getDate() - now.getDay());
-        return new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate());
+        return new Date(
+          weekStart.getFullYear(),
+          weekStart.getMonth(),
+          weekStart.getDate()
+        );
       case 'month':
         return new Date(now.getFullYear(), now.getMonth(), 1);
       default:

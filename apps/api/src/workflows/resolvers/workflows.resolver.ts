@@ -32,11 +32,11 @@ export class WorkflowsResolver {
     @Args('offset', { nullable: true }) offset?: number
   ): Promise<Workflow[]> {
     return this.workflowsService.findAll(user.companyId, {
-      category,
-      isActive,
-      isTemplate,
-      limit,
-      offset,
+      ...(category && { category }),
+      ...(isActive !== undefined && { isActive }),
+      ...(isTemplate !== undefined && { isTemplate }),
+      ...(limit && { limit }),
+      ...(offset && { offset }),
     });
   }
 
@@ -68,8 +68,8 @@ export class WorkflowsResolver {
   @Mutation(() => Workflow)
   async duplicateWorkflow(
     @Args('id', { type: () => ID }) id: string,
-    @Args('newName', { nullable: true }) newName?: string,
-    @CurrentUser() user: any
+    @CurrentUser() user: any,
+    @Args('newName', { nullable: true }) newName?: string
   ): Promise<Workflow> {
     return this.workflowsService.duplicate(
       id,

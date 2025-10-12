@@ -1,7 +1,9 @@
-import {
+import type {
   NewVendor,
   Vendor,
   VendorContact,
+} from '@kiro/database';
+import {
   vendorCategories,
   vendorCategoryMemberships,
   vendorContacts,
@@ -17,7 +19,9 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
 import { BaseService } from '../common/services/base.service';
+import { CacheService } from '../common/services/cache.service';
 import { NotificationService } from '../common/services/notification.service';
+import { PerformanceMonitorService } from '../common/services/performance-monitor.service';
 
 export interface CreateVendorDto {
   vendorName: string;
@@ -37,7 +41,7 @@ export interface CreateVendorDto {
   categoryIds?: string[];
 }
 
-export interface UpdateVendorDto {
+export interface UpdateVendorDto extends Record<string, unknown> {
   vendorName?: string;
   parentVendorId?: string;
   email?: string;
@@ -80,13 +84,13 @@ export interface CreateVendorEvaluationDto {
   vendorId: string;
   evaluationDate: Date;
   overallScore: number;
-  qualityScore?: number;
-  deliveryScore?: number;
-  costScore?: number;
-  serviceScore?: number;
-  comments?: string;
-  recommendations?: string;
-  nextEvaluationDate?: Date;
+  qualityScore?: number | null;
+  deliveryScore?: number | null;
+  costScore?: number | null;
+  serviceScore?: number | null;
+  comments?: string | null;
+  recommendations?: string | null;
+  nextEvaluationDate?: Date | null;
 }
 
 export interface CreateVendorCategoryDto {
@@ -97,7 +101,7 @@ export interface CreateVendorCategoryDto {
 
 export interface VendorPortalUserDto {
   vendorId: string;
-  contactId?: string;
+  contactId?: string | null;
   username: string;
   email: string;
   password: string;
@@ -106,7 +110,7 @@ export interface VendorPortalUserDto {
 
 @Injectable()
 export class VendorsService extends BaseService<
-  typeof vendors,
+  any,
   Vendor,
   NewVendor,
   UpdateVendorDto
@@ -116,11 +120,13 @@ export class VendorsService extends BaseService<
 
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
-    logger: Logger,
+    override logger: Logger,
+    override cacheService: CacheService,
+    override performanceMonitor: PerformanceMonitorService,
     private readonly auditService: AuditService,
     private readonly notificationService: NotificationService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -153,17 +159,17 @@ export class VendorsService extends BaseService<
           vendorCode,
           vendorName: data.vendorName,
           vendorType: data.vendorType || 'Company',
-          parentVendorId: data.parentVendorId,
-          email: data.email,
-          phone: data.phone,
-          website: data.website,
-          taxId: data.taxId,
+          parentVendorId: data.parentVendorId || null,
+          email: data.email || null,
+          phone: data.phone || null,
+          website: data.website || null,
+          taxId: data.taxId || null,
           currency: data.currency || 'USD',
-          paymentTerms: data.paymentTerms,
+          paymentTerms: data.paymentTerms || null,
           creditLimit: data.creditLimit?.toString() || '0',
-          billingAddress: data.billingAddress,
-          shippingAddress: data.shippingAddress,
-          notes: data.notes,
+          billingAddress: data.billingAddress || null,
+          shippingAddress: data.shippingAddress || null,
+          notes: data.notes || null,
           companyId,
         })
         .returning();
@@ -171,13 +177,13 @@ export class VendorsService extends BaseService<
       // Create contacts if provided
       if (data.contacts && data.contacts.length > 0) {
         const contactInserts = data.contacts.map(contact => ({
-          vendorId: vendor.id,
+          vendorId: vendor!.id,
           firstName: contact.firstName,
           lastName: contact.lastName,
-          email: contact.email,
-          phone: contact.phone,
-          designation: contact.designation,
-          department: contact.department,
+          email: contact.email || null,
+          phone: contact.phone || null,
+          designation: contact.designation || null,
+          department: contact.department || null,
           isPrimary: contact.isPrimary || false,
         }));
 
@@ -188,7 +194,7 @@ export class VendorsService extends BaseService<
       if (data.categoryIds && data.categoryIds.length > 0) {
         const categoryMemberships = data.categoryIds.map(
           (categoryId, index) => ({
-            vendorId: vendor.id,
+            vendorId: vendor!.id,
             categoryId,
             isPrimary: index === 0, // First category is primary
             companyId,
@@ -201,18 +207,18 @@ export class VendorsService extends BaseService<
       // Log audit trail
       await this.auditService.logAudit({
         entityType: 'vendors',
-        entityId: vendor.id,
+        entityId: vendor!.id,
         action: 'CREATE',
         newValues: {
-          ...vendor,
+          ...vendor!,
           contacts: data.contacts,
           categoryIds: data.categoryIds,
         },
         companyId,
-        userId,
+        userId: userId || null,
       });
 
-      return vendor;
+      return vendor!;
     });
   }
 
@@ -261,7 +267,7 @@ export class VendorsService extends BaseService<
       oldValues: oldVendor,
       newValues: updatedVendor,
       companyId,
-      userId,
+      userId: userId || null,
     });
 
     return updatedVendor;
@@ -318,10 +324,10 @@ export class VendorsService extends BaseService<
         vendorId: data.vendorId,
         firstName: data.firstName,
         lastName: data.lastName,
-        email: data.email,
-        phone: data.phone,
-        designation: data.designation,
-        department: data.department,
+        email: data.email || null,
+        phone: data.phone || null,
+        designation: data.designation || null,
+        department: data.department || null,
         isPrimary: data.isPrimary || false,
       })
       .returning();
@@ -329,14 +335,14 @@ export class VendorsService extends BaseService<
     // Log audit trail
     await this.auditService.logAudit({
       entityType: 'vendor_contacts',
-      entityId: contact.id,
+      entityId: contact!.id,
       action: 'CREATE',
-      newValues: contact,
+      newValues: contact!,
       companyId,
-      userId,
+      userId: userId || null,
     });
 
-    return contact;
+    return contact!;
   }
 
   /**
@@ -355,8 +361,8 @@ export class VendorsService extends BaseService<
       metricType: data.metricType,
       metricName: data.metricName,
       value: data.value.toString(),
-      target: data.target?.toString(),
-      unit: data.unit,
+      target: data.target?.toString() || null,
+      unit: data.unit || null,
       period: data.period,
       periodStart: data.periodStart,
       periodEnd: data.periodEnd,
@@ -370,7 +376,7 @@ export class VendorsService extends BaseService<
       action: 'CREATE',
       newValues: data,
       companyId,
-      userId,
+      userId: userId || null,
     });
   }
 
@@ -392,13 +398,13 @@ export class VendorsService extends BaseService<
         evaluationDate: data.evaluationDate,
         evaluatedBy: userId,
         overallScore: data.overallScore.toString(),
-        qualityScore: data.qualityScore?.toString(),
-        deliveryScore: data.deliveryScore?.toString(),
-        costScore: data.costScore?.toString(),
-        serviceScore: data.serviceScore?.toString(),
-        comments: data.comments,
-        recommendations: data.recommendations,
-        nextEvaluationDate: data.nextEvaluationDate,
+        qualityScore: data.qualityScore?.toString() || null,
+        deliveryScore: data.deliveryScore?.toString() || null,
+        costScore: data.costScore?.toString() || null,
+        serviceScore: data.serviceScore?.toString() || null,
+        comments: data.comments || null,
+        recommendations: data.recommendations || null,
+        nextEvaluationDate: data.nextEvaluationDate || null,
         companyId,
       })
       .returning();
@@ -432,14 +438,14 @@ export class VendorsService extends BaseService<
     // Log audit trail
     await this.auditService.logAudit({
       entityType: 'vendor_evaluations',
-      entityId: evaluation.id,
+      entityId: evaluation!.id,
       action: 'CREATE',
-      newValues: evaluation,
+      newValues: evaluation!,
       companyId,
       userId,
     });
 
-    return evaluation;
+    return evaluation!;
   }
 
   /**
@@ -472,8 +478,8 @@ export class VendorsService extends BaseService<
       .insert(vendorCategories)
       .values({
         name: data.name,
-        description: data.description,
-        parentCategoryId: data.parentCategoryId,
+        description: data.description || null,
+        parentCategoryId: data.parentCategoryId || null,
         companyId,
       })
       .returning();
@@ -481,14 +487,14 @@ export class VendorsService extends BaseService<
     // Log audit trail
     await this.auditService.logAudit({
       entityType: 'vendor_categories',
-      entityId: category.id,
+      entityId: category!.id,
       action: 'CREATE',
-      newValues: category,
+      newValues: category!,
       companyId,
-      userId,
+      userId: userId || null,
     });
 
-    return category;
+    return category!;
   }
 
   /**
@@ -543,7 +549,7 @@ export class VendorsService extends BaseService<
       .insert(vendorPortalUsers)
       .values({
         vendorId: data.vendorId,
-        contactId: data.contactId,
+        contactId: data.contactId || null,
         username: data.username,
         email: data.email,
         passwordHash,
@@ -558,7 +564,7 @@ export class VendorsService extends BaseService<
         title: 'Welcome to Vendor Portal',
         message: `Your vendor portal account has been created. Username: ${data.username}`,
         type: 'INFO',
-        recipientId: portalUser.id,
+        recipientId: portalUser!.id,
         entityType: 'vendors',
         entityId: data.vendorId,
       },
@@ -569,14 +575,14 @@ export class VendorsService extends BaseService<
     // Log audit trail
     await this.auditService.logAudit({
       entityType: 'vendor_portal_users',
-      entityId: portalUser.id,
+      entityId: portalUser!.id,
       action: 'CREATE',
-      newValues: { ...portalUser, passwordHash: '[REDACTED]' },
+      newValues: { ...portalUser!, passwordHash: '[REDACTED]' },
       companyId,
-      userId,
+      userId: userId || null,
     });
 
-    return { ...portalUser, passwordHash: undefined };
+    return { ...portalUser!, passwordHash: undefined };
   }
 
   /**
@@ -662,7 +668,7 @@ export class VendorsService extends BaseService<
         )
       );
 
-    const nextNumber = result.maxCode ? parseInt(result.maxCode) + 1 : 1;
+    const nextNumber = result!.maxCode ? parseInt(result!.maxCode) + 1 : 1;
     return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 
@@ -671,7 +677,7 @@ export class VendorsService extends BaseService<
     newParentId: string,
     companyId: string
   ): Promise<boolean> {
-    let currentParentId = newParentId;
+    let currentParentId: string | null = newParentId;
 
     while (currentParentId) {
       if (currentParentId === vendorId) {
@@ -679,7 +685,7 @@ export class VendorsService extends BaseService<
       }
 
       const parent = await this.findById(currentParentId, companyId);
-      currentParentId = parent?.parentVendorId || null;
+      currentParentId = parent?.parentVendorId ?? null;
     }
 
     return false;

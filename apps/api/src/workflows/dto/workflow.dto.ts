@@ -5,6 +5,7 @@ import {
   Int,
   ObjectType,
   registerEnumType,
+  Float,
 } from '@nestjs/graphql';
 import {
   IsArray,
@@ -16,7 +17,8 @@ import {
   IsString,
   IsUUID,
 } from 'class-validator';
-import GraphQLJSON from 'graphql-type-json';
+// Custom JSON scalar type
+const GraphQLJSONObject = Object;
 
 // Enums
 export enum WorkflowStatus {
@@ -70,45 +72,45 @@ registerEnumType(ApprovalStatus, { name: 'ApprovalStatus' });
 @ObjectType()
 export class WorkflowNode {
   @Field()
-  id: string;
+  id!: string;
 
   @Field()
-  type: string;
+  type!: string;
 
   @Field()
-  label: string;
+  label!: string;
 
-  @Field(() => GraphQLJSON)
-  data: any;
+  @Field(() => GraphQLJSONObject)
+  data!: any;
 
-  @Field(() => GraphQLJSON)
-  position: { x: number; y: number };
+  @Field(() => GraphQLJSONObject)
+  position!: { x: number; y: number };
 }
 
 @ObjectType()
 export class WorkflowEdge {
   @Field()
-  id: string;
+  id!: string;
 
   @Field()
-  source: string;
+  source!: string;
 
   @Field()
-  target: string;
+  target!: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSONObject, { nullable: true })
   data?: any;
 }
 
 @ObjectType()
 export class WorkflowDefinition {
   @Field(() => [WorkflowNode])
-  nodes: WorkflowNode[];
+  nodes!: WorkflowNode[];
 
   @Field(() => [WorkflowEdge])
-  edges: WorkflowEdge[];
+  edges!: WorkflowEdge[];
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSONObject, { nullable: true })
   settings?: any;
 }
 
@@ -116,72 +118,72 @@ export class WorkflowDefinition {
 @ObjectType()
 export class Workflow {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   description?: string;
 
   @Field()
-  category: string;
+  category!: string;
 
   @Field(() => Int)
-  version: number;
+  version!: number;
 
   @Field()
-  isActive: boolean;
+  isActive!: boolean;
 
   @Field()
-  isTemplate: boolean;
+  isTemplate!: boolean;
 
   @Field(() => WorkflowDefinition)
-  definition: WorkflowDefinition;
+  definition!: WorkflowDefinition;
 
   @Field(() => [String], { nullable: true })
   tags?: string[];
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSONObject, { nullable: true })
   permissions?: any;
 
   @Field(() => ID)
-  createdBy: string;
+  createdBy!: string;
 
   @Field(() => ID, { nullable: true })
   updatedBy?: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 @ObjectType()
 export class WorkflowInstance {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field(() => ID)
-  workflowId: string;
+  workflowId!: string;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field({ nullable: true })
   name?: string;
 
   @Field(() => WorkflowStatus)
-  status: WorkflowStatus;
+  status!: WorkflowStatus;
 
   @Field(() => WorkflowPriority)
-  priority: WorkflowPriority;
+  priority!: WorkflowPriority;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSONObject, { nullable: true })
   contextData?: any;
 
   @Field({ nullable: true })
@@ -197,19 +199,19 @@ export class WorkflowInstance {
   dueDate?: Date;
 
   @Field()
-  slaBreached: boolean;
+  slaBreached!: boolean;
 
   @Field({ nullable: true })
   slaBreachedAt?: Date;
 
   @Field(() => ID)
-  initiatedBy: string;
+  initiatedBy!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   // Relations
   @Field(() => Workflow, { nullable: true })
@@ -222,22 +224,22 @@ export class WorkflowInstance {
 @ObjectType()
 export class WorkflowStep {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field(() => ID)
-  instanceId: string;
+  instanceId!: string;
 
   @Field()
-  stepId: string;
+  stepId!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field(() => WorkflowStepType)
-  type: WorkflowStepType;
+  type!: WorkflowStepType;
 
   @Field(() => WorkflowStepStatus)
-  status: WorkflowStepStatus;
+  status!: WorkflowStepStatus;
 
   @Field(() => ID, { nullable: true })
   assignedTo?: string;
@@ -245,10 +247,10 @@ export class WorkflowStep {
   @Field({ nullable: true })
   assignedRole?: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSONObject, { nullable: true })
   inputData?: any;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSONObject, { nullable: true })
   outputData?: any;
 
   @Field({ nullable: true })
@@ -263,14 +265,14 @@ export class WorkflowStep {
   @Field({ nullable: true })
   comments?: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSONObject, { nullable: true })
   attachments?: any;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   // Relations
   @Field(() => [WorkflowApproval], { nullable: true })
@@ -280,19 +282,19 @@ export class WorkflowStep {
 @ObjectType()
 export class WorkflowApproval {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field(() => ID)
-  stepId: string;
+  stepId!: string;
 
   @Field(() => ID)
-  instanceId: string;
+  instanceId!: string;
 
   @Field(() => ID)
-  approverId: string;
+  approverId!: string;
 
   @Field(() => ApprovalStatus)
-  status: ApprovalStatus;
+  status!: ApprovalStatus;
 
   @Field({ nullable: true })
   decision?: string;
@@ -310,7 +312,7 @@ export class WorkflowApproval {
   delegationReason?: string;
 
   @Field()
-  requestedAt: Date;
+  requestedAt!: Date;
 
   @Field({ nullable: true })
   respondedAt?: Date;
@@ -319,49 +321,49 @@ export class WorkflowApproval {
   dueDate?: Date;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 @ObjectType()
 export class WorkflowTemplate {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   description?: string;
 
   @Field()
-  category: string;
+  category!: string;
 
   @Field({ nullable: true })
   industry?: string;
 
   @Field(() => WorkflowDefinition)
-  definition: WorkflowDefinition;
+  definition!: WorkflowDefinition;
 
   @Field(() => Int)
-  usageCount: number;
+  usageCount!: number;
 
   @Field()
-  isPublic: boolean;
+  isPublic!: boolean;
 
   @Field(() => [String], { nullable: true })
   tags?: string[];
 
   @Field(() => ID)
-  createdBy: string;
+  createdBy!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 // Input Types
@@ -369,40 +371,40 @@ export class WorkflowTemplate {
 export class WorkflowNodeInput {
   @Field()
   @IsString()
-  id: string;
+  id!: string;
 
   @Field()
   @IsString()
-  type: string;
+  type!: string;
 
   @Field()
   @IsString()
-  label: string;
+  label!: string;
 
-  @Field(() => GraphQLJSON)
+  @Field(() => GraphQLJSONObject)
   @IsObject()
-  data: any;
+  data!: any;
 
-  @Field(() => GraphQLJSON)
+  @Field(() => GraphQLJSONObject)
   @IsObject()
-  position: { x: number; y: number };
+  position!: { x: number; y: number };
 }
 
 @InputType()
 export class WorkflowEdgeInput {
   @Field()
   @IsString()
-  id: string;
+  id!: string;
 
   @Field()
   @IsString()
-  source: string;
+  source!: string;
 
   @Field()
   @IsString()
-  target: string;
+  target!: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSONObject, { nullable: true })
   @IsOptional()
   @IsObject()
   data?: any;
@@ -412,13 +414,13 @@ export class WorkflowEdgeInput {
 export class WorkflowDefinitionInput {
   @Field(() => [WorkflowNodeInput])
   @IsArray()
-  nodes: WorkflowNodeInput[];
+  nodes!: WorkflowNodeInput[];
 
   @Field(() => [WorkflowEdgeInput])
   @IsArray()
-  edges: WorkflowEdgeInput[];
+  edges!: WorkflowEdgeInput[];
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSONObject, { nullable: true })
   @IsOptional()
   @IsObject()
   settings?: any;
@@ -428,7 +430,7 @@ export class WorkflowDefinitionInput {
 export class CreateWorkflowInput {
   @Field()
   @IsString()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -437,17 +439,17 @@ export class CreateWorkflowInput {
 
   @Field()
   @IsString()
-  category: string;
+  category!: string;
 
   @Field(() => WorkflowDefinitionInput)
-  definition: WorkflowDefinitionInput;
+  definition!: WorkflowDefinitionInput;
 
   @Field(() => [String], { nullable: true })
   @IsOptional()
   @IsArray()
   tags?: string[];
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSONObject, { nullable: true })
   @IsOptional()
   @IsObject()
   permissions?: any;
@@ -484,7 +486,7 @@ export class UpdateWorkflowInput {
   @IsArray()
   tags?: string[];
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSONObject, { nullable: true })
   @IsOptional()
   @IsObject()
   permissions?: any;
@@ -499,7 +501,7 @@ export class UpdateWorkflowInput {
 export class CreateWorkflowInstanceInput {
   @Field(() => ID)
   @IsUUID()
-  workflowId: string;
+  workflowId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -511,7 +513,7 @@ export class CreateWorkflowInstanceInput {
   @IsEnum(WorkflowPriority)
   priority?: WorkflowPriority;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSONObject, { nullable: true })
   @IsOptional()
   @IsObject()
   contextData?: any;
@@ -526,11 +528,11 @@ export class CreateWorkflowInstanceInput {
 export class WorkflowApprovalInput {
   @Field(() => ID)
   @IsUUID()
-  approvalId: string;
+  approvalId!: string;
 
   @Field()
   @IsString()
-  decision: string; // 'approve', 'reject', 'delegate'
+  decision!: string; // 'approve', 'reject', 'delegate'
 
   @Field({ nullable: true })
   @IsOptional()
@@ -557,7 +559,7 @@ export class WorkflowApprovalInput {
 export class CreateWorkflowTemplateInput {
   @Field()
   @IsString()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -566,7 +568,7 @@ export class CreateWorkflowTemplateInput {
 
   @Field()
   @IsString()
-  category: string;
+  category!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -574,7 +576,7 @@ export class CreateWorkflowTemplateInput {
   industry?: string;
 
   @Field(() => WorkflowDefinitionInput)
-  definition: WorkflowDefinitionInput;
+  definition!: WorkflowDefinitionInput;
 
   @Field(() => [String], { nullable: true })
   @IsOptional()
@@ -591,7 +593,7 @@ export class CreateWorkflowTemplateInput {
 @ObjectType()
 export class WorkflowAnalytics {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field(() => ID, { nullable: true })
   workflowId?: string;
@@ -600,58 +602,58 @@ export class WorkflowAnalytics {
   instanceId?: string;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  metricType: string;
+  metricType!: string;
 
-  @Field(() => GraphQLJSON)
-  metricValue: any;
-
-  @Field()
-  period: string;
+  @Field(() => GraphQLJSONObject)
+  metricValue!: any;
 
   @Field()
-  date: Date;
+  period!: string;
 
   @Field()
-  createdAt: Date;
+  date!: Date;
+
+  @Field()
+  createdAt!: Date;
 }
 
 @ObjectType()
 export class WorkflowMetrics {
   @Field(() => Int)
-  totalWorkflows: number;
+  totalWorkflows!: number;
 
   @Field(() => Int)
-  activeInstances: number;
+  activeInstances!: number;
 
   @Field(() => Int)
-  completedToday: number;
+  completedToday!: number;
 
   @Field(() => Int)
-  overdueTasks: number;
+  overdueTasks!: number;
 
   @Field(() => Int)
-  slaBreaches: number;
+  slaBreaches!: number;
 
   @Field(() => Float)
-  averageCompletionTime: number;
+  averageCompletionTime!: number;
 
   @Field(() => [WorkflowCategoryMetric])
-  byCategory: WorkflowCategoryMetric[];
+  byCategory!: WorkflowCategoryMetric[];
 }
 
 @ObjectType()
 export class WorkflowCategoryMetric {
   @Field()
-  category: string;
+  category!: string;
 
   @Field(() => Int)
-  count: number;
+  count!: number;
 
   @Field(() => Float)
-  averageTime: number;
+  averageTime!: number;
 }
 
 @InputType()

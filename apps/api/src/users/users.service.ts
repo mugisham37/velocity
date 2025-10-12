@@ -234,7 +234,7 @@ export class UsersService {
       .values({
         name: roleData.name,
         description: roleData.description,
-        parentRoleId: roleData.parentRoleId,
+        parentRoleId: roleData.parentRoleId || null,
         isSystemRole: roleData.isSystemRole,
         companyId,
       })

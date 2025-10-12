@@ -69,12 +69,12 @@ export class WorkflowAnalyticsService {
       .orderBy(desc(sql`count(*)`));
 
     return {
-      totalWorkflows: Number(basicMetrics.totalWorkflows) || 0,
-      activeInstances: Number(basicMetrics.activeInstances) || 0,
-      completedToday: Number(basicMetrics.completedToday) || 0,
-      overdueTasks: Number(basicMetrics.overdueTasks) || 0,
-      slaBreaches: Number(basicMetrics.slaBreaches) || 0,
-      averageCompletionTime: Number(basicMetrics.averageCompletionTime) || 0,
+      totalWorkflows: Number(basicMetrics?.totalWorkflows) || 0,
+      activeInstances: Number(basicMetrics?.activeInstances) || 0,
+      completedToday: Number(basicMetrics?.completedToday) || 0,
+      overdueTasks: Number(basicMetrics?.overdueTasks) || 0,
+      slaBreaches: Number(basicMetrics?.slaBreaches) || 0,
+      averageCompletionTime: Number(basicMetrics?.averageCompletionTime) || 0,
       byCategory: categoryMetrics.map(metric => ({
         category: metric.category,
         count: Number(metric.count) || 0,
@@ -121,8 +121,8 @@ export class WorkflowAnalyticsService {
         )
       );
 
-    const totalExecutions = Number(performance.totalExecutions) || 0;
-    const successfulExecutions = Number(performance.successfulExecutions) || 0;
+    const totalExecutions = Number(performance?.totalExecutions) || 0;
+    const successfulExecutions = Number(performance?.successfulExecutions) || 0;
     const successRate =
       totalExecutions > 0 ? (successfulExecutions / totalExecutions) * 100 : 0;
 
@@ -180,7 +180,7 @@ export class WorkflowAnalyticsService {
     return {
       totalExecutions,
       successRate,
-      averageCompletionTime: Number(performance.averageCompletionTime) || 0,
+      averageCompletionTime: Number(performance?.averageCompletionTime) || 0,
       bottlenecks: bottlenecks.map(b => ({
         stepName: b.stepName,
         averageTime: Number(b.averageTime) || 0,
@@ -238,8 +238,8 @@ export class WorkflowAnalyticsService {
       )
       .where(and(...conditions));
 
-    const totalApprovals = Number(approvalMetrics.totalApprovals) || 0;
-    const approvedCount = Number(approvalMetrics.approvedCount) || 0;
+    const totalApprovals = Number(approvalMetrics?.totalApprovals) || 0;
+    const approvedCount = Number(approvalMetrics?.approvedCount) || 0;
     const approvalRate =
       totalApprovals > 0 ? (approvedCount / totalApprovals) * 100 : 0;
 
@@ -262,8 +262,8 @@ export class WorkflowAnalyticsService {
 
     return {
       totalApprovals,
-      pendingApprovals: Number(approvalMetrics.pendingApprovals) || 0,
-      averageApprovalTime: Number(approvalMetrics.averageApprovalTime) || 0,
+      pendingApprovals: Number(approvalMetrics?.pendingApprovals) || 0,
+      averageApprovalTime: Number(approvalMetrics?.averageApprovalTime) || 0,
       approvalRate,
       topApprovers: topApprovers.map(approver => ({
         userId: approver.userId,
@@ -405,8 +405,8 @@ export class WorkflowAnalyticsService {
         )
       );
 
-    const totalInstances = Number(compliance.totalInstances) || 0;
-    const breachedInstances = Number(compliance.breachedInstances) || 0;
+    const totalInstances = Number(compliance?.totalInstances) || 0;
+    const breachedInstances = Number(compliance?.breachedInstances) || 0;
     const complianceRate =
       totalInstances > 0
         ? ((totalInstances - breachedInstances) / totalInstances) * 100

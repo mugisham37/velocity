@@ -1,4 +1,5 @@
 import {
+  DatabaseService,
   workflowApprovals,
   workflowInstances,
   workflowSteps,
@@ -63,6 +64,10 @@ export class WorkflowExecutionService {
           initiatedBy: userId,
         })
         .returning();
+
+      if (!instance) {
+        throw new BadRequestException('Failed to create workflow instance');
+      }
 
       // Initialize workflow steps based on definition
       await this.initializeSteps(instance.id, workflow.definition);
@@ -203,7 +208,7 @@ export class WorkflowExecutionService {
 
   async completeStep(
     stepId: string,
-    userId: string,
+    _userId: string,
     data?: any
   ): Promise<void> {
     const [step] = await this.db.db
@@ -231,7 +236,7 @@ export class WorkflowExecutionService {
   async cancelInstance(
     id: string,
     companyId: string,
-    userId: string
+    _userId: string
   ): Promise<void> {
     const instance = await this.getInstanceById(id, companyId);
 
@@ -341,12 +346,12 @@ export class WorkflowExecutionService {
     }
   }
 
-  private async handleApprovalStep(step: any, userId: string): Promise<void> {
+  private async handleApprovalStep(step: any, _userId: string): Promise<void> {
     // Create approval record
     await this.db.db.insert(workflowApprovals).values({
       stepId: step.id,
       instanceId: step.instanceId,
-      approverId: step.assignedTo || userId,
+      approverId: step.assignedTo || _userId,
       requestedAt: new Date(),
       dueDate: step.dueDate,
     });
@@ -359,7 +364,7 @@ export class WorkflowExecutionService {
           type: 'INFO',
           title: 'Approval Required',
           message: `You have a pending approval for: ${step.name}`,
-          metadata: { stepId: step.id, instanceId: step.instanceId },
+          data: { stepId: step.id, instanceId: step.instanceId },
         },
         step.companyId || 'default'
       );
@@ -368,11 +373,11 @@ export class WorkflowExecutionService {
 
   private async handleTaskStep(
     step: any,
-    userId: string,
+    _userId: string,
     data?: any
   ): Promise<void> {
     // For task steps, just mark as completed with the provided data
-    await this.completeStep(step.id, userId, data);
+    await this.completeStep(step.id, _userId, data);
   }
 
   private async handleNotificationStep(step: any, data?: any): Promise<void> {
@@ -385,7 +390,7 @@ export class WorkflowExecutionService {
           type: 'INFO',
           title: notificationConfig.title || step.name,
           message: notificationConfig.message || 'Workflow notification',
-          metadata: data || {},
+          data: data || {},
         },
         step.companyId || 'default'
       );
@@ -527,7 +532,7 @@ export class WorkflowExecutionService {
         )
       );
 
-    if (pendingSteps.count === 0) {
+    if (pendingSteps && pendingSteps.count === 0) {
       // All steps completed, mark instance as completed
       await this.db.db
         .update(workflowInstances)

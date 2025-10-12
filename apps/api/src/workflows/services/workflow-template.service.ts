@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, sql } from 'dr-orm';
+import { and, asc, desc, eq, sql } from '@kiro/database';
 import {
   CreateWorkflowTemplateInput,
   WorkflowDefinition,
@@ -38,11 +38,11 @@ export class WorkflowTemplateService {
         .insert(workflowTemplates)
         .values({
           name: input.name,
-          description: input.description,
+          description: input.description || null,
           category: input.category,
-          industry: input.industry,
+          industry: input.industry || null,
           definition: input.definition as any,
-          tags: input.tags,
+          tags: input.tags || null,
           isPublic: input.isPublic || false,
           createdBy: userId,
         })
@@ -51,7 +51,7 @@ export class WorkflowTemplateService {
       return this.mapToDto(template);
     } catch (error) {
       throw new BadRequestException(
-        `Failed to create workflow template: ${error.message}`
+        `Failed to create workflow template: ${(error as Error).message}`
       );
     }
   }
@@ -81,7 +81,7 @@ export class WorkflowTemplateService {
 
     if (options?.search) {
       conditions.push(
-        sql`(${workflowTemplates.name} ilike ${`%${options.search}%`} or ${workflowTemplates.description} ilike ${`%${options.search}%`})`
+        sql`(${workflowTemplates.name} ILIKE ${`%${options.search}%`} or ${workflowTemplates.description} ILIKE ${`%${options.search}%`})`
       );
     }
 
@@ -195,10 +195,10 @@ export class WorkflowTemplateService {
 
     const workflowData = {
       name: customizations?.name || template.name,
-      description: customizations?.description || template.description,
+      description: customizations?.description || template.description || '',
       category: template.category,
       definition,
-      tags: template.tags,
+      tags: template.tags || [],
       isTemplate: false,
     };
 
@@ -219,7 +219,7 @@ export class WorkflowTemplateService {
       .delete(workflowTemplates)
       .where(eq(workflowTemplates.id, id));
 
-    return result.rowCount > 0;
+    return result.length > 0;
   }
 
   async getCategories(): Promise<string[]> {
@@ -279,12 +279,12 @@ export class WorkflowTemplateService {
 
     const templateInput: CreateWorkflowTemplateInput = {
       name: templateData.name,
-      description: templateData.description,
+      description: templateData.description || '',
       category: templateData.category,
-      industry: templateData.industry,
+      industry: templateData.industry || '',
       definition: workflow.definition,
-      tags: templateData.tags,
-      isPublic: templateData.isPublic,
+      tags: templateData.tags || [],
+      isPublic: templateData.isPublic || false,
     };
 
     return await this.create(templateInput, userId);
@@ -327,9 +327,9 @@ export class WorkflowTemplateService {
       .limit(10);
 
     return {
-      totalTemplates: Number(stats.totalTemplates) || 0,
-      publicTemplates: Number(stats.publicTemplates) || 0,
-      totalUsage: Number(stats.totalUsage) || 0,
+      totalTemplates: Number(stats?.totalTemplates) || 0,
+      publicTemplates: Number(stats?.publicTemplates) || 0,
+      totalUsage: Number(stats?.totalUsage) || 0,
       topCategories: topCategories.map(cat => ({
         category: cat.category,
         count: Number(cat.count) || 0,
@@ -350,7 +350,7 @@ export class WorkflowTemplateService {
     }
   ): Promise<WorkflowTemplate[]> {
     const conditions = [
-      sql`(${workflowTemplates.name} ilike ${`%${query}%`} or ${workflowTemplates.description} ilike ${`%${query}%`})`,
+      sql`(${workflowTemplates.name} ILIKE ${`%${query}%`} or ${workflowTemplates.description} ILIKE ${`%${query}%`})`,
     ];
 
     if (filters?.category) {

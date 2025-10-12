@@ -3,21 +3,21 @@ import { Field, ID, ObjectType } from '@nestjs/graphql';
 @ObjectType()
 export class Vendor {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
-  vendorCode: string;
-
-  @Field()
-  vendorName: string;
+  vendorCode!: string;
 
   @Field()
-  vendorType: string;
+  vendorName!: string;
+
+  @Field()
+  vendorType!: string;
 
   @Field(() => ID, { nullable: true })
   parentVendorId?: string | null;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field({ nullable: true })
   email?: string | null;
@@ -38,7 +38,7 @@ export class Vendor {
   paymentTerms?: string | null;
 
   @Field()
-  creditLimit: string;
+  creditLimit!: string;
 
   @Field({ nullable: true })
   billingAddress?: any;
@@ -47,19 +47,19 @@ export class Vendor {
   shippingAddress?: any;
 
   @Field()
-  isActive: boolean;
+  isActive!: boolean;
 
   @Field()
-  isBlocked: boolean;
+  isBlocked!: boolean;
 
   @Field({ nullable: true })
   notes?: string | null;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   // Virtual fields
   @Field(() => Vendor, { nullable: true })
@@ -75,16 +75,16 @@ export class Vendor {
 @ObjectType()
 export class VendorContact {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field(() => ID)
-  vendorId: string;
+  vendorId!: string;
 
   @Field()
-  firstName: string;
+  firstName!: string;
 
   @Field()
-  lastName: string;
+  lastName!: string;
 
   @Field({ nullable: true })
   email?: string | null;
@@ -99,16 +99,16 @@ export class VendorContact {
   department?: string | null;
 
   @Field()
-  isPrimary: boolean;
+  isPrimary!: boolean;
 
   @Field()
-  isActive: boolean;
+  isActive!: boolean;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Field(() => Vendor)
   vendor?: Vendor;
@@ -117,10 +117,10 @@ export class VendorContact {
 @ObjectType()
 export class VendorCategory {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   description?: string | null;
@@ -129,16 +129,16 @@ export class VendorCategory {
   parentCategoryId?: string | null;
 
   @Field()
-  isActive: boolean;
+  isActive!: boolean;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Field(() => VendorCategory, { nullable: true })
   parentCategory?: VendorCategory;
@@ -150,19 +150,19 @@ export class VendorCategory {
 @ObjectType()
 export class VendorEvaluation {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field(() => ID)
-  vendorId: string;
+  vendorId!: string;
 
   @Field()
-  evaluationDate: Date;
+  evaluationDate!: Date;
 
   @Field(() => ID)
-  evaluatedBy: string;
+  evaluatedBy!: string;
 
   @Field()
-  overallScore: string;
+  overallScore!: string;
 
   @Field({ nullable: true })
   qualityScore?: string | null;
@@ -186,13 +186,13 @@ export class VendorEvaluation {
   nextEvaluationDate?: Date | null;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Field(() => Vendor)
   vendor?: Vendor;
@@ -201,7 +201,7 @@ export class VendorEvaluation {
 @ObjectType()
 export class VendorPerformanceSummary {
   @Field(() => [VendorPerformanceMetric])
-  performanceMetrics: VendorPerformanceMetric[];
+  performanceMetrics!: VendorPerformanceMetric[];
 
   @Field(() => VendorEvaluation, { nullable: true })
   latestEvaluation?: VendorEvaluation | null;
@@ -210,35 +210,35 @@ export class VendorPerformanceSummary {
 @ObjectType()
 export class VendorPerformanceMetric {
   @Field()
-  metricType: string;
+  metricType!: string;
 
   @Field()
-  avgValue: number;
+  avgValue!: number;
 
   @Field({ nullable: true })
   avgTarget?: number | null;
 
   @Field()
-  metricCount: number;
+  metricCount!: number;
 }
 
 @ObjectType()
 export class VendorAnalytics {
   @Field()
-  totalVendors: number;
+  totalVendors!: number;
 
   @Field()
-  activeVendors: number;
+  activeVendors!: number;
 
   @Field()
-  blockedVendors: number;
+  blockedVendors!: number;
 
   @Field()
-  individualVendors: number;
+  individualVendors!: number;
 
   @Field()
-  companyVendors: number;
+  companyVendors!: number;
 
   @Field()
-  totalCreditLimit: number;
+  totalCreditLimit!: number;
 }

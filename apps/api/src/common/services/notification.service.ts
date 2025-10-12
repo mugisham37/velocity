@@ -1,5 +1,17 @@
 import { Injectable } from '@nestjs/common';
 
+export interface NotificationData {
+  title: string;
+  message: string;
+  type: 'INFO' | 'WARNING' | 'ERROR' | 'SUCCESS';
+  recipientId: string;
+  entityType?: string;
+  entityId?: string;
+  userId?: string;
+  data?: any;
+  metadata?: any;
+}
+
 @Injectable()
 export class NotificationService {
   async sendComplianceAlert(companyId: string, alert: any): Promise<void> {
@@ -30,5 +42,14 @@ export class NotificationService {
   async sendVulnerabilityAlert(companyId: string, vulnerability: any): Promise<void> {
     // Implementation for sending vulnerability alerts
     console.log('Vulnerability alert:', { companyId, vulnerability });
+  }
+
+  async sendNotification(
+    notification: NotificationData | any,
+    companyId?: string,
+    channels: string[] = ['IN_APP']
+  ): Promise<void> {
+    // Implementation for sending notifications
+    console.log('Notification sent:', { notification, companyId, channels });
   }
 }

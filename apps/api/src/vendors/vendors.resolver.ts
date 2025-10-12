@@ -1,4 +1,4 @@
-import { User } from '@kiro/database';
+import type { User } from '@kiro/database';
 import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -116,15 +116,15 @@ export class VendorsResolver {
         vendorId: input.vendorId,
         evaluationDate: new Date(input.evaluationDate),
         overallScore: input.overallScore,
-        qualityScore: input.qualityScore,
-        deliveryScore: input.deliveryScore,
-        costScore: input.costScore,
-        serviceScore: input.serviceScore,
-        comments: input.comments,
-        recommendations: input.recommendations,
+        qualityScore: input.qualityScore ?? null,
+        deliveryScore: input.deliveryScore ?? null,
+        costScore: input.costScore ?? null,
+        serviceScore: input.serviceScore ?? null,
+        comments: input.comments ?? null,
+        recommendations: input.recommendations ?? null,
         nextEvaluationDate: input.nextEvaluationDate
           ? new Date(input.nextEvaluationDate)
-          : undefined,
+          : null,
       },
       user.companyId,
       user.id
@@ -144,7 +144,7 @@ export class VendorsResolver {
     await this.vendorsService.createPortalUser(
       {
         vendorId,
-        contactId,
+        contactId: contactId ?? null,
         username,
         email,
         password,

@@ -25,8 +25,8 @@ export class WorkflowAnalyticsResolver {
   @Query(() => String)
   async workflowPerformance(
     @Args('workflowId', { type: () => ID }) workflowId: string,
-    @Args('period', { nullable: true }) period?: string,
-    @CurrentUser() user: any
+    @CurrentUser() user: any,
+    @Args('period', { nullable: true }) period?: string
   ): Promise<string> {
     const performance = await this.analyticsService.getWorkflowPerformance(
       workflowId,
