@@ -1,4 +1,4 @@
-i{ Field, InputType, ObjectType, Int, Float, registerEnumType } from '@nestjs/graphql';
+import { Field, InputType, ObjectType, Int, Float, registerEnumType } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 import { IsArray, IsDate, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
@@ -52,13 +52,13 @@ registerEnumType(AccessLevel, {
 @ObjectType()
 export class OpportunityType {
   @Field()
-  id: string;
+  id!: string;
 
   @Field()
-  opportunityCode: string;
+  opportunityCode!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   customerId?: string;
@@ -67,16 +67,16 @@ export class OpportunityType {
   leadId?: string;
 
   @Field(() => OpportunityStage)
-  stage: OpportunityStage;
+  stage!: OpportunityStage;
 
   @Field(() => Int)
-  probability: number;
+  probability!: number;
 
   @Field(() => Float)
-  amount: number;
+  amount!: number;
 
   @Field()
-  currency: string;
+  currency!: string;
 
   @Field({ nullable: true })
   expectedCloseDate?: Date;
@@ -103,34 +103,34 @@ export class OpportunityType {
   lostReason?: string;
 
   @Field()
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 @ObjectType()
 export class OpportunityActivityType {
   @Field()
-  id: string;
+  id!: string;
 
   @Field()
-  opportunityId: string;
+  opportunityId!: string;
 
   @Field()
-  activityType: string;
+  activityType!: string;
 
   @Field()
-  subject: string;
+  subject!: string;
 
   @Field({ nullable: true })
   description?: string;
 
   @Field()
-  activityDate: Date;
+  activityDate!: Date;
 
   @Field(() => Int, { nullable: true })
   duration?: number;
@@ -145,22 +145,22 @@ export class OpportunityActivityType {
   nextActionDate?: Date;
 
   @Field()
-  createdBy: string;
+  createdBy!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 }
 
 @ObjectType()
 export class OpportunityCompetitorType {
   @Field()
-  id: string;
+  id!: string;
 
   @Field()
-  opportunityId: string;
+  opportunityId!: string;
 
   @Field()
-  competitorName: string;
+  competitorName!: string;
 
   @Field({ nullable: true })
   strengths?: string;
@@ -178,25 +178,25 @@ export class OpportunityCompetitorType {
   notes?: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 @ObjectType()
 export class OpportunityStageHistoryType {
   @Field()
-  id: string;
+  id!: string;
 
   @Field()
-  opportunityId: string;
+  opportunityId!: string;
 
   @Field(() => OpportunityStage, { nullable: true })
   fromStage?: OpportunityStage;
 
   @Field(() => OpportunityStage)
-  toStage: OpportunityStage;
+  toStage!: OpportunityStage;
 
   @Field(() => Int, { nullable: true })
   probability?: number;
@@ -208,34 +208,34 @@ export class OpportunityStageHistoryType {
   notes?: string;
 
   @Field()
-  changedBy: string;
+  changedBy!: string;
 
   @Field()
-  changedAt: Date;
+  changedAt!: Date;
 }
 
 @ObjectType()
 export class OpportunityTeamMemberType {
   @Field()
-  id: string;
+  id!: string;
 
   @Field()
-  opportunityId: string;
+  opportunityId!: string;
 
   @Field()
-  userId: string;
+  userId!: string;
 
   @Field()
-  role: string;
+  role!: string;
 
   @Field(() => AccessLevel)
-  accessLevel: AccessLevel;
+  accessLevel!: AccessLevel;
 
   @Field()
-  addedAt: Date;
+  addedAt!: Date;
 
   @Field()
-  addedBy: string;
+  addedBy!: string;
 }
 
 // Input Types for Mutations
@@ -243,7 +243,7 @@ export class OpportunityTeamMemberType {
 export class CreateOpportunityInput {
   @Field()
   @IsString()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -270,7 +270,7 @@ export class CreateOpportunityInput {
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  amount: number;
+  amount!: number;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -391,15 +391,15 @@ export class UpdateOpportunityInput {
 export class CreateOpportunityActivityInput {
   @Field()
   @IsUUID()
-  opportunityId: string;
+  opportunityId!: string;
 
   @Field()
   @IsString()
-  activityType: string;
+  activityType!: string;
 
   @Field()
   @IsString()
-  subject: string;
+  subject!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -409,7 +409,7 @@ export class CreateOpportunityActivityInput {
   @Field()
   @IsDate()
   @Type(() => Date)
-  activityDate: Date;
+  activityDate!: Date;
 
   @Field(() => Int, { nullable: true })
   @IsOptional()
@@ -438,11 +438,11 @@ export class CreateOpportunityActivityInput {
 export class CreateOpportunityCompetitorInput {
   @Field()
   @IsUUID()
-  opportunityId: string;
+  opportunityId!: string;
 
   @Field()
   @IsString()
-  competitorName: string;
+  competitorName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -477,15 +477,15 @@ export class CreateOpportunityCompetitorInput {
 export class AddTeamMemberInput {
   @Field()
   @IsUUID()
-  opportunityId: string;
+  opportunityId!: string;
 
   @Field()
   @IsUUID()
-  userId: string;
+  userId!: string;
 
   @Field()
   @IsString()
-  role: string;
+  role!: string;
 
   @Field(() => AccessLevel, { nullable: true })
   @IsOptional()
@@ -585,52 +585,52 @@ export class OpportunityFilterInput {
 @ObjectType()
 export class OpportunityConnection {
   @Field(() => [OpportunityType])
-  opportunities: OpportunityType[];
+  opportunities!: OpportunityType[];
 
   @Field(() => Int)
-  total: number;
+  total!: number;
 
   @Field(() => Int)
-  page: number;
+  page!: number;
 
   @Field(() => Int)
-  limit: number;
+  limit!: number;
 
   @Field(() => Int)
-  totalPages: number;
+  totalPages!: number;
 }
 
 @ObjectType()
 export class SalesForecastType {
   @Field(() => [StageForecastType])
-  forecastByStage: StageForecastType[];
+  forecastByStage!: StageForecastType[];
 
   @Field(() => [ConversionRateType])
-  conversionRates: ConversionRateType[];
+  conversionRates!: ConversionRateType[];
 
   @Field(() => Float)
-  totalPipeline: number;
+  totalPipeline!: number;
 
   @Field(() => Float)
-  totalWeighted: number;
+  totalWeighted!: number;
 }
 
 @ObjectType()
 export class StageForecastType {
   @Field(() => OpportunityStage)
-  stage: OpportunityStage;
+  stage!: OpportunityStage;
 
   @Field(() => Float)
-  totalAmount: number;
+  totalAmount!: number;
 
   @Field(() => Float)
-  weightedAmount: number;
+  weightedAmount!: number;
 
   @Field(() => Int)
-  count: number;
+  count!: number;
 
   @Field(() => Float)
-  averageProbability: number;
+  averageProbability!: number;
 }
 
 @ObjectType()
@@ -639,58 +639,58 @@ export class ConversionRateType {
   fromStage?: OpportunityStage;
 
   @Field(() => OpportunityStage)
-  toStage: OpportunityStage;
+  toStage!: OpportunityStage;
 
   @Field(() => Int)
-  count: number;
+  count!: number;
 }
 
 @ObjectType()
 export class OpportunityAnalyticsType {
   @Field(() => Int)
-  totalOpportunities: number;
+  totalOpportunities!: number;
 
   @Field(() => Int)
-  openOpportunities: number;
+  openOpportunities!: number;
 
   @Field(() => Int)
-  wonOpportunities: number;
+  wonOpportunities!: number;
 
   @Field(() => Int)
-  lostOpportunities: number;
+  lostOpportunities!: number;
 
   @Field(() => Float)
-  totalValue: number;
+  totalValue!: number;
 
   @Field(() => Float)
-  wonValue: number;
+  wonValue!: number;
 
   @Field(() => Float)
-  averageDealSize: number;
+  averageDealSize!: number;
 
   @Field(() => Float)
-  averageProbability: number;
+  averageProbability!: number;
 
   @Field(() => Float)
-  winRate: number;
+  winRate!: number;
 
   @Field(() => [StageAnalyticsType])
-  opportunitiesByStage: StageAnalyticsType[];
+  opportunitiesByStage!: StageAnalyticsType[];
 
   @Field(() => [SourceAnalyticsType])
-  opportunitiesBySource: SourceAnalyticsType[];
+  opportunitiesBySource!: SourceAnalyticsType[];
 }
 
 @ObjectType()
 export class StageAnalyticsType {
   @Field(() => OpportunityStage)
-  stage: OpportunityStage;
+  stage!: OpportunityStage;
 
   @Field(() => Int)
-  count: number;
+  count!: number;
 
   @Field(() => Float)
-  totalValue: number;
+  totalValue!: number;
 }
 
 @ObjectType()
@@ -699,13 +699,13 @@ export class SourceAnalyticsType {
   source?: OpportunitySource;
 
   @Field(() => Int)
-  count: number;
+  count!: number;
 
   @Field(() => Int)
-  wonCount: number;
+  wonCount!: number;
 
   @Field(() => Float)
-  totalValue: number;
+  totalValue!: number;
 }
 
 @InputType()
@@ -729,10 +729,10 @@ export class ForecastPeriodInput {
   @Field()
   @IsDate()
   @Type(() => Date)
-  start: Date;
+  start!: Date;
 
   @Field()
   @IsDate()
   @Type(() => Date)
-  end: Date;
+  end!: Date;
 }

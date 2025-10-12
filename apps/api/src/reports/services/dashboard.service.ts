@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
-import { AccountsService } from '../../accounts/accounts.service';
+
 import { BalanceSheetService } from './balance-sheet.service';
 import { FinancialRatiosService } from './financial-ratios.service';
 import { ProfitLossService } from './profit-loss.service';
@@ -13,7 +13,7 @@ export interface DashboardMetrics {
   totalAssets: number;
   totalLiabilities: number;
   totalEquity: number;
-  cashPositr;
+  cashPosition: number;
   accountsReceivable: number;
   accountsPayable: number;
   workingCapital: number;
@@ -62,7 +62,6 @@ export class DashboardService {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
     private readonly logger: Logger,
-    private readonly accountsService: AccountsService,
     private readonly balanceSheetService: BalanceSheetService,
     private readonly profitLossService: ProfitLossService,
     private readonly financialRatiosService: FinancialRatiosService
@@ -266,7 +265,7 @@ export class DashboardService {
     return charts;
   }
 
-  private generateAlerts(metrics: DashboardMetrics, ratios: any): Array<any> {
+  private generateAlerts(metrics: DashboardMetrics, _ratios: any): Array<any> {
     const alerts = [];
 
     // Cash flow alerts
@@ -315,7 +314,7 @@ export class DashboardService {
     return alerts;
   }
 
-  private generateInsights(metrics: DashboardMetrics, ratios: any): Array<any> {
+  private generateInsights(metrics: DashboardMetrics, _ratios: any): Array<any> {
     const insights = [];
 
     // Profitability insights
@@ -353,13 +352,13 @@ export class DashboardService {
 
   // Helper methods for chart data generation
   private async generateRevenueChartData(
-    companyId: string,
+    _companyId: string,
     start: Date,
     end: Date
   ) {
     // Mock data - in production, query actual revenue by month
     const months = this.getMonthsBetween(start, end);
-    return months.map((month, index) => ({
+    return months.map((month, _index) => ({
       label: month.toLocaleDateString('en-US', {
         month: 'short',
         year: 'numeric',
@@ -370,9 +369,9 @@ export class DashboardService {
   }
 
   private async generateExpenseBreakdownData(
-    companyId: string,
-    start: Date,
-    end: Date
+    _companyId: string,
+    _start: Date,
+    _end: Date
   ) {
     // Mock data - in production, query expense categories
     return [
@@ -385,7 +384,7 @@ export class DashboardService {
   }
 
   private async generateCashFlowData(
-    companyId: string,
+    _companyId: string,
     start: Date,
     end: Date
   ) {
@@ -399,7 +398,7 @@ export class DashboardService {
   }
 
   private async generateProfitabilityData(
-    companyId: string,
+    _companyId: string,
     start: Date,
     end: Date
   ) {

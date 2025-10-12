@@ -215,9 +215,9 @@ export class TrialBalanceService {
   }
 
   private async getAdjustingEntries(
-    companyId: string,
-    periodStart: Date,
-    periodEnd: Date
+    _companyId: string,
+    _periodStart: Date,
+    _periodEnd: Date
   ): Promise<any[]> {
     // Get adjusting journal entries for the period
     // This would query journal entries marked as adjusting entries
@@ -226,8 +226,8 @@ export class TrialBalanceService {
   }
 
   private async getClosingEntries(
-    companyId: string,
-    periodEnd: Date
+    _companyId: string,
+    _periodEnd: Date
   ): Promise<any[]> {
     // Get closing journal entries for the period
     // This would query journal entries marked as closing entries
@@ -237,7 +237,7 @@ export class TrialBalanceService {
 
   private applyAdjustments(
     lines: FinancialReportLine[],
-    adjustments: any[]
+    _adjustments: any[]
   ): FinancialReportLine[] {
     // Apply adjusting or closing entries to trial balance lines
     // For now, just return the original lines

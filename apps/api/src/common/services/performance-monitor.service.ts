@@ -56,4 +56,41 @@ export class PerformanceMonitorService {
       tags,
     });
   }
+
+  async getPerformanceSummary(): Promise<{
+    averageResponseTime: number;
+    requestsPerSecond: number;
+    errorRate: number;
+    activeConnections: number;
+    uptime: number;
+  }> {
+    // Mock performance data - in production, collect actual metrics
+    return {
+      averageResponseTime: 150, // ms
+      requestsPerSecond: 45,
+      errorRate: 0.02, // 2%
+      activeConnections: 12,
+      uptime: Date.now() - (24 * 60 * 60 * 1000) // 24 hours
+    };
+  }
+
+  async getSystemMetrics(): Promise<{
+    cpuUsage: number;
+    memoryUsage: number;
+    diskUsage: number;
+    networkIO: { in: number; out: number };
+    processCount: number;
+  }> {
+    // Mock system metrics - in production, use actual system monitoring
+    return {
+      cpuUsage: 35.5, // percentage
+      memoryUsage: 68.2, // percentage
+      diskUsage: 45.8, // percentage
+      networkIO: {
+        in: 1024 * 1024 * 50, // 50MB
+        out: 1024 * 1024 * 30 // 30MB
+      },
+      processCount: 156
+    };
+  }
 }

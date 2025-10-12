@@ -61,7 +61,7 @@ export interface CustomReportDefinition {
 export interface CustomReportResult {
   definition: CustomReportDefinition;
   data: Array<Record<string, any>>;
-  totals?: Record<string, number>;
+  totals: Record<string, number> | undefined;
   metadata: {
     totalRows: number;
     executionTime: number;
@@ -78,11 +78,11 @@ export class ReportBuilderService {
 
   async createCustomReport(
     definition: Omit<CustomReportDefinition, 'id' | 'createdAt'>,
-    companyId: string
+    _companyId: string
   ): Promise<CustomReportDefinition> {
     this.logger.info('Creating custom report', {
       name: definition.name,
-      companyId,
+      companyId: _companyId,
     });
 
     const reportDefinition: CustomReportDefinition = {
@@ -147,7 +147,7 @@ export class ReportBuilderService {
     }
   }
 
-  async getAvailableFields(companyId: string): Promise<
+  async getAvailableFields(_companyId: string): Promise<
     Array<{
       id: string;
       name: string;
@@ -427,7 +427,7 @@ export class ReportBuilderService {
 
   private async getReportDefinition(
     reportId: string,
-    companyId: string
+    _companyId: string
   ): Promise<CustomReportDefinition | null> {
     // TODO: Load from database
     // For now, return a mock definition
@@ -462,19 +462,19 @@ export class ReportBuilderService {
     const updatedDefinition = { ...definition };
 
     // Override date range if provided
-    if (parameters.startDate && parameters.endDate) {
+    if (parameters['startDate'] && parameters['endDate']) {
       updatedDefinition.dateRange = {
         type: 'fixed',
-        startDate: new Date(parameters.startDate),
-        endDate: new Date(parameters.endDate),
+        startDate: new Date(parameters['startDate']),
+        endDate: new Date(parameters['endDate']),
       };
     }
 
     // Add additional filters if provided
-    if (parameters.filters) {
+    if (parameters['filters']) {
       updatedDefinition.filters = [
         ...definition.filters,
-        ...parameters.filters,
+        ...parameters['filters'],
       ];
     }
 
@@ -482,8 +482,8 @@ export class ReportBuilderService {
   }
 
   private async executeReport(
-    definition: CustomReportDefinition,
-    companyId: string
+    _definition: CustomReportDefinition,
+    _companyId: string
   ): Promise<Array<Record<string, any>>> {
     // TODO: Build and execute SQL query based on definition
     // For now, return mock data
@@ -533,6 +533,6 @@ export class ReportBuilderService {
   }
 
   private generateReportId(): string {
-    return `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `report_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 }

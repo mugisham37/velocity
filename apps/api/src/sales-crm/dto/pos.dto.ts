@@ -29,7 +29,7 @@ export enum PaymentMethodType {
 export class CreatePOSProfileDto {
   @Field()
   @IsString()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -38,19 +38,19 @@ export class CreatePOSProfileDto {
 
   @Field(() => ID)
   @IsUUID()
-  warehouseId: string;
+  warehouseId!: string;
 
   @Field(() => ID)
   @IsUUID()
-  cashAccount: string;
+  cashAccount!: string;
 
   @Field(() => ID)
   @IsUUID()
-  incomeAccount: string;
+  incomeAccount!: string;
 
   @Field(() => ID)
   @IsUUID()
-  expenseAccount: string;
+  expenseAccount!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -59,7 +59,7 @@ export class CreatePOSProfileDto {
 
   @Field({ defaultValue: 'USD' })
   @IsString()
-  currency: string;
+  currency!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -67,34 +67,34 @@ export class CreatePOSProfileDto {
   priceList?: string;
 
   @Field({ defaultValue: true })
-  @IsBool
-  allowDiscount: boolean;
+  @IsBoolean()
+  allowDiscount!: boolean;
 
   @Field(() => Float, { defaultValue: 0 })
   @IsNumber()
   @Min(0)
   @Max(100)
-  maxDiscount: number;
+  maxDiscount!: number;
 
   @Field({ defaultValue: false })
   @IsBoolean()
-  allowCreditSale: boolean;
+  allowCreditSale!: boolean;
 
   @Field({ defaultValue: true })
   @IsBoolean()
-  allowReturn: boolean;
+  allowReturn!: boolean;
 
   @Field({ defaultValue: true })
   @IsBoolean()
-  printReceipt: boolean;
+  printReceipt!: boolean;
 
   @Field({ defaultValue: false })
   @IsBoolean()
-  emailReceipt: boolean;
+  emailReceipt!: boolean;
 
   @Field({ defaultValue: false })
   @IsBoolean()
-  offlineMode: boolean;
+  offlineMode!: boolean;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -201,12 +201,12 @@ export class UpdatePOSProfileDto {
 export class PaymentMethodDto {
   @Field(() => PaymentMethodType)
   @IsEnum(PaymentMethodType)
-  type: PaymentMethodType;
+  type!: PaymentMethodType;
 
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  amount: number;
+  amount!: number;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -233,11 +233,11 @@ export class PaymentMethodDto {
 export class POSItemDto {
   @Field()
   @IsString()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
   @IsString()
-  itemName: string;
+  itemName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -247,33 +247,33 @@ export class POSItemDto {
   @Field(() => Float)
   @IsNumber()
   @Min(0.0001)
-  quantity: number;
+  quantity!: number;
 
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  unitPrice: number;
+  unitPrice!: number;
 
   @Field(() => Float, { defaultValue: 0 })
   @IsNumber()
   @Min(0)
   @Max(100)
-  discountPercent: number;
+  discountPercent!: number;
 
   @Field(() => Float, { defaultValue: 0 })
   @IsNumber()
   @Min(0)
-  discountAmount: number;
+  discountAmount!: number;
 
   @Field(() => Float, { defaultValue: 0 })
   @IsNumber()
   @Min(0)
-  taxPercent: number;
+  taxPercent!: number;
 
   @Field(() => Float, { defaultValue: 0 })
   @IsNumber()
   @Min(0)
-  taxAmount: number;
+  taxAmount!: number;
 
   @Field(() => [String], { nullable: true })
   @IsOptional()
@@ -286,7 +286,7 @@ export class POSItemDto {
 export class CreatePOSSaleDto {
   @Field(() => ID)
   @IsUUID()
-  posProfileId: string;
+  posProfileId!: string;
 
   @Field(() => ID, { nullable: true })
   @IsOptional()
@@ -312,18 +312,18 @@ export class CreatePOSSaleDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => POSItemDto)
-  items: POSItemDto[];
+  items!: POSItemDto[];
 
   @Field(() => [PaymentMethodDto])
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PaymentMethodDto)
-  paymentMethods: PaymentMethodDto[];
+  paymentMethods!: PaymentMethodDto[];
 
   @Field(() => Int, { defaultValue: 0 })
   @IsNumber()
   @Min(0)
-  loyaltyPointsRedeemed: number;
+  loyaltyPointsRedeemed!: number;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -332,23 +332,23 @@ export class CreatePOSSaleDto {
 
   @Field({ defaultValue: false })
   @IsBoolean()
-  isOffline: boolean;
+  isOffline!: boolean;
 }
 
 @InputType()
 export class OfflineTransactionDto {
   @Field()
   @IsString()
-  localId: string;
+  localId!: string;
 
   @Field(() => CreatePOSSaleDto)
   @ValidateNested()
   @Type(() => CreatePOSSaleDto)
-  saleData: CreatePOSSaleDto;
+  saleData!: CreatePOSSaleDto;
 
   @Field()
   @IsString()
-  timestamp: string;
+  timestamp!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -360,130 +360,130 @@ export class OfflineTransactionDto {
 export class BarcodeSearchDto {
   @Field()
   @IsString()
-  barcode: string;
+  barcode!: string;
 
   @Field(() => ID)
   @IsUUID()
-  warehouseId: string;
+  warehouseId!: string;
 }
 
 @InputType()
 export class LoyaltyPointsDto {
   @Field(() => ID)
   @IsUUID()
-  customerId: string;
+  customerId!: string;
 
   @Field(() => Int)
   @IsNumber()
   @Min(1)
-  points: number;
+  points!: number;
 
   @Field()
   @IsString()
-  reason: string;
+  reason!: string;
 }
 
 // Object Types
 @ObjectType()
 export class POSProfile {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   description?: string;
 
   @Field(() => ID)
-  warehouseId: string;
+  warehouseId!: string;
 
   @Field(() => ID)
-  cashAccount: string;
+  cashAccount!: string;
 
   @Field(() => ID)
-  incomeAccount: string;
+  incomeAccount!: string;
 
   @Field(() => ID)
-  expenseAccount: string;
+  expenseAccount!: string;
 
   @Field({ nullable: true })
   costCenter?: string;
 
   @Field()
-  currency: string;
+  currency!: string;
 
   @Field({ nullable: true })
   priceList?: string;
 
   @Field()
-  allowDiscount: boolean;
+  allowDiscount!: boolean;
 
   @Field(() => Float)
-  maxDiscount: number;
+  maxDiscount!: number;
 
   @Field()
-  allowCreditSale: boolean;
+  allowCreditSale!: boolean;
 
   @Field()
-  allowReturn: boolean;
+  allowReturn!: boolean;
 
   @Field()
-  printReceipt: boolean;
+  printReceipt!: boolean;
 
   @Field()
-  emailReceipt: boolean;
+  emailReceipt!: boolean;
 
   @Field()
-  offlineMode: boolean;
+  offlineMode!: boolean;
 
   @Field({ nullable: true })
   loyaltyProgram?: string;
 
   @Field()
-  isActive: boolean;
+  isActive!: boolean;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 @ObjectType()
 export class POSInvoiceItem {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
-  itemName: string;
+  itemName!: string;
 
   @Field({ nullable: true })
   barcode?: string;
 
   @Field(() => Float)
-  quantity: number;
+  quantity!: number;
 
   @Field(() => Float)
-  unitPrice: number;
+  unitPrice!: number;
 
   @Field(() => Float)
-  discountPercent: number;
+  discountPercent!: number;
 
   @Field(() => Float)
-  discountAmount: number;
+  discountAmount!: number;
 
   @Field(() => Float)
-  taxPercent: number;
+  taxPercent!: number;
 
   @Field(() => Float)
-  taxAmount: number;
+  taxAmount!: number;
 
   @Field(() => Float)
-  lineTotal: number;
+  lineTotal!: number;
 
   @Field(() => [String], { nullable: true })
   serialNumbers?: string[];
@@ -492,16 +492,16 @@ export class POSInvoiceItem {
 @ObjectType()
 export class POSInvoice {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  invoiceCode: string;
+  invoiceCode!: string;
 
   @Field(() => ID)
-  posProfileId: string;
+  posProfileId!: string;
 
   @Field(() => POSProfile)
-  posProfile: POSProfile;
+  posProfile!: POSProfile;
 
   @Field(() => ID, { nullable: true })
   customerId?: string;
@@ -516,73 +516,73 @@ export class POSInvoice {
   customerEmail?: string;
 
   @Field()
-  invoiceDate: Date;
+  invoiceDate!: Date;
 
   @Field()
-  currency: string;
+  currency!: string;
 
   @Field(() => Float)
-  subtotal: number;
+  subtotal!: number;
 
   @Field(() => Float)
-  totalTax: number;
+  totalTax!: number;
 
   @Field(() => Float)
-  totalDiscount: number;
+  totalDiscount!: number;
 
   @Field(() => Float)
-  grandTotal: number;
+  grandTotal!: number;
 
   @Field(() => Float)
-  paidAmount: number;
+  paidAmount!: number;
 
   @Field(() => Float)
-  changeAmount: number;
+  changeAmount!: number;
 
   @Field(() => [PaymentMethodDto])
-  paymentMethods: PaymentMethodDto[];
+  paymentMethods!: PaymentMethodDto[];
 
   @Field(() => Int)
-  loyaltyPointsEarned: number;
+  loyaltyPointsEarned!: number;
 
   @Field(() => Int)
-  loyaltyPointsRedeemed: number;
+  loyaltyPointsRedeemed!: number;
 
   @Field({ nullable: true })
   notes?: string;
 
   @Field()
-  isSynced: boolean;
+  isSynced!: boolean;
 
   @Field({ nullable: true })
   syncedAt?: Date;
 
   @Field(() => [POSInvoiceItem])
-  items: POSInvoiceItem[];
+  items!: POSInvoiceItem[];
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 }
 
 @ObjectType()
 export class ItemLookupResult {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
-  itemName: string;
+  itemName!: string;
 
   @Field({ nullable: true })
   barcode?: string;
 
   @Field(() => Float)
-  price: number;
+  price!: number;
 
   @Field(() => Float)
-  availableQuantity: number;
+  availableQuantity!: number;
 
   @Field({ nullable: true })
   description?: string;
@@ -594,58 +594,58 @@ export class ItemLookupResult {
   taxRate?: number;
 
   @Field()
-  isActive: boolean;
+  isActive!: boolean;
 }
 
 @ObjectType()
 export class SyncResult {
   @Field(() => Int)
-  totalTransactions: number;
+  totalTransactions!: number;
 
   @Field(() => Int)
-  successfulSyncs: number;
+  successfulSyncs!: number;
 
   @Field(() => Int)
-  failedSyncs: number;
+  failedSyncs!: number;
 
   @Field(() => [String])
-  errors: string[];
+  errors!: string[];
 
   @Field()
-  syncedAt: Date;
+  syncedAt!: Date;
 }
 
 @ObjectType()
 export class LoyaltyPointsBalance {
   @Field(() => ID)
-  customerId: string;
+  customerId!: string;
 
   @Field(() => Int)
-  totalPoints: number;
+  totalPoints!: number;
 
   @Field(() => Int)
-  availablePoints: number;
+  availablePoints!: number;
 
   @Field(() => Int)
-  redeemedPoints: number;
+  redeemedPoints!: number;
 
   @Field(() => Float)
-  pointValue: number; // Monetary value per point
+  pointValue!: number; // Monetary value per point
 
   @Field()
-  lastUpdated: Date;
+  lastUpdated!: Date;
 }
 
 @ObjectType()
 export class ReceiptData {
   @Field(() => POSInvoice)
-  invoice: POSInvoice;
+  invoice!: POSInvoice;
 
   @Field()
-  receiptTemplate: string;
+  receiptTemplate!: string;
 
   @Field()
-  qrCode: string;
+  qrCode!: string;
 
   @Field({ nullable: true })
   loyaltyMessage?: string;

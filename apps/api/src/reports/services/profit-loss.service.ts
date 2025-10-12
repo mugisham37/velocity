@@ -65,20 +65,28 @@ export class ProfitLossService {
         this.createTotalLine('NET INCOME', netIncome, 0, true),
       ];
 
-      return {
+      const report: FinancialReport = {
         reportType: 'PROFIT_LOSS',
         title: 'Profit & Loss Statement',
         companyName: 'Company Name', // TODO: Get from company service
         periodStart: input.periodStart,
         periodEnd: input.periodEnd,
-        comparativePeriodStart: input.comparativePeriodStart,
-        comparativePeriodEnd: input.comparativePeriodEnd,
         lines: allLines,
         totalRevenue,
         totalExpenses,
         netIncome,
         generatedAt: new Date(),
       };
+
+      // Only add comparative periods if they exist
+      if (input.comparativePeriodStart) {
+        report.comparativePeriodStart = input.comparativePeriodStart;
+      }
+      if (input.comparativePeriodEnd) {
+        report.comparativePeriodEnd = input.comparativePeriodEnd;
+      }
+
+      return report;
     } catch (error) {
       this.logger.error('Failed to generate profit & loss statement', {
         error,
@@ -177,7 +185,7 @@ export class ProfitLossService {
   private async getAccountPeriodActivity(
     accountId: string,
     companyId: string,
-    periodStart: Date,
+    _periodStart: Date,
     periodEnd: Date
   ): Promise<number> {
     // This would calculate the net activity for the period

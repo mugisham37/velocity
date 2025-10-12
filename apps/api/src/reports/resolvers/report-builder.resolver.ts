@@ -2,10 +2,8 @@ import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import {
-  CustomReportDefinition,
-  ReportBuilderService,
-} from '../services/report-builder.service';
+import { ReportBuilderService } from '../services/report-builder.service';
+import type { CustomReportDefinition } from '../services/report-builder.service';
 
 @Resolver()
 @UseGuards(JwtAuthGuard)

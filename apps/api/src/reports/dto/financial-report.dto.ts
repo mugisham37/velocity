@@ -3,34 +3,34 @@ import { Field, Float, InputType, Int, ObjectType } from '@nestjs/graphql';
 @ObjectType()
 export class FinancialReportLine {
   @Field()
-  accountId: string;
+  accountId!: string;
 
   @Field()
-  accountCode: string;
+  accountCode!: string;
 
   @Field()
-  accountName: string;
+  accountName!: string;
 
   @Field()
-  accountType: string;
+  accountType!: string;
 
   @Field(() => Float)
-  amount: number;
+  amount!: number;
 
   @Field(() => Float)
-  previousAmount: number;
+  previousAmount!: number;
 
   @Field(() => Float)
-  variance: number;
+  variance!: number;
 
   @Field(() => Float)
-  variancePercent: number;
+  variancePercent!: number;
 
   @Field()
-  isGroup: boolean;
+  isGroup!: boolean;
 
   @Field(() => Int)
-  level: number;
+  level!: number;
 
   @Field(() => [FinancialReportLine], { nullable: true })
   children?: FinancialReportLine[];
@@ -39,19 +39,19 @@ export class FinancialReportLine {
 @ObjectType()
 export class FinancialReport {
   @Field()
-  reportType: string;
+  reportType!: string;
 
   @Field()
-  title: string;
+  title!: string;
 
   @Field()
-  companyName: string;
+  companyName!: string;
 
   @Field()
-  periodStart: Date;
+  periodStart!: Date;
 
   @Field()
-  periodEnd: Date;
+  periodEnd!: Date;
 
   @Field({ nullable: true })
   comparativePeriodStart?: Date;
@@ -60,7 +60,7 @@ export class FinancialReport {
   comparativePeriodEnd?: Date;
 
   @Field(() => [FinancialReportLine])
-  lines: FinancialReportLine[];
+  lines!: FinancialReportLine[];
 
   @Field(() => Float)
   totalAssets?: number;
@@ -81,19 +81,19 @@ export class FinancialReport {
   netIncome?: number;
 
   @Field()
-  generatedAt: Date;
+  generatedAt!: Date;
 }
 
 @InputType()
 export class FinancialReportInput {
   @Field()
-  reportType: string;
+  reportType!: string;
 
   @Field()
-  periodStart: Date;
+  periodStart!: Date;
 
   @Field()
-  periodEnd: Date;
+  periodEnd!: Date;
 
   @Field({ nullable: true })
   comparativePeriodStart?: Date;
@@ -117,13 +117,13 @@ export class FinancialReportInput {
 @ObjectType()
 export class FinancialRatio {
   @Field()
-  name: string;
+  name!: string;
 
   @Field()
-  category: string;
+  category!: string;
 
   @Field(() => Float)
-  value: number;
+  value!: number;
 
   @Field(() => Float, { nullable: true })
   previousValue?: number;
@@ -132,38 +132,38 @@ export class FinancialRatio {
   industryBenchmark?: number;
 
   @Field()
-  formula: string;
+  formula!: string;
 
   @Field()
-  interpretation: string;
+  interpretation!: string;
 
   @Field()
-  trend: string; // 'improving' | 'declining' | 'stable'
+  trend!: string; // 'improving' | 'declining' | 'stable'
 }
 
 @ObjectType()
 export class FinancialRatiosReport {
   @Field()
-  companyName: string;
+  companyName!: string;
 
   @Field()
-  periodStart: Date;
+  periodStart!: Date;
 
   @Field()
-  periodEnd: Date;
+  periodEnd!: Date;
 
   @Field(() => [FinancialRatio])
-  liquidityRatios: FinancialRatio[];
+  liquidityRatios!: FinancialRatio[];
 
   @Field(() => [FinancialRatio])
-  profitabilityRatios: FinancialRatio[];
+  profitabilityRatios!: FinancialRatio[];
 
   @Field(() => [FinancialRatio])
-  leverageRatios: FinancialRatio[];
+  leverageRatios!: FinancialRatio[];
 
   @Field(() => [FinancialRatio])
-  efficiencyRatios: FinancialRatio[];
+  efficiencyRatios!: FinancialRatio[];
 
   @Field()
-  generatedAt: Date;
+  generatedAt!: Date;
 }

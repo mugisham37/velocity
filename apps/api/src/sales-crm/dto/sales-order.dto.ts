@@ -16,7 +16,7 @@ import {
 
 // Enums
 export enum SalesOrderStatus {
-  Draft',
+  DRAFT = 'Draft',
   PENDING_APPROVAL = 'Pending Approval',
   APPROVED = 'Approved',
   CONFIRMED = 'Confirmed',
@@ -38,13 +38,13 @@ registerEnumType(SalesOrderStatus, {
 @ObjectType()
 export class SalesOrderType {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  salesOrderCode: string;
+  salesOrderCode!: string;
 
   @Field(() => ID)
-  customerId: string;
+  customerId!: string;
 
   @Field(() => ID, { nullable: true })
   quotationId?: string;
@@ -53,37 +53,37 @@ export class SalesOrderType {
   opportunityId?: string;
 
   @Field(() => SalesOrderStatus)
-  status: SalesOrderStatus;
+  status!: SalesOrderStatus;
 
   @Field()
-  orderDate: Date;
+  orderDate!: Date;
 
   @Field({ nullable: true })
   deliveryDate?: Date;
 
   @Field()
-  currency: string;
+  currency!: string;
 
   @Field(() => Float)
-  exchangeRate: number;
+  exchangeRate!: number;
 
   @Field(() => Float)
-  subtotal: number;
+  subtotal!: number;
 
   @Field(() => Float)
-  totalTax: number;
+  totalTax!: number;
 
   @Field(() => Float)
-  totalDiscount: number;
+  totalDiscount!: number;
 
   @Field(() => Float)
-  shippingCharges: number;
+  shippingCharges!: number;
 
   @Field(() => Float)
-  grandTotal: number;
+  grandTotal!: number;
 
   @Field(() => Float)
-  advanceAmount: number;
+  advanceAmount!: number;
 
   @Field(() => Float, { nullable: true })
   balanceAmount?: number;
@@ -116,67 +116,67 @@ export class SalesOrderType {
   confirmedAt?: Date;
 
   @Field(() => [SalesOrderItemType])
-  items: SalesOrderItemType[];
+  items!: SalesOrderItemType[];
 
   @Field()
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 @ObjectType()
 export class SalesOrderItemType {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field(() => ID)
-  salesOrderId: string;
+  salesOrderId!: string;
 
   @Field()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
-  itemName: string;
+  itemName!: string;
 
   @Field({ nullable: true })
   description?: string;
 
   @Field(() => Float)
-  quantity: number;
+  quantity!: number;
 
   @Field(() => Float)
-  deliveredQuantity: number;
+  deliveredQuantity!: number;
 
   @Field(() => Float)
-  invoicedQuantity: number;
+  invoicedQuantity!: number;
 
   @Field(() => Float)
-  unitPrice: number;
+  unitPrice!: number;
 
   @Field(() => Float)
-  discountPercent: number;
+  discountPercent!: number;
 
   @Field(() => Float)
-  discountAmount: number;
+  discountAmount!: number;
 
   @Field(() => Float)
-  taxPercent: number;
+  taxPercent!: number;
 
   @Field(() => Float)
-  taxAmount: number;
+  taxAmount!: number;
 
   @Field(() => Float)
-  lineTotal: number;
+  lineTotal!: number;
 
   @Field({ nullable: true })
   notes?: string;
 
   @Field(() => Int)
-  sortOrder: number;
+  sortOrder!: number;
 }
 
 // Input Types for Mutations
@@ -184,11 +184,11 @@ export class SalesOrderItemType {
 export class CreateSalesOrderItemInput {
   @Field()
   @IsString()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
   @IsString()
-  itemName: string;
+  itemName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -198,12 +198,12 @@ export class CreateSalesOrderItemInput {
   @Field(() => Float)
   @IsNumber()
   @Min(0.0001)
-  quantity: number;
+  quantity!: number;
 
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  unitPrice: number;
+  unitPrice!: number;
 
   @Field(() => Float, { nullable: true })
   @IsOptional()
@@ -273,7 +273,7 @@ export class AddressInput {
 export class CreateSalesOrderInput {
   @Field(() => ID)
   @IsUUID()
-  customerId: string;
+  customerId!: string;
 
   @Field(() => ID, { nullable: true })
   @IsOptional()
@@ -288,7 +288,7 @@ export class CreateSalesOrderInput {
   @Field()
   @IsDate()
   @Type(() => Date)
-  orderDate: Date;
+  orderDate!: Date;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -357,7 +357,7 @@ export class CreateSalesOrderInput {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateSalesOrderItemInput)
-  items: CreateSalesOrderItemInput[];
+  items!: CreateSalesOrderItemInput[];
 }
 
 @InputType()
@@ -521,47 +521,47 @@ export class SalesOrderFilterInput {
 @ObjectType()
 export class SalesOrderConnection {
   @Field(() => [SalesOrderType])
-  salesOrders: SalesOrderType[];
+  salesOrders!: SalesOrderType[];
 
   @Field(() => Int)
-  total: number;
+  total!: number;
 
   @Field(() => Int)
-  page: number;
+  page!: number;
 
   @Field(() => Int)
-  limit: number;
+  limit!: number;
 
   @Field(() => Int)
-  totalPages: number;
+  totalPages!: number;
 }
 
 @InputType()
 export class UpdateOrderItemQuantityInput {
   @Field(() => ID)
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  deliveredQuantity: number;
+  deliveredQuantity!: number;
 
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  invoicedQuantity: number;
+  invoicedQuantity!: number;
 }
 
 @InputType()
 export class OrderAmendmentInput {
   @Field(() => ID)
   @IsUUID()
-  salesOrderId: string;
+  salesOrderId!: string;
 
   @Field()
   @IsString()
-  amendmentReason: string;
+  amendmentReason!: string;
 
   @Field(() => [CreateSalesOrderItemInput], { nullable: true })
   @IsOptional()
@@ -587,98 +587,98 @@ export class OrderAmendmentInput {
 @ObjectType()
 export class SalesOrderAnalyticsType {
   @Field(() => Int)
-  totalOrders: number;
+  totalOrders!: number;
 
   @Field(() => Int)
-  draftOrders: number;
+  draftOrders!: number;
 
   @Field(() => Int)
-  confirmedOrders: number;
+  confirmedOrders!: number;
 
   @Field(() => Int)
-  deliveredOrders: number;
+  deliveredOrders!: number;
 
   @Field(() => Int)
-  invoicedOrders: number;
+  invoicedOrders!: number;
 
   @Field(() => Int)
-  cancelledOrders: number;
+  cancelledOrders!: number;
 
   @Field(() => Float)
-  totalValue: number;
+  totalValue!: number;
 
   @Field(() => Float)
-  deliveredValue: number;
+  deliveredValue!: number;
 
   @Field(() => Float)
-  invoicedValue: number;
+  invoicedValue!: number;
 
   @Field(() => Float)
-  averageOrderValue: number;
+  averageOrderValue!: number;
 
   @Field(() => Float)
-  fulfillmentRate: number;
+  fulfillmentRate!: number;
 
   @Field(() => [SalesOrderStatusAnalyticsType])
-  ordersByStatus: SalesOrderStatusAnalyticsType[];
+  ordersByStatus!: SalesOrderStatusAnalyticsType[];
 }
 
 @ObjectType()
 export class SalesOrderStatusAnalyticsType {
   @Field(() => SalesOrderStatus)
-  status: SalesOrderStatus;
+  status!: SalesOrderStatus;
 
   @Field(() => Int)
-  count: number;
+  count!: number;
 
   @Field(() => Float)
-  totalValue: number;
+  totalValue!: number;
 }
 
 @ObjectType()
 export class OrderFulfillmentType {
   @Field(() => ID)
-  salesOrderId: string;
+  salesOrderId!: string;
 
   @Field()
-  salesOrderCode: string;
+  salesOrderCode!: string;
 
   @Field(() => Float)
-  totalQuantity: number;
+  totalQuantity!: number;
 
   @Field(() => Float)
-  deliveredQuantity: number;
+  deliveredQuantity!: number;
 
   @Field(() => Float)
-  pendingQuantity: number;
+  pendingQuantity!: number;
 
   @Field(() => Float)
-  fulfillmentPercentage: number;
+  fulfillmentPercentage!: number;
 
   @Field(() => [OrderItemFulfillmentType])
-  items: OrderItemFulfillmentType[];
+  items!: OrderItemFulfillmentType[];
 }
 
 @ObjectType()
 export class OrderItemFulfillmentType {
   @Field(() => ID)
-  itemId: string;
+  itemId!: string;
 
   @Field()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
-  itemName: string;
+  itemName!: string;
 
   @Field(() => Float)
-  orderedQuantity: number;
+  orderedQuantity!: number;
 
   @Field(() => Float)
-  deliveredQuantity: number;
+  deliveredQuantity!: number;
 
   @Field(() => Float)
-  pendingQuantity: number;
+  pendingQuantity!: number;
 
   @Field(() => Float)
-  fulfillmentPercentage: number;
+  fulfillmentPercentage!: number;
 }

@@ -41,40 +41,40 @@ registerEnumType(QuotationStatus, {
 @ObjectType()
 export class QuotationType {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  quotationCode: string;
+  quotationCode!: string;
 
   @Field(() => ID)
-  customerId: string;
+  customerId!: string;
 
   @Field(() => ID, { nullable: true })
   opportunityId?: string;
 
   @Field(() => QuotationStatus)
-  status: QuotationStatus;
+  status!: QuotationStatus;
 
   @Field()
-  validUntil: Date;
+  validUntil!: Date;
 
   @Field()
-  currency: string;
+  currency!: string;
 
   @Field(() => Float)
-  exchangeRate: number;
+  exchangeRate!: number;
 
   @Field(() => Float)
-  subtotal: number;
+  subtotal!: number;
 
   @Field(() => Float)
-  totalTax: number;
+  totalTax!: number;
 
   @Field(() => Float)
-  totalDiscount: number;
+  totalDiscount!: number;
 
   @Field(() => Float)
-  grandTotal: number;
+  grandTotal!: number;
 
   @Field({ nullable: true })
   terms?: string;
@@ -107,61 +107,61 @@ export class QuotationType {
   rejectionReason?: string;
 
   @Field(() => [QuotationItemType])
-  items: QuotationItemType[];
+  items!: QuotationItemType[];
 
   @Field()
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 @ObjectType()
 export class QuotationItemType {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field(() => ID)
-  quotationId: string;
+  quotationId!: string;
 
   @Field()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
-  itemName: string;
+  itemName!: string;
 
   @Field({ nullable: true })
   description?: string;
 
   @Field(() => Float)
-  quantity: number;
+  quantity!: number;
 
   @Field(() => Float)
-  unitPrice: number;
+  unitPrice!: number;
 
   @Field(() => Float)
-  discountPercent: number;
+  discountPercent!: number;
 
   @Field(() => Float)
-  discountAmount: number;
+  discountAmount!: number;
 
   @Field(() => Float)
-  taxPercent: number;
+  taxPercent!: number;
 
   @Field(() => Float)
-  taxAmount: number;
+  taxAmount!: number;
 
   @Field(() => Float)
-  lineTotal: number;
+  lineTotal!: number;
 
   @Field({ nullable: true })
   notes?: string;
 
   @Field(() => Int)
-  sortOrder: number;
+  sortOrder!: number;
 }
 
 // Input Types for Mutations
@@ -169,11 +169,11 @@ export class QuotationItemType {
 export class CreateQuotationItemInput {
   @Field()
   @IsString()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
   @IsString()
-  itemName: string;
+  itemName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -183,12 +183,12 @@ export class CreateQuotationItemInput {
   @Field(() => Float)
   @IsNumber()
   @Min(0.0001)
-  quantity: number;
+  quantity!: number;
 
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  unitPrice: number;
+  unitPrice!: number;
 
   @Field(() => Float, { nullable: true })
   @IsOptional()
@@ -225,7 +225,7 @@ export class CreateQuotationItemInput {
 export class CreateQuotationInput {
   @Field(() => ID)
   @IsUUID()
-  customerId: string;
+  customerId!: string;
 
   @Field(() => ID, { nullable: true })
   @IsOptional()
@@ -235,7 +235,7 @@ export class CreateQuotationInput {
   @Field()
   @IsDate()
   @Type(() => Date)
-  validUntil: Date;
+  validUntil!: Date;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -272,7 +272,7 @@ export class CreateQuotationInput {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateQuotationItemInput)
-  items: CreateQuotationItemInput[];
+  items!: CreateQuotationItemInput[];
 }
 
 @InputType()
@@ -402,19 +402,19 @@ export class QuotationFilterInput {
 @ObjectType()
 export class QuotationConnection {
   @Field(() => [QuotationType])
-  quotations: QuotationType[];
+  quotations!: QuotationType[];
 
   @Field(() => Int)
-  total: number;
+  total!: number;
 
   @Field(() => Int)
-  page: number;
+  page!: number;
 
   @Field(() => Int)
-  limit: number;
+  limit!: number;
 
   @Field(() => Int)
-  totalPages: number;
+  totalPages!: number;
 }
 
 @InputType()
@@ -437,7 +437,7 @@ export class PaginationInput {
 export class ConvertToSalesOrderInput {
   @Field(() => ID)
   @IsUUID()
-  quotationId: string;
+  quotationId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -465,47 +465,47 @@ export class ConvertToSalesOrderInput {
 @ObjectType()
 export class QuotationAnalyticsType {
   @Field(() => Int)
-  totalQuotations: number;
+  totalQuotations!: number;
 
   @Field(() => Int)
-  draftQuotations: number;
+  draftQuotations!: number;
 
   @Field(() => Int)
-  sentQuotations: number;
+  sentQuotations!: number;
 
   @Field(() => Int)
-  acceptedQuotations: number;
+  acceptedQuotations!: number;
 
   @Field(() => Int)
-  rejectedQuotations: number;
+  rejectedQuotations!: number;
 
   @Field(() => Int)
-  expiredQuotations: number;
+  expiredQuotations!: number;
 
   @Field(() => Float)
-  totalValue: number;
+  totalValue!: number;
 
   @Field(() => Float)
-  acceptedValue: number;
+  acceptedValue!: number;
 
   @Field(() => Float)
-  conversionRate: number;
+  conversionRate!: number;
 
   @Field(() => Float)
-  averageQuotationValue: number;
+  averageQuotationValue!: number;
 
   @Field(() => [QuotationStatusAnalyticsType])
-  quotationsByStatus: QuotationStatusAnalyticsType[];
+  quotationsByStatus!: QuotationStatusAnalyticsType[];
 }
 
 @ObjectType()
 export class QuotationStatusAnalyticsType {
   @Field(() => QuotationStatus)
-  status: QuotationStatus;
+  status!: QuotationStatus;
 
   @Field(() => Int)
-  count: number;
+  count!: number;
 
   @Field(() => Float)
-  totalValue: number;
+  totalValue!: number;
 }

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
-import { AccountsService } from '../../accounts/accounts.service';
+
 import {
   FinancialReport,
   FinancialReportInput,
@@ -12,8 +12,7 @@ import {
 export class CashFlowService {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
-    private readonly logger: Logger,
-    private readonly accountsService: AccountsService
+    private readonly logger: Logger
   ) {}
 
   async generateCashFlowStatement(
@@ -24,13 +23,12 @@ export class CashFlowService {
 
     try {
       // Generate both direct and indirect method cash flows
-      const method = 'indirect'; // Could be configurable
+      const method = 'indirect' as 'direct' | 'indirect'; // Could be configurable
 
       if (method === 'direct') {
         return this.generateDirectCashFlow(input, companyId);
-      } else {
-        return this.generateIndirectCashFlow(input, companyId);
       }
+      return this.generateIndirectCashFlow(input, companyId);
     } catch (error) {
       this.logger.error('Failed to generate cash flow statement', {
         error,
@@ -192,9 +190,9 @@ export class CashFlowService {
 
   // Helper methods for cash flow calculations
   private async getNetIncome(
-    companyId: string,
-    start: Date,
-    end: Date
+    _companyId: string,
+    _start: Date,
+    _end: Date
   ): Promise<number> {
     // This would calculate net income for the period
     // For now, returning mock data
@@ -202,9 +200,9 @@ export class CashFlowService {
   }
 
   private async getOperatingAdjustments(
-    companyId: string,
-    start: Date,
-    end: Date
+    _companyId: string,
+    _start: Date,
+    _end: Date
   ) {
     // Adjustments for non-cash items like depreciation, changes in working capital
     const depreciation = 10000;
@@ -224,36 +222,36 @@ export class CashFlowService {
   }
 
   private async getCashReceipts(
-    companyId: string,
-    start: Date,
-    end: Date
+    _companyId: string,
+    _start: Date,
+    _end: Date
   ): Promise<number> {
     // Calculate actual cash receipts from customers
     return 150000;
   }
 
   private async getCashPayments(
-    companyId: string,
-    start: Date,
-    end: Date
+    _companyId: string,
+    _start: Date,
+    _end: Date
   ): Promise<number> {
     // Calculate actual cash payments to suppliers and employees
     return 100000;
   }
 
   private async getInvestingCashFlow(
-    companyId: string,
-    start: Date,
-    end: Date
+    _companyId: string,
+    _start: Date,
+    _end: Date
   ): Promise<number> {
     // Calculate cash flows from investing activities
     return -15000; // Capital expenditures
   }
 
   private async getFinancingCashFlow(
-    companyId: string,
-    start: Date,
-    end: Date
+    _companyId: string,
+    _start: Date,
+    _end: Date
   ): Promise<number> {
     // Calculate cash flows from financing activities
     return 5000; // Net borrowing

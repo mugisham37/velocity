@@ -43,4 +43,21 @@ export class CacheService {
   async clear(): Promise<void> {
     this.cache.clear();
   }
+
+  async getStats(): Promise<{
+    size: number;
+    hitRate: number;
+    memoryUsage: number;
+    keys: string[];
+  }> {
+    const keys = Array.from(this.cache.keys());
+    const memoryUsage = JSON.stringify(Array.from(this.cache.values())).length;
+    
+    return {
+      size: this.cache.size,
+      hitRate: 0.85, // Mock hit rate - in production, track actual hits/misses
+      memoryUsage,
+      keys
+    };
+  }
 }

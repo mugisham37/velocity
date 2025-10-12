@@ -13,11 +13,11 @@ import {
 export class CreateLeadInput {
   @Field()
   @IsString()
-  firstName: string;
+  firstName!: string;
 
   @Field()
   @IsString()
-  lastName: string;
+  lastName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -66,7 +66,7 @@ export class CreateLeadInput {
     'Partner',
     'Other',
   ])
-  source:
+  source!:
     | 'Website'
     | 'Email Campaign'
     | 'Social Media'
@@ -231,15 +231,15 @@ export class UpdateLeadInput {
 export class CreateLeadActivityInput {
   @Field(() => ID)
   @IsString()
-  leadId: string;
+  leadId!: string;
 
   @Field()
   @IsString()
-  activityType: string;
+  activityType!: string;
 
   @Field()
   @IsString()
-  subject: string;
+  subject!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -248,7 +248,7 @@ export class CreateLeadActivityInput {
 
   @Field()
   @IsDateString()
-  activityDate: string;
+  activityDate!: string;
 
   @Field(() => Int, { nullable: true })
   @IsOptional()
@@ -274,10 +274,10 @@ export class CreateLeadActivityInput {
 @InputType()
 export class LeadConversionInput {
   @Field()
-  createCustomer: boolean;
+  createCustomer!: boolean;
 
   @Field()
-  createOpportunity: boolean;
+  createOpportunity!: boolean;
 
   @Field({ nullable: true })
   @IsOptional()

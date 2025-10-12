@@ -62,20 +62,28 @@ export class BalanceSheetService {
         ...this.addSectionHeader('EQUITY', equityLines),
       ];
 
-      return {
+      const report: FinancialReport = {
         reportType: 'BALANCE_SHEET',
         title: 'Balance Sheet',
         companyName: 'Company Name', // TODO: Get from company service
         periodStart: input.periodStart,
         periodEnd: input.periodEnd,
-        comparativePeriodStart: input.comparativePeriodStart,
-        comparativePeriodEnd: input.comparativePeriodEnd,
         lines: allLines,
         totalAssets,
         totalLiabilities,
         totalEquity,
         generatedAt: new Date(),
       };
+
+      // Only add comparative periods if they exist
+      if (input.comparativePeriodStart) {
+        report.comparativePeriodStart = input.comparativePeriodStart;
+      }
+      if (input.comparativePeriodEnd) {
+        report.comparativePeriodEnd = input.comparativePeriodEnd;
+      }
+
+      return report;
     } catch (error) {
       this.logger.error('Failed to generate balance sheet', {
         error,
