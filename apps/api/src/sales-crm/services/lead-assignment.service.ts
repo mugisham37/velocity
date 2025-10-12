@@ -1,15 +1,18 @@
 import {
-  Lead,
-  LeadAssignmentRule,
-  NewLeadAssignmentRule,
+  type Lead,
+  type LeadAssignmentRule,
+  type NewLeadAssignmentRule,
   leadAssignmentRules,
   users,
+  leads,
 } from '@kiro/database';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, sql } from '@kiro/database';
 import { Logger } from 'winston';
 import { BaseService } from '../../common/services/base.service';
-t { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { CacheService } from '../../common/services/cache.service';
+import { PerformanceMonitorService } from '../../common/services/performance-monitor.service';
 
 export interface CreateLeadAssignmentRuleDto {
   name: string;
@@ -31,19 +34,21 @@ export interface UpdateLeadAssignmentRuleDto {
 
 @Injectable()
 export class LeadAssignmentService extends BaseService<
-  typeof leadAssignmentRules,
+  any,
   LeadAssignmentRule,
   NewLeadAssignmentRule,
-  UpdateLeadAssignmentRuleDto
+  Record<string, any>
 > {
-  protected table = leadAssignmentRules;
+  protected table = leadAssignmentRules as any;
   protected tableName = 'lead_assignment_rules';
 
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
     logger: Logger,
+    cacheService: CacheService,
+    performanceMonitor: PerformanceMonitorService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -64,7 +69,7 @@ export class LeadAssignmentService extends BaseService<
 
     // Find the first matching rule
     for (const rule of rules) {
-      if (this.evaluateCriteria(lead, rule.criteria)) {
+      if (this.evaluateCriteria(lead, rule.criteria as Record<string, any>)) {
         // Verify the assigned user is still active
         const [assignedUser] = await this.database
           .select({ id: users.id })
@@ -94,7 +99,7 @@ export class LeadAssignmentService extends BaseService<
   async createAssignmentRule(
     data: CreateLeadAssignmentRuleDto,
     companyId: string,
-    userId?: string
+    _userId?: string
   ): Promise<LeadAssignmentRule> {
     // Verify the assigned user exists and is active
     const [assignedUser] = await this.database
@@ -117,7 +122,7 @@ export class LeadAssignmentService extends BaseService<
       .insert(leadAssignmentRules)
       .values({
         name: data.name,
-        description: data.description,
+        description: data.description ?? null,
         criteria: data.criteria,
         assignTo: data.assignTo,
         priority: data.priority ?? 0,
@@ -125,6 +130,10 @@ export class LeadAssignmentService extends BaseService<
         companyId,
       })
       .returning();
+
+    if (!rule) {
+      throw new Error('Failed to create assignment rule');
+    }
 
     return rule;
   }
@@ -136,7 +145,7 @@ export class LeadAssignmentService extends BaseService<
     id: string,
     data: UpdateLeadAssignmentRuleDto,
     companyId: string,
-    userId?: string
+    _userId?: string
   ): Promise<LeadAssignmentRule> {
     // Verify the assigned user exists and is active if being updated
     if (data.assignTo) {
@@ -157,9 +166,15 @@ export class LeadAssignmentService extends BaseService<
       }
     }
 
+    const updateData = {
+      ...data,
+      description: data.description ?? null,
+      updatedAt: new Date()
+    };
+
     const [rule] = await this.database
       .update(leadAssignmentRules)
-      .set({ ...data, updatedAt: new Date() })
+      .set(updateData)
       .where(
         and(
           eq(leadAssignmentRules.id, id),
@@ -210,7 +225,7 @@ export class LeadAssignmentService extends BaseService<
     const territories = [...new Set(salesTeamMembers.filter(m => m.territory).map(m => m.territory))];
     territories.forEach((territory, index) => {
       const territoryMembers = salesTeamMembers.filter(m => m.territory === territory);
-      if (territoryMembers.length > 0) {
+      if (territoryMembers.length > 0 && territoryMembers[0]) {
         rules.push({
           name: `${territory} Territory Assignment`,
           description: `Assign leads from ${territory} territory`,
@@ -226,7 +241,7 @@ export class LeadAssignmentService extends BaseService<
     });
 
     // High-value lead assignment (to senior sales rep)
-    if (salesTeamMembers.length > 0) {
+    if (salesTeamMembers.length > 0 && salesTeamMembers[0]) {
       rules.push({
         name: 'High-Value Lead Assignment',
         description: 'Assign high-value leads to senior sales representative',
@@ -243,18 +258,22 @@ export class LeadAssignmentService extends BaseService<
     // Industry-specific assignment
     const industries = ['Technology', 'Healthcare', 'Finance', 'Manufacturing'];
     industries.forEach((industry, index) => {
-      if (salesTeamMembers.length > index) {
-        rules.push({
-          name: `${industry} Industry Assignment`,
-          description: `Assign ${industry} industry leads to specialist`,
-          criteria: {
-            field: 'industry',
-            operator: 'equals',
-            value: industry,
-          },
-          assignTo: salesTeamMembers[index % salesTeamMembers.length].id,
-          priority: 10 + index,
-        });
+      if (salesTeamMembers.length > 0) {
+        const memberIndex = index % salesTeamMembers.length;
+        const member = salesTeamMembers[memberIndex];
+        if (member) {
+          rules.push({
+            name: `${industry} Industry Assignment`,
+            description: `Assign ${industry} industry leads to specialist`,
+            criteria: {
+              field: 'industry',
+              operator: 'equals',
+              value: industry,
+            },
+            assignTo: member.id,
+            priority: 10 + index,
+          });
+        }
       }
     });
 
@@ -278,7 +297,8 @@ export class LeadAssignmentService extends BaseService<
         createdRules.push(rule);
       } catch (error) {
         // Skip rules with invalid users
-        this.logger.warn(`Skipping assignment rule ${ruleData.name}: ${error.message}`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        this.logger.warn(`Skipping assignment rule ${ruleData.name}: ${errorMessage}`);
       }
     }
 
@@ -290,24 +310,24 @@ export class LeadAssignmentService extends BaseService<
    */
   async reassignLeads(companyId: string): Promise<void> {
     // Get all unassigned or leads that need reassignment
-    const leads = await this.database
+    const leadsToReassign = await this.database
       .select()
-      .from(this.database.schema.leads)
+      .from(leads)
       .where(
         and(
-          eq(this.database.schema.leads.companyId, companyId),
-          sql`${this.database.schema.leads.status} NOT IN ('Converted', 'Lost', 'Unqualified')`
+          eq(leads.companyId, companyId),
+          sql`${leads.status} NOT IN ('Converted', 'Lost', 'Unqualified')`
         )
       );
 
-    for (const lead of leads) {
+    for (const lead of leadsToReassign) {
       const newAssignee = await this.assignLead(lead, companyId);
 
       if (newAssignee && newAssignee !== lead.assignedTo) {
         await this.database
-          .update(this.database.schema.leads)
+          .update(leads)
           .set({ assignedTo: newAssignee, updatedAt: new Date() })
-          .where(eq(this.database.schema.leads.id, lead.id));
+          .where(eq(leads.id, lead.id));
       }
     }
   }
@@ -318,34 +338,38 @@ export class LeadAssignmentService extends BaseService<
   async getAssignmentStatistics(companyId: string): Promise<any> {
     const stats = await this.database
       .select({
-        assignedTo: this.database.schema.leads.assignedTo,
+        assignedTo: leads.assignedTo,
         totalLeads: sql<number>`COUNT(*)`,
         newLeads: sql<number>`COUNT(*) FILTER (WHERE status = 'New')`,
         qualifiedLeads: sql<number>`COUNT(*) FILTER (WHERE status = 'Qualified')`,
         convertedLeads: sql<number>`COUNT(*) FILTER (WHERE is_converted = true)`,
       })
-      .from(this.database.schema.leads)
-      .where(eq(this.database.schema.leads.companyId, companyId))
-      .groupBy(this.database.schema.leads.assignedTo);
+      .from(leads)
+      .where(eq(leads.companyId, companyId))
+      .groupBy(leads.assignedTo);
 
     // Get user names for assigned users
     const userIds = stats.map(s => s.assignedTo).filter(Boolean);
-    const userNames = await this.database
-      .select({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-      })
-      .from(users)
-      .where(sql`${users.id} = ANY(${userIds})`);
+    let userNameMap = new Map<string, string>();
+    
+    if (userIds.length > 0) {
+      const userNames = await this.database
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        })
+        .from(users)
+        .where(sql`${users.id} = ANY(${userIds})`);
 
-    const userNameMap = new Map(
-      userNames.map(u => [u.id, `${u.firstName} ${u.lastName}`])
-    );
+      userNameMap = new Map(
+        userNames.map(u => [u.id, `${u.firstName} ${u.lastName}`])
+      );
+    }
 
     return stats.map(stat => ({
       ...stat,
-      assigneeName: stat.assignedTo ? userNameMap.get(stat.assignedTo) || 'Unknown' : 'Unassigned',
+      assigneeName: stat.assignedTo ? (userNameMap.get(stat.assignedTo) || 'Unknown') : 'Unassigned',
     }));
   }
 
@@ -390,14 +414,14 @@ export class LeadAssignmentService extends BaseService<
    * Private method to evaluate criteria against lead data
    */
   private evaluateCriteria(lead: Lead, criteria: Record<string, any>): boolean {
-    if (criteria.operator === 'and') {
-      return criteria.conditions.every((condition: any) =>
+    if (criteria['operator'] === 'and') {
+      return criteria['conditions'].every((condition: any) =>
         this.evaluateSingleCriteria(lead, condition)
       );
     }
 
-    if (criteria.operator === 'or') {
-      return criteria.conditions.some((condition: any) =>
+    if (criteria['operator'] === 'or') {
+      return criteria['conditions'].some((condition: any) =>
         this.evaluateSingleCriteria(lead, condition)
       );
     }
@@ -406,25 +430,25 @@ export class LeadAssignmentService extends BaseService<
   }
 
   private evaluateSingleCriteria(lead: Lead, criteria: Record<string, any>): boolean {
-    const fieldValue = this.getFieldValue(lead, criteria.field);
+    const fieldValue = this.getFieldValue(lead, criteria['field']);
 
-    switch (criteria.operator) {
+    switch (criteria['operator']) {
       case 'equals':
-        return fieldValue === criteria.value;
+        return fieldValue === criteria['value'];
 
       case 'not_equals':
-        return fieldValue !== criteria.value;
+        return fieldValue !== criteria['value'];
 
       case 'in':
-        return Array.isArray(criteria.values) && criteria.values.includes(fieldValue);
+        return Array.isArray(criteria['values']) && criteria['values'].includes(fieldValue);
 
       case 'not_in':
-        return Array.isArray(criteria.values) && !criteria.values.includes(fieldValue);
+        return Array.isArray(criteria['values']) && !criteria['values'].includes(fieldValue);
 
       case 'contains':
         return typeof fieldValue === 'string' &&
-               typeof criteria.value === 'string' &&
-               fieldValue.toLowerCase().includes(criteria.value.toLowerCase());
+               typeof criteria['value'] === 'string' &&
+               fieldValue.toLowerCase().includes(criteria['value'].toLowerCase());
 
       case 'not_empty':
         return fieldValue !== null && fieldValue !== undefined && fieldValue !== '';
@@ -433,16 +457,16 @@ export class LeadAssignmentService extends BaseService<
         return fieldValue === null || fieldValue === undefined || fieldValue === '';
 
       case 'gt':
-        return typeof fieldValue === 'number' && fieldValue > criteria.value;
+        return typeof fieldValue === 'number' && fieldValue > criteria['value'];
 
       case 'gte':
-        return typeof fieldValue === 'number' && fieldValue >= criteria.value;
+        return typeof fieldValue === 'number' && fieldValue >= criteria['value'];
 
       case 'lt':
-        return typeof fieldValue === 'number' && fieldValue < criteria.value;
+        return typeof fieldValue === 'number' && fieldValue < criteria['value'];
 
       case 'lte':
-        return typeof fieldValue === 'number' && fieldValue <= criteria.value;
+        return typeof fieldValue === 'number' && fieldValue <= criteria['value'];
 
       default:
         return false;

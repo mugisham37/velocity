@@ -1,7 +1,7 @@
 import {
-  Lead,
-  LeadActivity,
-  NewLead,
+  type Lead,
+  type LeadActivity,
+  type NewLead,
   customers,
   leadActivities,
   leads,
@@ -17,6 +17,8 @@ import { NotificationService } from '../../common/services/notification.service'
 import { LeadAssignmentService } from './lead-assignment.service';
 import { LeadNurturingService } from './lead-nurturing.service';
 import { LeadScoringService } from './lead-scoring.service';
+import { CacheService } from '../../common/services/cache.service';
+import { PerformanceMonitorService } from '../../common/services/performance-monitor.service';
 
 export interface CreateLeadDto {
   firstName: string;
@@ -139,24 +141,26 @@ export interface LeadFilterDto {
 
 @Injectable()
 export class LeadsService extends BaseService<
-  typeof leads,
+  any,
   Lead,
   NewLead,
-  UpdateLeadDto
+  Record<string, any>
 > {
-  protected table = leads;
+  protected table = leads as any;
   protected tableName = 'leads';
 
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
     logger: Logger,
+    cacheService: CacheService,
+    performanceMonitor: PerformanceMonitorService,
     private readonly auditService: AuditService,
     private readonly notificationService: NotificationService,
     private readonly leadScoringService: LeadScoringService,
     private readonly leadAssignmentService: LeadAssignmentService,
     private readonly leadNurturingService: LeadNurturingService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -178,22 +182,26 @@ export class LeadsService extends BaseService<
           leadCode,
           firstName: data.firstName,
           lastName: data.lastName,
-          email: data.email,
-          phone: data.phone,
-          company: data.company,
-          jobTitle: data.jobTitle,
-          industry: data.industry,
-          website: data.website,
-          address: data.address,
+          email: data.email ?? null,
+          phone: data.phone ?? null,
+          company: data.company ?? null,
+          jobTitle: data.jobTitle ?? null,
+          industry: data.industry ?? null,
+          website: data.website ?? null,
+          address: data.address ?? null,
           source: data.source,
-          territory: data.territory,
-          estimatedValue: data.estimatedValue?.toString(),
-          expectedCloseDate: data.expectedCloseDate,
-          notes: data.notes,
-          customFields: data.customFields,
+          territory: data.territory ?? null,
+          estimatedValue: data.estimatedValue?.toString() ?? null,
+          expectedCloseDate: data.expectedCloseDate ?? null,
+          notes: data.notes ?? null,
+          customFields: data.customFields ?? null,
           companyId,
         })
         .returning();
+
+      if (!lead) {
+        throw new Error('Failed to create lead');
+      }
 
       // Calculate lead score
       const score = await this.leadScoringService.calculateLeadScore(
@@ -208,23 +216,31 @@ export class LeadsService extends BaseService<
         .where(eq(leads.id, lead.id))
         .returning();
 
+      if (!scoredLead) {
+        throw new Error('Failed to update lead with score');
+      }
+
       // Auto-assign lead based on rules
       const assignedTo = await this.leadAssignmentService.assignLead(
         scoredLead,
         companyId
       );
 
+      let finalLead = scoredLead;
       if (assignedTo) {
-        await tx
+        const [updatedLead] = await tx
           .update(leads)
           .set({ assignedTo, updatedAt: new Date() })
-          .where(eq(leads.id, lead.id));
+          .where(eq(leads.id, lead.id))
+          .returning();
 
-        scoredLead.assignedTo = assignedTo;
+        if (updatedLead) {
+          finalLead = updatedLead;
+        }
       }
 
       // Enroll in nurturing campaigns
-      await this.leadNurturingService.enrollInCampaigns(scoredLead, companyId);
+      await this.leadNurturingService.enrollInCampaigns(finalLead, companyId);
 
       // Create initial activity
       await tx.insert(leadActivities).values({
@@ -254,16 +270,19 @@ export class LeadsService extends BaseService<
       }
 
       // Log audit trail
-      await this.auditService.logAudit({
+      const auditEntry: any = {
         entityType: 'leads',
         entityId: lead.id,
         action: 'CREATE',
-        newValues: scoredLead,
+        newValues: finalLead,
         companyId,
-        userId,
-      });
+      };
+      if (userId) {
+        auditEntry.userId = userId;
+      }
+      await this.auditService.logAudit(auditEntry);
 
-      return scoredLead;
+      return finalLead;
     });
   }
 
@@ -279,12 +298,35 @@ export class LeadsService extends BaseService<
     const oldLead = await this.findByIdOrFail(id, companyId);
 
     return await this.transaction(async tx => {
+      // Prepare update data with proper null handling
+      const updateData = {
+        ...data,
+        email: data.email ?? null,
+        phone: data.phone ?? null,
+        company: data.company ?? null,
+        jobTitle: data.jobTitle ?? null,
+        industry: data.industry ?? null,
+        website: data.website ?? null,
+        address: data.address ?? null,
+        territory: data.territory ?? null,
+        estimatedValue: data.estimatedValue?.toString() ?? null,
+        expectedCloseDate: data.expectedCloseDate ?? null,
+        nextFollowUpDate: data.nextFollowUpDate ?? null,
+        notes: data.notes ?? null,
+        customFields: data.customFields ?? null,
+        updatedAt: new Date()
+      };
+
       // Update lead
       const [updatedLead] = await tx
         .update(leads)
-        .set({ ...data, updatedAt: new Date() })
+        .set(updateData)
         .where(and(eq(leads.id, id), eq(leads.companyId, companyId)))
         .returning();
+
+      if (!updatedLead) {
+        throw new Error('Lead not found or update failed');
+      }
 
       // Recalculate score if relevant fields changed
       const scoreRelevantFields = [
@@ -298,16 +340,21 @@ export class LeadsService extends BaseService<
         field => data[field as keyof UpdateLeadDto] !== undefined
       );
 
+      let finalUpdatedLead = updatedLead;
       if (shouldRecalculateScore) {
         const newScore = await this.leadScoringService.calculateLeadScore(
           updatedLead,
           companyId
         );
-        await tx
+        const [rescored] = await tx
           .update(leads)
           .set({ score: newScore, updatedAt: new Date() })
-          .where(eq(leads.id, id));
-        updatedLead.score = newScore;
+          .where(eq(leads.id, id))
+          .returning();
+        
+        if (rescored) {
+          finalUpdatedLead = rescored;
+        }
       }
 
       // Create activity for status change
@@ -322,13 +369,13 @@ export class LeadsService extends BaseService<
         });
 
         // Send notification for important status changes
-        if (data.status === 'Qualified' && updatedLead.assignedTo) {
+        if (data.status === 'Qualified' && finalUpdatedLead.assignedTo) {
           await this.notificationService.sendNotification(
             {
               title: 'Lead Qualified',
-              message: `Lead "${updatedLead.firstName} ${updatedLead.lastName}" has been qualified`,
+              message: `Lead "${finalUpdatedLead.firstName} ${finalUpdatedLead.lastName}" has been qualified`,
               type: 'SUCCESS',
-              recipientId: updatedLead.assignedTo,
+              recipientId: finalUpdatedLead.assignedTo,
               entityType: 'leads',
               entityId: id,
             },
@@ -339,17 +386,20 @@ export class LeadsService extends BaseService<
       }
 
       // Log audit trail
-      await this.auditService.logAudit({
+      const auditEntry: any = {
         entityType: 'leads',
         entityId: id,
         action: 'UPDATE',
         oldValues: oldLead,
-        newValues: updatedLead,
+        newValues: finalUpdatedLead,
         companyId,
-        userId,
-      });
+      };
+      if (userId) {
+        auditEntry.userId = userId;
+      }
+      await this.auditService.logAudit(auditEntry);
 
-      return updatedLead;
+      return finalUpdatedLead;
     });
   }
 
@@ -411,13 +461,13 @@ export class LeadsService extends BaseService<
           .values({
             opportunityCode,
             name: conversionData.opportunityData.name,
-            customerId,
+            customerId: customerId ?? null,
             leadId: id,
             stage: conversionData.opportunityData.stage || 'Prospecting',
             probability: conversionData.opportunityData.probability || 10,
             amount: conversionData.opportunityData.amount.toString(),
-            expectedCloseDate: conversionData.opportunityData.expectedCloseDate,
-            description: conversionData.opportunityData.description,
+            expectedCloseDate: conversionData.opportunityData.expectedCloseDate ?? null,
+            description: conversionData.opportunityData.description ?? null,
             source: lead.source,
             assignedTo: lead.assignedTo,
             territory: lead.territory,
@@ -434,8 +484,8 @@ export class LeadsService extends BaseService<
         .set({
           isConverted: true,
           status: 'Converted',
-          convertedCustomerId: customerId,
-          convertedOpportunityId: opportunityId,
+          convertedCustomerId: customerId ?? null,
+          convertedOpportunityId: opportunityId ?? null,
           updatedAt: new Date(),
         })
         .where(eq(leads.id, id));
@@ -471,8 +521,8 @@ export class LeadsService extends BaseService<
       await this.auditService.logAudit({
         entityType: 'leads',
         entityId: id,
-        action: 'CONVERT',
-        newValues: { customerId, opportunityId },
+        action: 'UPDATE',
+        newValues: { customerId, opportunityId, isConverted: true, status: 'Converted' },
         companyId,
         userId,
       });
@@ -498,23 +548,27 @@ export class LeadsService extends BaseService<
         leadId: data.leadId,
         activityType: data.activityType,
         subject: data.subject,
-        description: data.description,
+        description: data.description ?? null,
         activityDate: data.activityDate,
-        duration: data.duration,
-        outcome: data.outcome,
-        nextAction: data.nextAction,
-        nextActionDate: data.nextActionDate,
+        duration: data.duration ?? null,
+        outcome: data.outcome ?? null,
+        nextAction: data.nextAction ?? null,
+        nextActionDate: data.nextActionDate ?? null,
         createdBy: userId,
         companyId,
       })
       .returning();
+
+    if (!activity) {
+      throw new Error('Failed to create activity');
+    }
 
     // Update lead's last contact date and next follow-up date
     await this.database
       .update(leads)
       .set({
         lastContactDate: data.activityDate,
-        nextFollowUpDate: data.nextActionDate,
+        nextFollowUpDate: data.nextActionDate ?? null,
         updatedAt: new Date(),
       })
       .where(eq(leads.id, data.leadId));
@@ -620,17 +674,19 @@ export class LeadsService extends BaseService<
           like(leads.email, `%${filter.search}%`),
           like(leads.company, `%${filter.search}%`),
           like(leads.phone, `%${filter.search}%`)
-        )
+        )!
       );
     }
 
     query = query.where(and(...conditions));
 
     // Get total count
-    const [{ count }] = await this.database
+    const countResult = await this.database
       .select({ count: sql<number>`count(*)` })
       .from(leads)
       .where(and(...conditions));
+    
+    const total = Number(countResult[0]?.count || 0);
 
     // Get paginated results
     const results = await query
@@ -640,7 +696,7 @@ export class LeadsService extends BaseService<
 
     return {
       leads: results,
-      total: count,
+      total,
     };
   }
 
@@ -722,7 +778,7 @@ export class LeadsService extends BaseService<
   private async generateLeadCode(companyId: string): Promise<string> {
     const prefix = 'LEAD';
 
-    const [result] = await this.database
+    const result = await this.database
       .select({
         maxCode: sql<string>`MAX(CAST(SUBSTRING(${leads.leadCode}, 5) AS INTEGER))`,
       })
@@ -731,14 +787,15 @@ export class LeadsService extends BaseService<
         and(eq(leads.companyId, companyId), like(leads.leadCode, `${prefix}%`))
       );
 
-    const nextNumber = result.maxCode ? parseInt(result.maxCode) + 1 : 1;
+    const maxCode = result[0]?.maxCode;
+    const nextNumber = maxCode ? parseInt(maxCode) + 1 : 1;
     return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 
   private async generateCustomerCode(companyId: string): Promise<string> {
     const prefix = 'CUST';
 
-    const [result] = await this.database
+    const result = await this.database
       .select({
         maxCode: sql<string>`MAX(CAST(SUBSTRING(customer_code, 5) AS INTEGER))`,
       })
@@ -750,14 +807,15 @@ export class LeadsService extends BaseService<
         )
       );
 
-    const nextNumber = result.maxCode ? parseInt(result.maxCode) + 1 : 1;
+    const maxCode = result[0]?.maxCode;
+    const nextNumber = maxCode ? parseInt(maxCode) + 1 : 1;
     return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 
   private async generateOpportunityCode(companyId: string): Promise<string> {
     const prefix = 'OPP';
 
-    const [result] = await this.database
+    const result = await this.database
       .select({
         maxCode: sql<string>`MAX(CAST(SUBSTRING(opportunity_code, 4) AS INTEGER))`,
       })
@@ -769,7 +827,8 @@ export class LeadsService extends BaseService<
         )
       );
 
-    const nextNumber = result.maxCode ? parseInt(result.maxCode) + 1 : 1;
+    const maxCode = result[0]?.maxCode;
+    const nextNumber = maxCode ? parseInt(maxCode) + 1 : 1;
     return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 }

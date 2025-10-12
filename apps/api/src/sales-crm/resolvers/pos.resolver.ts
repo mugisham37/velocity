@@ -118,10 +118,10 @@ export class POSResolver {
   // POS Analytics Queries
   @Query(() => [POSInvoice])
   async posInvoices(
-    @Args('profileId', { type: () => ID, nullable: true }) profileId?: string,
-    @Args('startDate', { nullable: true }) startDate?: Date,
-    @Args('endDate', { nullable: true }) endDate?: Date,
-    @CurrentUser() user?: User
+    @Args('profileId', { type: () => ID, nullable: true }) _profileId?: string,
+    @Args('startDate', { nullable: true }) _startDate?: Date,
+    @Args('endDate', { nullable: true }) _endDate?: Date,
+    @CurrentUser() _user?: User
   ): Promise<POSInvoice[]> {
     // This would implement filtering and pagination
     // Mock implementation for now
@@ -130,9 +130,9 @@ export class POSResolver {
 
   @Query(() => String)
   async posDailySalesReport(
-    @Args('profileId', { type: () => ID }) profileId: string,
-    @Args('date') date: Date,
-    @CurrentUser() user: User
+    @Args('profileId', { type: () => ID }) _profileId: string,
+    @Args('date') _date: Date,
+    @CurrentUser() _user: User
   ): Promise<string> {
     // This would generate daily sales report
     return 'Daily sales report data';

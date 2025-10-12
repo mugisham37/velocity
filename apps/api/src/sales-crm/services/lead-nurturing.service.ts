@@ -1,16 +1,19 @@
 import {
-  Lead,
-  LeadNurturingCampaign,
-  NewLeadNurturingCampaign,
+  type Lead,
+  type LeadNurturingCampaign,
+  type NewLeadNurturingCampaign,
   leadNurturingCampaigns,
   leadCampaignEnrollments,
+  leads,
 } from '@kiro/database';
 import { Injectable, Inject } from '@nestjs/common';
 import { and, eq, sql } from '@kiro/database';
-import { WINSTON_MODULE_PROVIDER }om 'nest-winston';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { BaseService } from '../../common/services/base.service';
 import { NotificationService } from '../../common/services/notification.service';
+import { CacheService } from '../../common/services/cache.service';
+import { PerformanceMonitorService } from '../../common/services/performance-monitor.service';
 
 export interface CreateLeadNurturingCampaignDto {
   name: string;
@@ -76,20 +79,22 @@ export interface WebhookStepConfig {
 
 @Injectable()
 export class LeadNurturingService extends BaseService<
-  typeof leadNurturingCampaigns,
+  any,
   LeadNurturingCampaign,
   NewLeadNurturingCampaign,
-  UpdateLeadNurturingCampaignDto
+  Record<string, any>
 > {
-  protected table = leadNurturingCampaigns;
+  protected table = leadNurturingCampaigns as any;
   protected tableName = 'lead_nurturing_campaigns';
 
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
     logger: Logger,
+    cacheService: CacheService,
+    performanceMonitor: PerformanceMonitorService,
     private readonly notificationService: NotificationService,
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -98,21 +103,25 @@ export class LeadNurturingService extends BaseService<
   async createCampaign(
     data: CreateLeadNurturingCampaignDto,
     companyId: string,
-    userId?: string
+    _userId?: string
   ): Promise<LeadNurturingCampaign> {
     const [campaign] = await this.database
       .insert(leadNurturingCampaigns)
       .values({
         name: data.name,
-        description: data.description,
+        description: data.description ?? null,
         targetCriteria: data.targetCriteria,
         workflow: data.workflow,
         isActive: data.isActive ?? true,
-        startDate: data.startDate,
-        endDate: data.endDate,
+        startDate: data.startDate ?? null,
+        endDate: data.endDate ?? null,
         companyId,
       })
       .returning();
+
+    if (!campaign) {
+      throw new Error('Failed to create nurturing campaign');
+    }
 
     return campaign;
   }
@@ -124,11 +133,19 @@ export class LeadNurturingService extends BaseService<
     id: string,
     data: UpdateLeadNurturingCampaignDto,
     companyId: string,
-    userId?: string
+    _userId?: string
   ): Promise<LeadNurturingCampaign> {
+    const updateData = {
+      ...data,
+      description: data.description ?? null,
+      startDate: data.startDate ?? null,
+      endDate: data.endDate ?? null,
+      updatedAt: new Date()
+    };
+
     const [campaign] = await this.database
       .update(leadNurturingCampaigns)
-      .set({ ...data, updatedAt: new Date() })
+      .set(updateData)
       .where(
         and(
           eq(leadNurturingCampaigns.id, id),
@@ -199,7 +216,7 @@ export class LeadNurturingService extends BaseService<
 
     for (const campaign of campaigns) {
       // Check if lead matches campaign criteria
-      if (this.evaluateCriteria(lead, campaign.targetCriteria)) {
+      if (this.evaluateCriteria(lead, campaign.targetCriteria as Record<string, any>)) {
         // Check if lead is not already enrolled
         const [existingEnrollment] = await this.database
           .select()
@@ -240,7 +257,7 @@ export class LeadNurturingService extends BaseService<
       .select({
         enrollment: leadCampaignEnrollments,
         campaign: leadNurturingCampaigns,
-        lead: this.database.schema.leads,
+        lead: leads,
       })
       .from(leadCampaignEnrollments)
       .innerJoin(
@@ -248,8 +265,8 @@ export class LeadNurturingService extends BaseService<
         eq(leadCampaignEnrollments.campaignId, leadNurturingCampaigns.id)
       )
       .innerJoin(
-        this.database.schema.leads,
-        eq(leadCampaignEnrollments.leadId, this.database.schema.leads.id)
+        leads,
+        eq(leadCampaignEnrollments.leadId, leads.id)
       )
       .where(
         and(
@@ -412,12 +429,12 @@ export class LeadNurturingService extends BaseService<
   /**
    * Setup default nurturing campaigns for a company
    */
-  async setupDefaultCampaigns(companyId: string, userId?: string): Promise<LeadNurturingCampaign[]> {
+  async setupDefaultCampaigns(companyId: string, _userId?: string): Promise<LeadNurturingCampaign[]> {
     const defaultCampaigns = this.getDefaultNurturingCampaigns();
     const createdCampaigns: LeadNurturingCampaign[] = [];
 
     for (const campaignData of defaultCampaigns) {
-      const campaign = await this.createCampaign(campaignData, companyId, userId);
+      const campaign = await this.createCampaign(campaignData, companyId, _userId);
       createdCampaigns.push(campaign);
     }
 
@@ -547,7 +564,7 @@ export class LeadNurturingService extends BaseService<
         {
           title: config.title,
           message: config.description,
-          type: 'TASK',
+          type: 'INFO',
           recipientId: assignTo,
           entityType: 'leads',
           entityId: lead.id,
@@ -558,7 +575,7 @@ export class LeadNurturingService extends BaseService<
     }
   }
 
-  private async executeWebhookStep(step: NurturingStep, lead: any, companyId: string): Promise<void> {
+  private async executeWebhookStep(step: NurturingStep, lead: any, _companyId: string): Promise<void> {
     const config = step.config as WebhookStepConfig;
 
     // This would make an HTTP request to the configured webhook URL
@@ -570,14 +587,14 @@ export class LeadNurturingService extends BaseService<
    * Private method to evaluate criteria against lead data
    */
   private evaluateCriteria(lead: Lead, criteria: Record<string, any>): boolean {
-    if (criteria.operator === 'and') {
-      return criteria.conditions.every((condition: any) =>
+    if (criteria['operator'] === 'and') {
+      return criteria['conditions'].every((condition: any) =>
         this.evaluateSingleCriteria(lead, condition)
       );
     }
 
-    if (criteria.operator === 'or') {
-      return criteria.conditions.some((condition: any) =>
+    if (criteria['operator'] === 'or') {
+      return criteria['conditions'].some((condition: any) =>
         this.evaluateSingleCriteria(lead, condition)
       );
     }
@@ -586,27 +603,27 @@ export class LeadNurturingService extends BaseService<
   }
 
   private evaluateSingleCriteria(lead: Lead, criteria: Record<string, any>): boolean {
-    const fieldValue = this.getFieldValue(lead, criteria.field);
+    const fieldValue = this.getFieldValue(lead, criteria['field']);
 
-    switch (criteria.operator) {
+    switch (criteria['operator']) {
       case 'equals':
-        return fieldValue === criteria.value;
+        return fieldValue === criteria['value'];
       case 'in':
-        return Array.isArray(criteria.values) && criteria.values.includes(fieldValue);
+        return Array.isArray(criteria['values']) && criteria['values'].includes(fieldValue);
       case 'gte':
-        return typeof fieldValue === 'number' && fieldValue >= criteria.value;
+        return typeof fieldValue === 'number' && fieldValue >= criteria['value'];
       case 'past_days':
         if (!fieldValue || !(fieldValue instanceof Date)) return false;
         const now = new Date();
         const pastTime = now.getTime() - fieldValue.getTime();
         const pastDays = Math.ceil(pastTime / (1000 * 60 * 60 * 24));
-        return pastDays >= criteria.value;
+        return pastDays >= criteria['value'];
       case 'within_days':
         if (!fieldValue || !(fieldValue instanceof Date)) return false;
         const today = new Date();
         const diffTime = Math.abs(fieldValue.getTime() - today.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays <= criteria.value;
+        return diffDays <= criteria['value'];
       default:
         return false;
     }

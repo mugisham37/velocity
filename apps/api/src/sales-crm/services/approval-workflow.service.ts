@@ -1,7 +1,7 @@
-import { Database, db } from '@kiro/database';
+
 import { Inject, Injectable } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-iort { Logger } from 'winston';
+import type { Logger } from 'winston';
 
 export interface ApprovalRule {
   id: string;
@@ -43,14 +43,10 @@ export interface ApprovalRequest {
 
 @Injectable()
 export class ApprovalWorkflowService {
-  private database: Database;
-
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
     private readonly logger: Logger
-  ) {
-    this.database = db;
-  }
+  ) {}
 
   /**
    * Check if approval is required for an entity
@@ -140,11 +136,14 @@ export class ApprovalWorkflowService {
       await this.saveApprovalRequest(approvalRequest, companyId);
 
       // Send notification to first approver
-      await this.notifyApprover(
-        approvalRequest.approvals[0].userId,
-        approvalRequest,
-        companyId
-      );
+      const firstApproval = approvalRequest.approvals[0];
+      if (firstApproval) {
+        await this.notifyApprover(
+          firstApproval.userId,
+          approvalRequest,
+          companyId
+        );
+      }
 
       this.logger.info('Created approval request', {
         approvalRequestId: approvalRequest.id,
@@ -170,7 +169,7 @@ export class ApprovalWorkflowService {
     userId: string,
     decision: 'approved' | 'rejected',
     comments?: string,
-    companyId?: string
+    companyId: string = ''
   ): Promise<ApprovalRequest> {
     try {
       this.logger.info('Processing approval', {
@@ -206,7 +205,7 @@ export class ApprovalWorkflowService {
       approvalRequest.approvals[approvalIndex] = {
         userId,
         status: decision,
-        comments,
+        ...(comments && { comments }),
         approvedAt: new Date(),
       };
 
@@ -240,11 +239,13 @@ export class ApprovalWorkflowService {
 
           // Notify next approver
           const nextApproval = pendingApprovals[0];
-          await this.notifyApprover(
-            nextApproval.userId,
-            approvalRequest,
-            companyId
-          );
+          if (nextApproval) {
+            await this.notifyApprover(
+              nextApproval.userId,
+              approvalRequest,
+              companyId
+            );
+          }
         }
       }
 
@@ -278,6 +279,12 @@ export class ApprovalWorkflowService {
     companyId: string
   ): Promise<ApprovalRequest[]> {
     try {
+      this.logger.info('Getting approval requests for user', {
+        userId,
+        status,
+        companyId,
+      });
+      
       // This would typically query the database
       // For now, return empty array
       return [];
@@ -366,6 +373,10 @@ export class ApprovalWorkflowService {
     entityData: any,
     companyId: string
   ): Promise<ApprovalRule[]> {
+    this.logger.debug('Getting applicable approval rules', {
+      entityType,
+      companyId,
+    });
     // Mock approval rules - in a real implementation, these would come from database
     const mockRules: ApprovalRule[] = [
       {
@@ -454,6 +465,12 @@ export class ApprovalWorkflowService {
     entityId: string,
     companyId: string
   ): Promise<any> {
+    this.logger.debug('Getting entity data', {
+      entityType,
+      entityId,
+      companyId,
+    });
+    
     // This would typically query the appropriate service
     // For now, return mock data
     return {
@@ -469,7 +486,7 @@ export class ApprovalWorkflowService {
    * Generate approval request ID
    */
   private generateApprovalRequestId(): string {
-    return `APR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `APR-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
   /**
@@ -493,6 +510,11 @@ export class ApprovalWorkflowService {
     approvalRequestId: string,
     companyId: string
   ): Promise<ApprovalRequest | null> {
+    this.logger.debug('Getting approval request', {
+      approvalRequestId,
+      companyId,
+    });
+    
     // In a real implementation, this would query from database
     return null;
   }

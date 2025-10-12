@@ -1,14 +1,17 @@
 import {
-  Lead,
-  LeadScoringRule,
-  NewLeadScoringRule,
+  type Lead,
+  type LeadScoringRule,
+  type NewLeadScoringRule,
   leadScoringRules,
+  leads,
 } from '@kiro/database';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { BaseService } from '../../common/services/base.service';
+import { CacheService } from '../../common/services/cache.service';
+import { PerformanceMonitorService } from '../../common/services/performance-monitor.service';
 
 export interface CreateLeadScoringRuleDto {
   name: string;
@@ -28,19 +31,21 @@ export interface UpdateLeadScoringRuleDto {
 
 @Injectable()
 export class LeadScoringService extends BaseService<
-  typeof leadScoringRules,
+  any,
   LeadScoringRule,
   NewLeadScoringRule,
-  UpdateLeadScoringRuleDto
+  Record<string, any>
 > {
-  protected table = leadScoringRules;
+  protected table = leadScoringRules as any;
   protected tableName = 'lead_scoring_rules';
 
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
-    logger: Logger
+    logger: Logger,
+    cacheService: CacheService,
+    performanceMonitor: PerformanceMonitorService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -61,7 +66,7 @@ export class LeadScoringService extends BaseService<
     let totalScore = 0;
 
     for (const rule of rules) {
-      if (this.evaluateCriteria(lead, rule.criteria)) {
+      if (this.evaluateCriteria(lead, rule.criteria as Record<string, any>)) {
         totalScore += rule.points;
       }
     }
@@ -76,19 +81,23 @@ export class LeadScoringService extends BaseService<
   async createScoringRule(
     data: CreateLeadScoringRuleDto,
     companyId: string,
-    userId?: string
+    _userId?: string
   ): Promise<LeadScoringRule> {
     const [rule] = await this.database
       .insert(leadScoringRules)
       .values({
         name: data.name,
-        description: data.description,
+        description: data.description ?? null,
         criteria: data.criteria,
         points: data.points,
         isActive: data.isActive ?? true,
         companyId,
       })
       .returning();
+
+    if (!rule) {
+      throw new Error('Failed to create scoring rule');
+    }
 
     return rule;
   }
@@ -100,11 +109,17 @@ export class LeadScoringService extends BaseService<
     id: string,
     data: UpdateLeadScoringRuleDto,
     companyId: string,
-    userId?: string
+    _userId?: string
   ): Promise<LeadScoringRule> {
+    const updateData = {
+      ...data,
+      description: data.description ?? null,
+      updatedAt: new Date()
+    };
+
     const [rule] = await this.database
       .update(leadScoringRules)
-      .set({ ...data, updatedAt: new Date() })
+      .set(updateData)
       .where(
         and(
           eq(leadScoringRules.id, id),
@@ -240,13 +255,13 @@ export class LeadScoringService extends BaseService<
    */
   async setupDefaultScoringRules(
     companyId: string,
-    userId?: string
+    _userId?: string
   ): Promise<LeadScoringRule[]> {
     const defaultRules = this.getDefaultScoringRules();
     const createdRules: LeadScoringRule[] = [];
 
     for (const ruleData of defaultRules) {
-      const rule = await this.createScoringRule(ruleData, companyId, userId);
+      const rule = await this.createScoringRule(ruleData, companyId, _userId);
       createdRules.push(rule);
     }
 
@@ -258,18 +273,18 @@ export class LeadScoringService extends BaseService<
    */
   async recalculateAllLeadScores(companyId: string): Promise<void> {
     // This would typically be run as a background job
-    const leads = await this.database
+    const leadsToScore = await this.database
       .select()
-      .from(this.database.schema.leads)
-      .where(eq(this.database.schema.leads.companyId, companyId));
+      .from(leads)
+      .where(eq(leads.companyId, companyId));
 
-    for (const lead of leads) {
+    for (const lead of leadsToScore) {
       const newScore = await this.calculateLeadScore(lead, companyId);
 
       await this.database
-        .update(this.database.schema.leads)
+        .update(leads)
         .set({ score: newScore, updatedAt: new Date() })
-        .where(eq(this.database.schema.leads.id, lead.id));
+        .where(eq(leads.id, lead.id));
     }
   }
 
@@ -277,14 +292,14 @@ export class LeadScoringService extends BaseService<
    * Private method to evaluate criteria against lead data
    */
   private evaluateCriteria(lead: Lead, criteria: Record<string, any>): boolean {
-    if (criteria.operator === 'and') {
-      return criteria.conditions.every((condition: any) =>
+    if (criteria['operator'] === 'and') {
+      return criteria['conditions'].every((condition: any) =>
         this.evaluateSingleCriteria(lead, condition)
       );
     }
 
-    if (criteria.operator === 'or') {
-      return criteria.conditions.some((condition: any) =>
+    if (criteria['operator'] === 'or') {
+      return criteria['conditions'].some((condition: any) =>
         this.evaluateSingleCriteria(lead, condition)
       );
     }
@@ -296,38 +311,38 @@ export class LeadScoringService extends BaseService<
     lead: Lead,
     criteria: Record<string, any>
   ): boolean {
-    const fieldValue = this.getFieldValue(lead, criteria.field);
+    const fieldValue = this.getFieldValue(lead, criteria['field']);
 
-    switch (criteria.operator) {
+    switch (criteria['operator']) {
       case 'equals':
-        return fieldValue === criteria.value;
+        return fieldValue === criteria['value'];
 
       case 'not_equals':
-        return fieldValue !== criteria.value;
+        return fieldValue !== criteria['value'];
 
       case 'in':
         return (
-          Array.isArray(criteria.values) && criteria.values.includes(fieldValue)
+          Array.isArray(criteria['values']) && criteria['values'].includes(fieldValue)
         );
 
       case 'not_in':
         return (
-          Array.isArray(criteria.values) &&
-          !criteria.values.includes(fieldValue)
+          Array.isArray(criteria['values']) &&
+          !criteria['values'].includes(fieldValue)
         );
 
       case 'contains':
         return (
           typeof fieldValue === 'string' &&
-          typeof criteria.value === 'string' &&
-          fieldValue.toLowerCase().includes(criteria.value.toLowerCase())
+          typeof criteria['value'] === 'string' &&
+          fieldValue.toLowerCase().includes(criteria['value'].toLowerCase())
         );
 
       case 'contains_any':
         return (
           typeof fieldValue === 'string' &&
-          Array.isArray(criteria.values) &&
-          criteria.values.some((value: string) =>
+          Array.isArray(criteria['values']) &&
+          criteria['values'].some((value: string) =>
             fieldValue.toLowerCase().includes(value.toLowerCase())
           )
         );
@@ -343,30 +358,30 @@ export class LeadScoringService extends BaseService<
         );
 
       case 'gt':
-        return typeof fieldValue === 'number' && fieldValue > criteria.value;
+        return typeof fieldValue === 'number' && fieldValue > criteria['value'];
 
       case 'gte':
-        return typeof fieldValue === 'number' && fieldValue >= criteria.value;
+        return typeof fieldValue === 'number' && fieldValue >= criteria['value'];
 
       case 'lt':
-        return typeof fieldValue === 'number' && fieldValue < criteria.value;
+        return typeof fieldValue === 'number' && fieldValue < criteria['value'];
 
       case 'lte':
-        return typeof fieldValue === 'number' && fieldValue <= criteria.value;
+        return typeof fieldValue === 'number' && fieldValue <= criteria['value'];
 
       case 'within_days':
         if (!fieldValue || !(fieldValue instanceof Date)) return false;
         const today = new Date();
         const diffTime = fieldValue.getTime() - today.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays >= 0 && diffDays <= criteria.value;
+        return diffDays >= 0 && diffDays <= criteria['value'];
 
       case 'past_days':
         if (!fieldValue || !(fieldValue instanceof Date)) return false;
         const now = new Date();
         const pastTime = now.getTime() - fieldValue.getTime();
         const pastDays = Math.ceil(pastTime / (1000 * 60 * 60 * 24));
-        return pastDays >= 0 && pastDays <= criteria.value;
+        return pastDays >= 0 && pastDays <= criteria['value'];
 
       default:
         return false;
