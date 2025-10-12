@@ -49,6 +49,7 @@ export class SerialBatchTrackingResolver {
 
     return this.serialBatchTrackingService.createSerialNumber(
       input,
+      user.companyId,
       user.id
     );
   }
@@ -191,10 +192,7 @@ export class SerialBatchTrackingResolver {
     const { user } = context.req;
     this.logger.log(`Creating batch location for batch: ${input.batchId}`);
 
-    return this.serialBatchTrackingService.createBatchLocation(
-      input,
-      user.companyId
-    );
+    return this.serialBatchTrackingService.createBatchLocation(input);
   }
 
   // Product Recall Mutations
