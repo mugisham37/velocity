@@ -12,7 +12,7 @@ interface WorkflowInstanceListProps {
 
 export function WorkflowInstanceList({
   instances,
-  onRefresh,
+  onRefresh: _onRefresh,
 }: WorkflowInstanceListProps) {
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {

@@ -5,7 +5,7 @@ interface WorkflowExecutionChartProps {
 }
 
 export function WorkflowExecutionChart({
-  workflowId,
+  workflowId: _workflowId,
 }: WorkflowExecutionChartProps) {
   // Placeholder for chart implementation
   // In a real implementation, this would use a charting library like Chart.js or Recharts

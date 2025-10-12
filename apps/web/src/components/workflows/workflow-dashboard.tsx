@@ -55,8 +55,8 @@ export function WorkflowDashboard({ className }: WorkflowDashboardProps) {
   const categories = categoriesData?.workflowCategories || [];
   const metrics = metricsData?.workflowMetrics || {
     totalWorkflows: 0,
-    activeInstances:
-ompletedToday: 0,
+    activeInstances: 0,
+    completedToday: 0,
     overdueTasks: 0,
     slaBreaches: 0,
     averageCompletionTime: 0,

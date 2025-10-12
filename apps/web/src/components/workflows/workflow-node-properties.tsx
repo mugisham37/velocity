@@ -561,7 +561,7 @@ export function WorkflowNodeProperties({
                       <Label htmlFor='edge-label'>Label</Label>
                       <Input
                         id='edge-label'
-                        value={selectedEdge.label || ''}
+                        value={String(selectedEdge.label || '')}
                         placeholder='Enter edge label'
                       />
                     </div>

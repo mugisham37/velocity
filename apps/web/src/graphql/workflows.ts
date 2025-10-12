@@ -34,7 +34,7 @@ export const WORKFLOW_DEFINITION_FRAGMENT = gql`
   ${WORKFLOW_EDGE_FRAGMENT}
 `;
 
-export const WORKFLOW_ gql`
+export const WORKFLOW_FRAGMENT = gql`
   fragment WorkflowFragment on Workflow {
     id
     companyId

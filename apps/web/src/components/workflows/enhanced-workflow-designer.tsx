@@ -10,22 +10,19 @@ import {
 import { useMutation, useQuery } from '@apollo/client';
 import { ArrowLeft, Check, Eye, GitBranch, Save, TestTube } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactFlow, {
   Background,
   BackgroundVariant,
-  Connection,
   Controls,
-  Edge,
   MiniMap,
-  Node,
   Panel,
-  ReactFlowInstance,
   addEdge,
   useEdgesState,
   useNodesState,
 } from 'reactflow';
+import type { Connection, Edge, Node, ReactFlowInstance } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { WorkflowNodePalette } from './workflow-node-palette';
 import { WorkflowNodeProperties } from './workflow-node-properties';
@@ -39,7 +36,6 @@ interface EnhancedWorkflowDesignerProps {
 export function EnhancedWorkflowDesigner({
   className,
 }: EnhancedWorkflowDesignerProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const workflowId = searchParams.get('id');
 
@@ -53,7 +49,6 @@ export function EnhancedWorkflowDesigner({
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showTestRunner, setShowTestRunner] = useState(false);
-  const [activeTab, setActiveTab] = useState('design');
   const [isDirty, setIsDirty] = useState(false);
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -194,12 +189,12 @@ export function EnhancedWorkflowDesigner({
     return labels[nodeType] || nodeType;
   };
 
-  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+  const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
     setSelectedEdge(null);
   }, []);
 
-  const onEdgeClick = useCallback((event: React.MouseEvent, edge: Edge) => {
+  const onEdgeClick = useCallback((_event: React.MouseEvent, edge: Edge) => {
     setSelectedEdge(edge);
     setSelectedNode(null);
   }, []);
@@ -497,7 +492,7 @@ export function EnhancedWorkflowDesigner({
         open={showTestRunner}
         onClose={() => setShowTestRunner(false)}
         workflow={{
-          id: workflowId,
+          id: workflowId || '',
           name: workflowName,
           definition: {
             nodes: nodes.map(node => ({

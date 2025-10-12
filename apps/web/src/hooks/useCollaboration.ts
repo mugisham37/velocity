@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Socket, io } from 'socket.io-client';
-import { useAuthStore } from '../store/auth';
+import { useAuthStore } from '../store/auth-store';
 
-interface User
- string;
+interface CollaborationUser {
+  id: string;
   username: string;
   avatar?: string;
 }
@@ -50,11 +50,11 @@ interface UseCollaborationOptions {
 
 export function useCollaboration(options: UseCollaborationOptions = {}) {
   const { documentId, channelId, autoConnect = true } = options;
-  const { token } = useAuthStore();
+  const { accessToken: token } = useAuthStore();
   const socketRef = useRef<Socket | null>(null);
 
   const [isConnected, setIsConnected] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<CollaborationUser[]>([]);
   const [documentState, setDocumentState] = useState<DocumentState | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
@@ -63,7 +63,7 @@ export function useCollaboration(options: UseCollaborationOptions = {}) {
   useEffect(() => {
     if (!autoConnect || !token) return;
 
-    const socket = io(`${process.env.NEXT_PUBLIC_API_URL}/collaboration`, {
+    const socket = io(`${process.env['NEXT_PUBLIC_API_URL']}/collaboration`, {
       auth: {
         token,
       },
@@ -88,7 +88,7 @@ export function useCollaboration(options: UseCollaborationOptions = {}) {
     });
 
     // User presence events
-    socket.on('user-online', (user: User) => {
+    socket.on('user-online', (user: CollaborationUser) => {
       setOnlineUsers(prev => {
         const exists = prev.find(u => u.id === user.id);
         if (exists) return prev;
@@ -100,7 +100,7 @@ export function useCollaboration(options: UseCollaborationOptions = {}) {
       setOnlineUsers(prev => prev.filter(u => u.id !== userId));
     });
 
-    socket.on('online-users', (users: User[]) => {
+    socket.on('online-users', (users: CollaborationUser[]) => {
       setOnlineUsers(users);
     });
 
@@ -123,7 +123,7 @@ export function useCollaboration(options: UseCollaborationOptions = {}) {
       setDocumentState(state);
     });
 
-    socket.on('document-operation', ({ operation, revision, userId }: {
+    socket.on('document-operation', ({ operation, revision, userId: _userId }: {
       operation: Operation;
       revision: number;
       userId: string;
@@ -157,7 +157,7 @@ export function useCollaboration(options: UseCollaborationOptions = {}) {
       console.error(`Operation ${operationId} failed:`, error);
     });
 
-    socket.on('user-joined-document', ({ userId, username, avatar }: {
+    socket.on('user-joined-document', ({ userId, username: _username, avatar: _avatar }: {
       userId: string;
       username: string;
       avatar?: string;
@@ -205,14 +205,14 @@ export function useCollaboration(options: UseCollaborationOptions = {}) {
       setMessages(prev => [...prev, message]);
     });
 
-    socket.on('user-typing', ({ userId, username }: {
+    socket.on('user-typing', ({ userId: _userId, username }: {
       userId: string;
       username: string;
     }) => {
       setTypingUsers(prev => new Set([...prev, username]));
     });
 
-    socket.on('user-stopped-typing', ({ userId }: { userId: string }) => {
+    socket.on('user-stopped-typing', ({ userId: _userId }: { userId: string }) => {
       setTypingUsers(prev => {
         const newSet = new Set(prev);
         // Remove by userId (would need username mapping in real implementation)

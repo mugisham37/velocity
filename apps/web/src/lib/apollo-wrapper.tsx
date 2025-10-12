@@ -5,13 +5,13 @@ import { setContext } from '@apollo/client/link/context';
 import {
   ApolloNextAppProvider,
   NextSSRApolloClient,
-  NextSSRInAppRouter,
   SSRMultipartLink,
 } from '@apollo/experimental-nextjs-app-support/ssr';
+import { InMemoryCache } from '@apollo/client';
 
 function makeClient() {
   const httpLink = new HttpLink({
-    uri: process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql',
+    uri: process.env['NEXT_PUBLIC_GRAPHQL_URL'] || 'http://localhost:4000/graphql',
     fetchOptions: { cache: 'no-store' },
   });
 
@@ -32,7 +32,7 @@ function makeClient() {
   });
 
   return new NextSSRApolloClient({
-    cache: new NextSSRInAppRouter(),
+    cache: new InMemoryCache(),
     link:
       typeof window === 'undefined'
         ? ApolloLink.from([

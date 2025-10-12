@@ -52,7 +52,7 @@ export function WorkflowTestRunner({
       const contextData = JSON.parse(testData);
 
       const result = await createInstance({
-        es: {
+        variables: {
           input: {
             workflowId: workflow.id,
             name: `Test Run - ${workflow.name}`,
@@ -77,18 +77,17 @@ export function WorkflowTestRunner({
         })),
         totalDuration: 1.2,
         errors: [],
-        warnings:
-          node.type === 'condition' ? ['Condition evaluation may be slow'] : [],
+        warnings: [],
       };
 
       setTestResults(mockResults);
     } catch (error) {
       setTestResults({
         status: 'failed',
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         steps: [],
         totalDuration: 0,
-        errors: [error.message],
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
         warnings: [],
       });
     } finally {
@@ -244,7 +243,7 @@ export function WorkflowTestRunner({
                   </CardHeader>
                   <CardContent>
                     <div className='space-y-3'>
-                      {testResults.steps.map((step: any, index: number) => (
+                      {testResults.steps.map((step: any) => (
                         <div
                           key={step.id}
                           className='flex items-center gap-3 p-2 border rounded'

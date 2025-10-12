@@ -209,7 +209,11 @@
     "aards",
     "workate",
     "ILIKE",
-    "ilike"
+    "ilike",
+    "reactflow",
+    "GANTT",
+    "Gantt",
+    "partialize"
   ],
   "ignorePaths": [
     "node_modules/**",

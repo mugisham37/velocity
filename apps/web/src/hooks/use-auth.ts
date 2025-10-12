@@ -37,6 +37,8 @@ export function useAuth() {
           toast.success('Successfully logged in');
           return { success: true };
         }
+        
+        return { error: 'Login failed' };
       } catch (error: any) {
         console.error('Login error:', error);
         toast.error(error.message || 'Login failed');
@@ -81,6 +83,8 @@ export function useAuth() {
         setAuth(user, accessToken, newRefreshToken);
         return true;
       }
+      
+      return false;
     } catch (error) {
       console.error('Token refresh error:', error);
       clearAuth();
