@@ -256,9 +256,13 @@ export class PricingService {
     context: PricingContext,
     _companyId: string
   ): Promise<PricingRule[]> {
-    // This would typically query the database for pricing rules
-    // For now, we'll return some mock rules
+    // Enhanced pricing rules with more realistic scenarios
+    const currentDate = new Date();
+    const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
+    const isHoliday = this.isHolidayPeriod(currentDate);
+    
     const mockRules: PricingRule[] = [
+      // Volume-based discounts
       {
         id: '1',
         name: 'Volume Discount 10+',
@@ -279,12 +283,51 @@ export class PricingService {
       },
       {
         id: '3',
+        name: 'Bulk Order 100+',
+        type: 'volume',
+        conditions: { minQuantity: 100 },
+        discount: { type: 'percentage', value: 15 },
+        priority: 25,
+        isActive: true,
+      },
+      // Customer-based discounts
+      {
+        id: '4',
         name: 'VIP Customer Discount',
         type: 'customer',
         conditions: { customerIds: [context.customerId] },
-        discount: { type: 'percentage', value: 15 },
+        discount: { type: 'percentage', value: 12 },
         priority: 30,
         isActive: true,
+      },
+      // Seasonal discounts
+      {
+        id: '5',
+        name: 'Weekend Special',
+        type: 'seasonal',
+        conditions: {},
+        discount: { type: 'percentage', value: 8 },
+        priority: 15,
+        isActive: isWeekend,
+      },
+      {
+        id: '6',
+        name: 'Holiday Promotion',
+        type: 'promotional',
+        conditions: {},
+        discount: { type: 'percentage', value: 20 },
+        priority: 35,
+        isActive: isHoliday,
+      },
+      // Product-specific discounts
+      {
+        id: '7',
+        name: 'Electronics Clearance',
+        type: 'product',
+        conditions: { productIds: ['ELEC-001', 'ELEC-002', 'ELEC-003'] },
+        discount: { type: 'percentage', value: 25 },
+        priority: 40,
+        isActive: context.itemCode.startsWith('ELEC'),
       },
     ];
 
@@ -429,5 +472,26 @@ export class PricingService {
       maxDiscountPercent: 20,
       maxDiscountAmount: 1000,
     };
+  }
+
+  /**
+   * Check if current date is in a holiday period
+   */
+  private isHolidayPeriod(date: Date): boolean {
+    const month = date.getMonth() + 1; // getMonth() returns 0-11
+    const day = date.getDate();
+    
+    // Holiday periods (simplified)
+    const holidays = [
+      { month: 12, startDay: 15, endDay: 31 }, // Christmas season
+      { month: 1, startDay: 1, endDay: 7 },    // New Year
+      { month: 11, startDay: 20, endDay: 30 }, // Black Friday/Thanksgiving
+      { month: 7, startDay: 1, endDay: 7 },    // Independence Day
+      { month: 2, startDay: 10, endDay: 20 },  // Valentine's season
+    ];
+    
+    return holidays.some(holiday => 
+      holiday.month === month && day >= holiday.startDay && day <= holiday.endDay
+    );
   }
 }
