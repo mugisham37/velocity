@@ -12,7 +12,7 @@ import {
 export class CreateWorkstationDto {
   @Field()
   @IsString()
-  workstationName: string;
+  workstationName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -21,7 +21,7 @@ export class CreateWorkstationDto {
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -195,44 +195,44 @@ export class WorkstationFilterDto {
 @ObjectType()
 export class WorkstationCapacityInfo {
   @Field(() => Float)
-  totalCapacity: number;
+  totalCapacity!: number;
 
   @Field(() => Float)
-  availableCapacity: number;
+  availableCapacity!: number;
 
   @Field(() => Float)
-  utilizationPercentage: number;
+  utilizationPercentage!: number;
 
   @Field()
-  workingHoursStart: string;
+  workingHoursStart!: string;
 
   @Field()
-  workingHoursEnd: string;
+  workingHoursEnd!: string;
 
   @Field(() => Float)
-  dailyWorkingHours: number;
+  dailyWorkingHours!: number;
 }
 
 @ObjectType()
 export class WorkstationCostBreakdown {
   @Field(() => Float)
-  hourRate: number;
+  hourRate!: number;
 
   @Field(() => Float)
-  electricityCost: number;
+  electricityCost!: number;
 
   @Field(() => Float)
-  consumableCost: number;
+  consumableCost!: number;
 
   @Field(() => Float)
-  rentCost: number;
+  rentCost!: number;
 
   @Field(() => Float)
-  labourCost: number;
+  labourCost!: number;
 
   @Field(() => Float)
-  totalHourlyRate: number;
+  totalHourlyRate!: number;
 
   @Field()
-  currency: string;
+  currency!: string;
 }

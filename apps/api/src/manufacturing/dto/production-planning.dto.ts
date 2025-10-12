@@ -50,19 +50,19 @@ export enum ActionRequired {
 export class CreateProductionPlanDto {
   @Field()
   @IsString()
-  planName: string;
+  planName!: string;
 
   @Field(() => ID)
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 
   @Field()
   @IsDateString()
-  fromDate: string;
+  fromDate!: string;
 
   @Field()
   @IsDateString()
-  toDate: string;
+  toDate!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -108,15 +108,15 @@ export class CreateProductionPlanDto {
 export class CreateProductionPlanItemDto {
   @Field(() => ID)
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @Field()
   @IsString()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
   @IsString()
-  itemName: string;
+  itemName!: string;
 
   @Field(() => ID, { nullable: true })
   @IsOptional()
@@ -131,11 +131,11 @@ export class CreateProductionPlanItemDto {
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  plannedQty: number;
+  plannedQty!: number;
 
   @Field()
   @IsString()
-  uom: string;
+  uom!: string;
 
   @Field(() => ID, { nullable: true })
   @IsOptional()
@@ -268,19 +268,19 @@ export class ProductionPlanFilterDto {
 export class CreateMRPRunDto {
   @Field()
   @IsString()
-  runName: string;
+  runName!: string;
 
   @Field(() => ID)
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 
   @Field()
   @IsDateString()
-  fromDate: string;
+  fromDate!: string;
 
   @Field()
   @IsDateString()
-  toDate: string;
+  toDate!: string;
 
   @Field({ defaultValue: false })
   @IsOptional()
@@ -365,7 +365,7 @@ export class MRPRunFilterDto {
 export class MRPResultFilterDto {
   @Field(() => ID)
   @IsUUID()
-  mrpRunId: string;
+  mrpRunId!: string;
 
   @Field(() => ID, { nullable: true })
   @IsOptional()
@@ -393,19 +393,19 @@ export class MRPResultFilterDto {
 export class CreateCapacityPlanDto {
   @Field()
   @IsString()
-  planName: string;
+  planName!: string;
 
   @Field(() => ID)
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 
   @Field()
   @IsDateString()
-  fromDate: string;
+  fromDate!: string;
 
   @Field()
   @IsDateString()
-  toDate: string;
+  toDate!: string;
 
   @Field(() => ID, { nullable: true })
   @IsOptional()
@@ -476,36 +476,36 @@ export class CapacityPlanFilterDto {
 export class CreateProductionForecastDto {
   @Field()
   @IsString()
-  forecastName: string;
+  forecastName!: string;
 
   @Field(() => ID)
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 
   @Field(() => ID)
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @Field()
   @IsString()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
   @IsString()
-  itemName: string;
+  itemName!: string;
 
   @Field()
   @IsDateString()
-  forecastDate: string;
+  forecastDate!: string;
 
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  forecastQuantity: number;
+  forecastQuantity!: number;
 
   @Field()
   @IsString()
-  uom: string;
+  uom!: string;
 
   @Field(() => ID, { nullable: true })
   @IsOptional()
@@ -649,128 +649,128 @@ export class ProductionForecastFilterDto {
 @ObjectType()
 export class ProductionPlanSummary {
   @Field(() => Int)
-  totalPlans: number;
+  totalPlans!: number;
 
   @Field(() => Int)
-  draftPlans: number;
+  draftPlans!: number;
 
   @Field(() => Int)
-  submittedPlans: number;
+  submittedPlans!: number;
 
   @Field(() => Int)
-  completedPlans: number;
+  completedPlans!: number;
 
   @Field(() => Int)
-  totalItems: number;
+  totalItems!: number;
 
   @Field(() => Float)
-  totalPlannedQuantity: number;
+  totalPlannedQuantity!: number;
 
   @Field(() => Float)
-  totalProducedQuantity: number;
+  totalProducedQuantity!: number;
 
   @Field(() => Float)
-  completionPercentage: number;
+  completionPercentage!: number;
 }
 
 @ObjectType()
 export class MRPSummary {
   @Field(() => Int)
-  totalRuns: number;
+  totalRuns!: number;
 
   @Field(() => Int)
-  completedRuns: number;
+  completedRuns!: number;
 
   @Field(() => Int)
-  totalItems: number;
+  totalItems!: number;
 
   @Field(() => Int)
-  itemsRequiringPurchase: number;
+  itemsRequiringPurchase!: number;
 
   @Field(() => Int)
-  itemsRequiringManufacture: number;
+  itemsRequiringManufacture!: number;
 
   @Field(() => Int)
-  itemsRequiringTransfer: number;
+  itemsRequiringTransfer!: number;
 
   @Field(() => Float)
-  totalRequiredValue: number;
+  totalRequiredValue!: number;
 }
 
 @ObjectType()
 export class CapacityUtilizationSummary {
   @Field(() => ID)
-  workstationId: string;
+  workstationId!: string;
 
   @Field()
-  workstationName: string;
+  workstationName!: string;
 
   @Field(() => Float)
-  totalAvailableCapacity: number;
+  totalAvailableCapacity!: number;
 
   @Field(() => Float)
-  totalPlannedCapacity: number;
+  totalPlannedCapacity!: number;
 
   @Field(() => Float)
-  utilizationPercentage: number;
+  utilizationPercentage!: number;
 
   @Field(() => Float)
-  overloadHours: number;
+  overloadHours!: number;
 
   @Field(() => Float)
-  underloadHours: number;
+  underloadHours!: number;
 
   @Field()
-  capacityUom: string;
+  capacityUom!: string;
 }
 
 @ObjectType()
 export class ForecastAccuracy {
   @Field(() => ID)
-  itemId: string;
+  itemId!: string;
 
   @Field()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
-  itemName: string;
+  itemName!: string;
 
   @Field(() => Int)
-  totalForecasts: number;
+  totalForecasts!: number;
 
   @Field(() => Float)
-  averageAccuracy: number;
+  averageAccuracy!: number;
 
   @Field(() => Float)
-  totalForecastedQuantity: number;
+  totalForecastedQuantity!: number;
 
   @Field(() => Float)
-  totalActualQuantity: number;
+  totalActualQuantity!: number;
 
   @Field(() => Float)
-  totalVariance: number;
+  totalVariance!: number;
 
   @Field(() => Float)
-  averageVariancePercentage: number;
+  averageVariancePercentage!: number;
 }
 
 // Gantt Chart DTOs
 @ObjectType()
 export class GanttChartItem {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field()
-  startDate: string;
+  startDate!: string;
 
   @Field()
-  endDate: string;
+  endDate!: string;
 
   @Field(() => Float)
-  progress: number;
+  progress!: number;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -781,7 +781,7 @@ export class GanttChartItem {
   dependencies?: string[];
 
   @Field()
-  type: string; // 'production_plan', 'work_order', 'operation'
+  type!: string; // 'production_plan', 'work_order', 'operation'
 
   @Field({ nullable: true })
   @IsOptional()
@@ -806,11 +806,11 @@ export class GenerateGanttChartDto {
 
   @Field()
   @IsDateString()
-  fromDate: string;
+  fromDate!: string;
 
   @Field()
   @IsDateString()
-  toDate: string;
+  toDate!: string;
 
   @Field({ defaultValue: true })
   @IsOptional()

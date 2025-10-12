@@ -32,7 +32,7 @@ export class CreatePredictiveMaintenanceModelDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({ description: 'Model description' })
   @IsOptional()
@@ -41,17 +41,17 @@ export class CreatePredictiveMaintenanceModelDto {
 
   @ApiProperty({ description: 'Model type', enum: ModelType })
   @IsEnum(ModelType)
-  modelType: ModelType;
+  modelType!: ModelType;
 
   @ApiProperty({ description: 'Machine learning algorithm', enum: Algorithm })
   @IsEnum(Algorithm)
-  algorithm: Algorithm;
+  algorithm!: Algorithm;
 
   @ApiProperty({ description: 'Target variable to predict' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  targetVariable: string;
+  targetVariable!: string;
 
   @ApiProperty({
     description: 'Feature names used for prediction',
@@ -60,7 +60,7 @@ export class CreatePredictiveMaintenanceModelDto {
   })
   @IsArray()
   @IsString({ each: true })
-  features: string[];
+  features!: string[];
 
   @ApiPropertyOptional({
     description: 'Model hyperparameters',
@@ -144,7 +144,7 @@ export class PredictMaintenanceDto {
   @ApiProperty({ description: 'Asset ID to predict maintenance for' })
   @IsString()
   @IsNotEmpty()
-  assetId: string;
+  assetId!: string;
 
   @ApiPropertyOptional({ description: 'Device ID associated with the asset' })
   @IsOptional()

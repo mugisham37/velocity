@@ -1,4 +1,4 @@
-import { IsString, IsUUID, IsOptional, IsNumber, IsBoolean, IsArray, ValidateNested, Min, Max } from 'class-validator';
+import { IsString, IsUUID, IsOptional, IsNumber, IsBoolean, IsArray, ValidateNested, Min } from 'class-validator';
 import { Field, Float, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 
@@ -6,15 +6,15 @@ import { Type } from 'class-transformer';
 export class CreateBOMItemDto {
   @Field()
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @Field()
   @IsString()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
   @IsString()
-  itemName: string;
+  itemName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -24,11 +24,11 @@ export class CreateBOMItemDto {
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  qty: number;
+  qty!: number;
 
   @Field()
   @IsString()
-  uom: string;
+  uom!: string;
 
   @Field(() => Float, { nullable: true })
   @IsOptional()
@@ -72,11 +72,11 @@ export class CreateBOMItemDto {
 export class CreateBOMOperationDto {
   @Field()
   @IsString()
-  operationNo: string;
+  operationNo!: string;
 
   @Field()
   @IsString()
-  operationName: string;
+  operationName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -140,15 +140,15 @@ export class CreateBOMOperationDto {
 export class CreateBOMScrapItemDto {
   @Field()
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @Field()
   @IsString()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
   @IsString()
-  itemName: string;
+  itemName!: string;
 
   @Field(() => Float, { nullable: true })
   @IsOptional()
@@ -172,15 +172,15 @@ export class CreateBOMScrapItemDto {
 export class CreateBOMDto {
   @Field()
   @IsString()
-  bomNo: string;
+  bomNo!: string;
 
   @Field()
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @Field()
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -200,7 +200,7 @@ export class CreateBOMDto {
 
   @Field()
   @IsString()
-  uom: string;
+  uom!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -411,11 +411,11 @@ export class BOMFilterDto {
 export class CreateBOMVersionDto {
   @Field()
   @IsUUID()
-  bomId: string;
+  bomId!: string;
 
   @Field()
   @IsString()
-  newVersion: string;
+  newVersion!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -432,7 +432,7 @@ export class CreateBOMVersionDto {
 export class BOMCostCalculationDto {
   @Field()
   @IsUUID()
-  bomId: string;
+  bomId!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -455,12 +455,12 @@ export class BOMCostCalculationDto {
 export class BOMExplosionDto {
   @Field()
   @IsUUID()
-  bomId: string;
+  bomId!: string;
 
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  quantity: number;
+  quantity!: number;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -481,46 +481,46 @@ export class BOMExplosionDto {
 @ObjectType()
 export class BOMCostBreakdown {
   @Field(() => Float)
-  materialCost: number;
+  materialCost!: number;
 
   @Field(() => Float)
-  operatingCost: number;
+  operatingCost!: number;
 
   @Field(() => Float)
-  scrapCost: number;
+  scrapCost!: number;
 
   @Field(() => Float)
-  totalCost: number;
+  totalCost!: number;
 
   @Field()
-  currency: string;
+  currency!: string;
 }
 
 @ObjectType()
 export class BOMExplosionItem {
   @Field()
-  itemId: string;
+  itemId!: string;
 
   @Field()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
-  itemName: string;
+  itemName!: string;
 
   @Field(() => Float)
-  requiredQty: number;
+  requiredQty!: number;
 
   @Field()
-  uom: string;
+  uom!: string;
 
   @Field(() => Float)
-  rate: number;
+  rate!: number;
 
   @Field(() => Float)
-  amount: number;
+  amount!: number;
 
   @Field(() => Int)
-  level: number;
+  level!: number;
 
   @Field({ nullable: true })
   parentBomId?: string;
@@ -532,11 +532,11 @@ export class BOMExplosionItem {
 @ObjectType()
 export class BOMExplosionResult {
   @Field(() => [BOMExplosionItem])
-  items: BOMExplosionItem[];
+  items!: BOMExplosionItem[];
 
   @Field(() => BOMCostBreakdown)
-  costBreakdown: BOMCostBreakdown;
+  costBreakdown!: BOMCostBreakdown;
 
   @Field(() => Float)
-  totalQuantity: number;
+  totalQuantity!: number;
 }

@@ -48,23 +48,23 @@ export enum StockEntryType {
 export class CreateWorkOrderDto {
   @Field()
   @IsString()
-  workOrderNo: string;
+  workOrderNo!: string;
 
   @Field(() => ID)
   @IsUUID()
-  companyId: string;
+  companyId!: string;
 
   @Field(() => ID)
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @Field()
   @IsString()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
   @IsString()
-  itemName: string;
+  itemName!: string;
 
   @Field(() => ID, { nullable: true })
   @IsOptional()
@@ -94,15 +94,15 @@ export class CreateWorkOrderDto {
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  qtyToManufacture: number;
+  qtyToManufacture!: number;
 
   @Field()
   @IsString()
-  uom: string;
+  uom!: string;
 
   @Field(() => ID)
   @IsUUID()
-  warehouseId: string;
+  warehouseId!: string;
 
   @Field(() => ID, { nullable: true })
   @IsOptional()
@@ -127,7 +127,7 @@ export class CreateWorkOrderDto {
   @Field({ nullable: true })
   @IsOptional()
   @IsDateString()
-  plae?: string;
+  plannedStartDate?: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -209,11 +209,11 @@ export class CreateWorkOrderOperationDto {
 
   @Field()
   @IsString()
-  operationNo: string;
+  operationNo!: string;
 
   @Field()
   @IsString()
-  operationName: string;
+  operationName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -275,15 +275,15 @@ export class CreateWorkOrderOperationDto {
 export class CreateWorkOrderItemDto {
   @Field(() => ID)
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @Field()
   @IsString()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
   @IsString()
-  itemName: string;
+  itemName!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -298,11 +298,11 @@ export class CreateWorkOrderItemDto {
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  requiredQty: number;
+  requiredQty!: number;
 
   @Field()
   @IsString()
-  uom: string;
+  uom!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -473,7 +473,7 @@ export class WorkOrderFilterDto {
 export class CreateTimeLogDto {
   @Field(() => ID)
   @IsUUID()
-  workOrderId: string;
+  workOrderId!: string;
 
   @Field(() => ID, { nullable: true })
   @IsOptional()
@@ -492,7 +492,7 @@ export class CreateTimeLogDto {
 
   @Field()
   @IsDateString()
-  fromTime: string;
+  fromTime!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -557,15 +557,15 @@ export class UpdateTimeLogDto {
 export class CreateWorkOrderStockEntryDto {
   @Field(() => ID)
   @IsUUID()
-  workOrderId: string;
+  workOrderId!: string;
 
   @Field(() => StockEntryType)
   @IsEnum(StockEntryType)
-  stockEntryType: StockEntryType;
+  stockEntryType!: StockEntryType;
 
   @Field()
   @IsString()
-  purpose: string;
+  purpose!: string;
 
   @Field(() => ID, { nullable: true })
   @IsOptional()
@@ -579,7 +579,7 @@ export class CreateWorkOrderStockEntryDto {
 
   @Field()
   @IsDateString()
-  postingDate: string;
+  postingDate!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -590,27 +590,27 @@ export class CreateWorkOrderStockEntryDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => StockEntryItemDto)
-  items: StockEntryItemDto[];
+  items!: StockEntryItemDto[];
 }
 
 @InputType()
 export class StockEntryItemDto {
   @Field(() => ID)
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @Field()
   @IsString()
-  itemCode: string;
+  itemCode!: string;
 
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  qty: number;
+  qty!: number;
 
   @Field()
   @IsString()
-  uom: string;
+  uom!: string;
 
   @Field(() => Float, { defaultValue: 0 })
   @IsOptional()
@@ -628,97 +628,97 @@ export class StockEntryItemDto {
 @ObjectType()
 export class WorkOrderSummary {
   @Field(() => Int)
-  totalWorkOrders: number;
+  totalWorkOrders!: number;
 
   @Field(() => Int)
-  draftWorkOrders: number;
+  draftWorkOrders!: number;
 
   @Field(() => Int)
-  releasedWorkOrders: number;
+  releasedWorkOrders!: number;
 
   @Field(() => Int)
-  inProgressWorkOrders: number;
+  inProgressWorkOrders!: number;
 
   @Field(() => Int)
-  completedWorkOrders: number;
+  completedWorkOrders!: number;
 
   @Field(() => Int)
-  cancelledWorkOrders: number;
+  cancelledWorkOrders!: number;
 
   @Field(() => Float)
-  totalPlannedQuantity: number;
+  totalPlannedQuantity!: number;
 
   @Field(() => Float)
-  totalManufacturedQuantity: number;
+  totalManufacturedQuantity!: number;
 
   @Field(() => Float)
-  completionPercentage: number;
+  completionPercentage!: number;
 
   @Field(() => Float)
-  totalOperatingCost: number;
+  totalOperatingCost!: number;
 
   @Field(() => Float)
-  totalRawMaterialCost: number;
+  totalRawMaterialCost!: number;
 }
 
 @ObjectType()
 export class OperationEfficiency {
   @Field(() => ID)
-  operationId: string;
+  operationId!: string;
 
   @Field()
-  operationName: string;
+  operationName!: string;
 
   @Field(() => ID)
-  workstationId: string;
+  workstationId!: string;
 
   @Field()
-  workstationName: string;
+  workstationName!: string;
 
   @Field(() => Float)
-  plannedTimeInMins: number;
+  plannedTimeInMins!: number;
 
   @Field(() => Float)
-  actualTimeInMins: number;
+  actualTimeInMins!: number;
 
   @Field(() => Float)
-  efficiency: number;
+  efficiency!: number;
 
   @Field(() => Float)
-  plannedCost: number;
+  plannedCost!: number;
 
   @Field(() => Float)
-  actualCost: number;
+  actualCost!: number;
 
   @Field(() => Float)
-  costVariance: number;
+  costVariance!: number;
 }
 
 @ObjectType()
 export class WorkOrderProgress {
   @Field(() => ID)
-  workOrderId: string;
+  workOrderId!: string;
 
   @Field()
-  workOrderNo: string;
+  workOrderNo!: string;
 
   @Field()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
-  itemName: string;
+  itemName!: string;
 
   @Field(() => Float)
-  qtyToManufacture: number;
+  qtyToManufacture!: number;
 
   @Field(() => Float)
-  manufacturedQty: number;
+  manufacturedQty!: number;
 
   @Field(() => Float)
-  progressPercentage: number;
+  progressPercentage!: number;
 
   @Field(() => WorkOrderStatus)
-  status: WorkOrderStatus;
+  status!: WorkOrderStatus;
 
   @Field({ nullable: true })
   plannedStartDate?: string;
@@ -733,10 +733,10 @@ export class WorkOrderProgress {
   actualEndDate?: string;
 
   @Field(() => Int)
-  totalOperations: number;
+  totalOperations!: number;
 
   @Field(() => Int)
-  completedOperations: number;
+  completedOperations!: number;
 }
 
 // Production Entry DTOs
@@ -744,16 +744,16 @@ export class WorkOrderProgress {
 export class CreateProductionEntryDto {
   @Field(() => ID)
   @IsUUID()
-  workOrderId: string;
+  workOrderId!: string;
 
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  manufacturedQty: number;
+  manufacturedQty!: number;
 
   @Field()
   @IsDateString()
-  postingDate: string;
+  postingDate!: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -779,20 +779,20 @@ export class CreateProductionEntryDto {
 export class ProductionEntryItemDto {
   @Field(() => ID)
   @IsUUID()
-  itemId: string;
+  itemId!: string;
 
   @Field()
   @IsString()
-  itemCode: string;
+  itemCode!: string;
 
   @Field(() => Float)
   @IsNumber()
   @Min(0)
-  qty: number;
+  qty!: number;
 
   @Field()
   @IsString()
-  uom: string;
+  uom!: string;
 
   @Field(() => Float, { defaultValue: 0 })
   @IsOptional()
