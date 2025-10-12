@@ -17,7 +17,11 @@ export class HttpGatewayService {
     companyId: string
   ): Promise<{ success: boolean; message: string }> {
     try {
-      await this.dataProcessingService.processSensorData(sensorData, companyId);
+      const processedData = {
+        ...sensorData,
+        timestamp: sensorData.timestamp ? new Date(sensorData.timestamp) : new Date(),
+      } as SensorDataDto & { timestamp?: Date };
+      await this.dataProcessingService.processSensorData(processedData, companyId);
 
       this.logger.log(
         `Received sensor data via HTTP from device: ${sensorData.deviceId}`
@@ -29,8 +33,8 @@ export class HttpGatewayService {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to process HTTP sensor data: ${error.message}`,
-        error.stack
+        `Failed to process HTTP sensor data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -62,7 +66,7 @@ export class HttpGatewayService {
           processed += batch.length;
         } catch (error) {
           this.logger.error(
-            `Failed to process batch starting at index ${i}: ${error.message}`
+            `Failed to process batch starting at index ${i}: ${error instanceof Error ? error.message : 'Unknown error'}`
           );
           failed += batch.length;
         }
@@ -80,8 +84,8 @@ export class HttpGatewayService {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to process bulk HTTP sensor data: ${error.message}`,
-        error.stack
+        `Failed to process bulk HTTP sensor data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -92,8 +96,12 @@ export class HttpGatewayService {
     companyId: string
   ): Promise<{ success: boolean; message: string }> {
     try {
+      const processedMetric = {
+        ...equipmentMetric,
+        timestamp: equipmentMetric.timestamp ? new Date(equipmentMetric.timestamp) : new Date(),
+      } as EquipmentMetricDto & { timestamp?: Date };
       await this.dataProcessingService.processEquipmentMetrics(
-        equipmentMetric,
+        processedMetric,
         companyId
       );
 
@@ -107,14 +115,14 @@ export class HttpGatewayService {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to process HTTP equipment metrics: ${error.message}`,
-        error.stack
+        `Failed to process HTTP equipment metrics: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
   }
 
-  async getDeviceStatus(deviceId: string, companyId: string): Promise<any> {
+  async getDeviceStatus(deviceId: string, _companyId: string): Promise<any> {
     try {
       // This would return the current status of a device
       // For now, return a mock response
@@ -136,8 +144,8 @@ export class HttpGatewayService {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to get device status: ${error.message}`,
-        error.stack
+        `Failed to get device status: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -146,7 +154,7 @@ export class HttpGatewayService {
   async sendCommand(
     deviceId: string,
     command: any,
-    companyId: string
+    _companyId: string
   ): Promise<{ success: boolean; message: string }> {
     try {
       // This would send a command to a device
@@ -165,8 +173,8 @@ export class HttpGatewayService {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to send command to device: ${error.message}`,
-        error.stack
+        `Failed to send command to device: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -234,8 +242,8 @@ export class HttpGatewayService {
       );
     } catch (error) {
       this.logger.error(
-        `Failed to get realtime data: ${error.message}`,
-        error.stack
+        `Failed to get realtime data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }

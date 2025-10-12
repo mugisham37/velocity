@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '../../../swagger';
 import {
   IsEnum,
   IsNotEmpty,
@@ -22,13 +22,13 @@ export class CreateIoTDeviceDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  deviceId: string;
+  deviceId!: string;
 
   @ApiProperty({ description: 'Device name' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({ description: 'Device description' })
   @IsOptional()
@@ -39,7 +39,7 @@ export class CreateIoTDeviceDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  deviceType: string;
+  deviceType!: string;
 
   @ApiPropertyOptional({ description: 'Device manufacturer' })
   @IsOptional()

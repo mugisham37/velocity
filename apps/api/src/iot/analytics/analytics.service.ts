@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { db } from '@velocity/database';
-import { equipmentMetrics, iotSensorData } from '@velocity/database/schema';
-import { and, eq, gte, sql } from '@kiro/database';
+import { db, and, eq, gte, sql } from '@kiro/database';
+import { equipmentMetrics, iotSensorData } from '@kiro/database/schema';
 
 @Injectable()
 export class IoTAnalyticsService {
@@ -13,7 +12,7 @@ export class IoTAnalyticsService {
     timeRange: string = '24h'
   ): Promise<any> {
     try {
-      const timeRangeMap = {
+      const timeRangeMap: Record<string, number> = {
         '1h': 1,
         '24h': 24,
         '7d': 24 * 7,
@@ -51,8 +50,8 @@ export class IoTAnalyticsService {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to get device analytics: ${error.message}`,
-        error.stack
+        `Failed to get device analytics: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -101,8 +100,8 @@ export class IoTAnalyticsService {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to get equipment efficiency: ${error.message}`,
-        error.stack
+        `Failed to get equipment efficiency: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -154,8 +153,8 @@ export class IoTAnalyticsService {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to get IoT overview: ${error.message}`,
-        error.stack
+        `Failed to get IoT overview: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }

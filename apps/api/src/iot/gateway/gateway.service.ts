@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DataProcessingService } from './data-processing.service';
-import { HttpGatewayService } from './http-gateway.service';
 import { MqttGatewayService } from './mqtt-gateway.service';
 
 @Injectable()
@@ -9,7 +8,6 @@ export class IoTGatewayService {
 
   constructor(
     private readonly mqttGateway: MqttGatewayService,
-    private readonly httpGateway: HttpGatewayService,
     private readonly dataProcessing: DataProcessingService
   ) {}
 
@@ -56,8 +54,8 @@ export class IoTGatewayService {
       }
     } catch (error) {
       this.logger.error(
-        `Failed to send command to device ${deviceId}: ${error.message}`,
-        error.stack
+        `Failed to send command to device ${deviceId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }

@@ -33,6 +33,7 @@
     "@nestjs/passport": "^10.0.2",
     "@nestjs/platform-fastify": "^10.2.7",
     "@nestjs/platform-socket.io": "^10.2.7",
+    "@nestjs/swagger": "7.4.2",
     "@nestjs/throttler": "^5.0.1",
     "@nestjs/websockets": "^10.2.7",
     "bcryptjs": "^2.4.3",

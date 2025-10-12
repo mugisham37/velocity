@@ -14,7 +14,7 @@ import {
   ApiQuery,
   ApiResponse,
   ApiTags,
-} from '@nestjs/swagger';
+} from '../../swagger';
 import { CurrentCompany } from '../../auth/decorators/current-company.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -125,7 +125,7 @@ export class IoTGatewayController {
     @Param('deviceId') deviceId: string,
     @Body() command: any,
     @Query('protocol') protocol: 'mqtt' | 'http' = 'mqtt',
-    @CurrentCompany() companyId: string
+    @CurrentCompany() _companyId: string
   ) {
     await this.gatewayService.sendCommandToDevice(deviceId, command, protocol);
     return { success: true, message: `Command sent to device ${deviceId}` };
@@ -186,15 +186,15 @@ export class IoTGatewayController {
     description: 'Real-time data retrieved successfully',
   })
   async getRealtimeData(
+    @CurrentCompany() companyId: string,
     @Query('deviceIds') deviceIds?: string,
     @Query('sensorTypes') sensorTypes?: string,
-    @Query('timeRange') timeRange?: string,
-    @CurrentCompany() companyId: string
+    @Query('timeRange') timeRange?: string
   ) {
     const filters = {
-      deviceIds: deviceIds ? deviceIds.split(',') : undefined,
-      sensorTypes: sensorTypes ? sensorTypes.split(',') : undefined,
-      timeRange,
+      ...(deviceIds && { deviceIds: deviceIds.split(',') }),
+      ...(sensorTypes && { sensorTypes: sensorTypes.split(',') }),
+      ...(timeRange && { timeRange }),
     };
 
     return this.httpGateway.getRealtimeData(companyId, filters);

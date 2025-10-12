@@ -1,11 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { db } from '@velocity/database';
+import { db, and, desc, eq, gte, sum } from '@kiro/database';
 import {
   energyConsumption,
   type EnergyConsumption,
   type NewEnergyConsumption,
-} from '@velocity/database/schema';
-import { and, desc, eq, gte, sum } from '@kiro/database';
+} from '@kiro/database/schema';
 
 @Injectable()
 export class EnergyMonitoringService {
@@ -17,14 +16,19 @@ export class EnergyMonitoringService {
         .insert(energyConsumption)
         .values(data)
         .returning();
+      
+      if (!record) {
+        throw new Error('Failed to create energy consumption record');
+      }
+      
       this.logger.log(
-        `Created energy consumption record for meter: ${record.meterId}`
+        `Created energy consumption record for meter: ${record['meterId']}`
       );
       return record;
     } catch (error) {
       this.logger.error(
-        `Failed to create energy consumption record: ${error.message}`,
-        error.stack
+        `Failed to create energy consumption record: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -51,8 +55,8 @@ export class EnergyMonitoringService {
         .orderBy(desc(energyConsumption.timestamp));
     } catch (error) {
       this.logger.error(
-        `Failed to fetch energy consumption data: ${error.message}`,
-        error.stack
+        `Failed to fetch energy consumption data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -82,8 +86,8 @@ export class EnergyMonitoringService {
       return result;
     } catch (error) {
       this.logger.error(
-        `Failed to get total consumption: ${error.message}`,
-        error.stack
+        `Failed to get total consumption: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }

@@ -1,11 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { db } from '@velocity/database';
+import { db, and, desc, eq, gte } from '@kiro/database';
 import {
   environmentalMonitoring,
   type EnvironmentalMonitoring,
   type NewEnvironmentalMonitoring,
-} from '@velocity/database/schema';
-import { and, desc, eq, gte } from '@kiro/database';
+} from '@kiro/database/schema';
 
 @Injectable()
 export class EnvironmentalMonitoringService {
@@ -19,14 +18,19 @@ export class EnvironmentalMonitoringService {
         .insert(environmentalMonitoring)
         .values(data)
         .returning();
+      
+      if (!record) {
+        throw new Error('Failed to create environmental monitoring record');
+      }
+      
       this.logger.log(
-        `Created environmental monitoring record for location: ${record.locationId}`
+        `Created environmental monitoring record for location: ${record['locationId']}`
       );
       return record;
     } catch (error) {
       this.logger.error(
-        `Failed to create environmental monitoring record: ${error.message}`,
-        error.stack
+        `Failed to create environmental monitoring record: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -54,8 +58,8 @@ export class EnvironmentalMonitoringService {
         .limit(100);
     } catch (error) {
       this.logger.error(
-        `Failed to fetch environmental data: ${error.message}`,
-        error.stack
+        `Failed to fetch environmental data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }

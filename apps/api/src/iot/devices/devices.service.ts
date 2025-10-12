@@ -4,13 +4,12 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { db } from '@velocity/database';
+import { db, and, asc, desc, eq, gte, ilike, or, lte, count } from '@kiro/database';
 import {
   iotDevices,
   type IoTDevice,
   type NewIoTDevice,
-} from '@velocity/database/schema';
-import { and, asc, desc, eq, gte, ilike, or } from '@kiro/database';
+} from '@kiro/database/schema';
 import { CreateIoTDeviceDto } from './dto/create-device.dto';
 import { DeviceQueryDto } from './dto/device-query.dto';
 import { UpdateIoTDeviceDto } from './dto/update-device.dto';
@@ -55,14 +54,18 @@ export class IoTDevicesService {
         .values(newDevice)
         .returning();
 
+      if (!device) {
+        throw new Error('Failed to create IoT device');
+      }
+
       this.logger.log(
-        `Created IoT device: ${device.deviceId} for company: ${companyId}`
+        `Created IoT device: ${device['deviceId']} for company: ${companyId}`
       );
       return device;
     } catch (error) {
       this.logger.error(
-        `Failed to create IoT device: ${error.message}`,
-        error.stack
+        `Failed to create IoT device: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -99,12 +102,13 @@ export class IoTDevicesService {
       }
 
       if (query.search) {
-        conditions.push(
-          or(
-            ilike(iotDevices.name, `%${query.search}%`),
-            ilike(iotDevices.deviceId, `%${query.search}%`)
-          )
+        const searchCondition = or(
+          ilike(iotDevices.name, `%${query.search}%`),
+          ilike(iotDevices.deviceId, `%${query.search}%`)
         );
+        if (searchCondition) {
+          conditions.push(searchCondition);
+        }
       }
 
       if (query.lastSeenAfter) {
@@ -119,48 +123,61 @@ export class IoTDevicesService {
         );
       }
 
-      const whereClause = and(...conditions);
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
       // Get total count
-      const [{ count: totalCount }] = await db
+      const countQuery = db
         .select({ count: count() })
-        .from(iotDevices)
-        .where(whereClause);
+        .from(iotDevices);
+      
+      if (whereClause) {
+        countQuery.where(whereClause);
+      }
+      
+      const countResult = await countQuery;
+      const totalCount = countResult[0]?.count ? Number(countResult[0].count) : 0;
 
       // Get paginated results
-      const offset = (query.page - 1) * query.limit;
-      const orderBy =
-        query.sortOrder === 'asc'
-          ? asc(
-              iotDevices[query.sortBy as keyof typeof iotDevices] ||
-                iotDevices.createdAt
-            )
-          : desc(
-              iotDevices[query.sortBy as keyof typeof iotDevices] ||
-                iotDevices.createdAt
-            );
+      const page = query.page || 1;
+      const limit = query.limit || 10;
+      const offset = (page - 1) * limit;
+      // Get the column to sort by, defaulting to createdAt
+      let sortColumn = iotDevices.createdAt;
+      if (query.sortBy && typeof query.sortBy === 'string') {
+        const validColumns = ['createdAt', 'updatedAt', 'name', 'deviceId', 'status', 'deviceType'];
+        if (validColumns.includes(query.sortBy)) {
+          sortColumn = iotDevices[query.sortBy as keyof typeof iotDevices] as any;
+        }
+      }
+      
+      const orderBy = query.sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
-      const devices = await db
+      const devicesQuery = db
         .select()
-        .from(iotDevices)
-        .where(whereClause)
+        .from(iotDevices);
+      
+      if (whereClause) {
+        devicesQuery.where(whereClause);
+      }
+      
+      const devices = await devicesQuery
         .orderBy(orderBy)
-        .limit(query.limit)
+        .limit(limit)
         .offset(offset);
 
-      const totalPages = Math.ceil(totalCount / query.limit);
+      const totalPages = Math.ceil(totalCount / limit);
 
       return {
         devices,
         total: totalCount,
-        page: query.page,
-        limit: query.limit,
+        page,
+        limit,
         totalPages,
       };
     } catch (error) {
       this.logger.error(
-        `Failed to fetch IoT devices: ${error.message}`,
-        error.stack
+        `Failed to fetch IoT devices: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -181,8 +198,8 @@ export class IoTDevicesService {
       return device;
     } catch (error) {
       this.logger.error(
-        `Failed to fetch IoT device ${id}: ${error.message}`,
-        error.stack
+        `Failed to fetch IoT device ${id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -213,8 +230,8 @@ export class IoTDevicesService {
       return device;
     } catch (error) {
       this.logger.error(
-        `Failed to fetch IoT device by device ID ${deviceId}: ${error.message}`,
-        error.stack
+        `Failed to fetch IoT device by device ID ${deviceId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -222,7 +239,7 @@ export class IoTDevicesService {
 
   async update(
     id: string,
-    updateDeviceDto: UpdateIoTDeviceDto,
+    updateDeviceDto: UpdateIoTDeviceDto & { deviceId?: string },
     companyId: string,
     userId: string
   ): Promise<IoTDevice> {
@@ -232,22 +249,22 @@ export class IoTDevicesService {
 
       // Check for device ID conflicts if updating deviceId
       if (updateDeviceDto.deviceId) {
+        const deviceIdToCheck = updateDeviceDto.deviceId;
         const existingDevice = await db
           .select()
           .from(iotDevices)
           .where(
             and(
-              eq(iotDevices.deviceId, updateDeviceDto.deviceId),
-              eq(iotDevices.companyId, companyId),
-              // Exclude current device
-              eq(iotDevices.id, id)
+              eq(iotDevices.deviceId, deviceIdToCheck),
+              eq(iotDevices.companyId, companyId)
             )
           )
           .limit(1);
 
-        if (existingDevice.length > 0) {
+        // Check if the existing device is not the current device being updated
+        if (existingDevice.length > 0 && existingDevice[0]?.id !== id) {
           throw new ConflictException(
-            `Device with ID ${updateDeviceDto.deviceId} already exists`
+            `Device with ID ${deviceIdToCheck} already exists`
           );
         }
       }
@@ -262,14 +279,18 @@ export class IoTDevicesService {
         .where(and(eq(iotDevices.id, id), eq(iotDevices.companyId, companyId)))
         .returning();
 
+      if (!updatedDevice) {
+        throw new Error('Failed to update IoT device');
+      }
+
       this.logger.log(
-        `Updated IoT device: ${updatedDevice.deviceId} for company: ${companyId}`
+        `Updated IoT device: ${updatedDevice['deviceId']} for company: ${companyId}`
       );
       return updatedDevice;
     } catch (error) {
       this.logger.error(
-        `Failed to update IoT device ${id}: ${error.message}`,
-        error.stack
+        `Failed to update IoT device ${id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -293,8 +314,8 @@ export class IoTDevicesService {
       this.logger.debug(`Updated last seen for device: ${deviceId}`);
     } catch (error) {
       this.logger.error(
-        `Failed to update last seen for device ${deviceId}: ${error.message}`,
-        error.stack
+        `Failed to update last seen for device ${deviceId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -322,13 +343,13 @@ export class IoTDevicesService {
       }
 
       this.logger.log(
-        `Updated status for IoT device: ${updatedDevice.deviceId} to ${status}`
+        `Updated status for IoT device: ${updatedDevice['deviceId']} to ${status}`
       );
       return updatedDevice;
     } catch (error) {
       this.logger.error(
-        `Failed to update status for IoT device ${id}: ${error.message}`,
-        error.stack
+        `Failed to update status for IoT device ${id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -346,12 +367,12 @@ export class IoTDevicesService {
       }
 
       this.logger.log(
-        `Deleted IoT device: ${result[0].deviceId} for company: ${companyId}`
+        `Deleted IoT device: ${result[0]?.['deviceId']} for company: ${companyId}`
       );
     } catch (error) {
       this.logger.error(
-        `Failed to delete IoT device ${id}: ${error.message}`,
-        error.stack
+        `Failed to delete IoT device ${id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -384,16 +405,19 @@ export class IoTDevicesService {
         offline: 0,
       };
 
-      stats.forEach(stat => {
-        result.total += stat.count;
-        result[stat.status as keyof typeof result] = stat.count;
+      stats.forEach((stat) => {
+        const count = Number(stat.count);
+        result.total += count;
+        if (stat.status in result) {
+          (result as any)[stat.status] = count;
+        }
       });
 
       return result;
     } catch (error) {
       this.logger.error(
-        `Failed to get device stats: ${error.message}`,
-        error.stack
+        `Failed to get device stats: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { db } from '@velocity/database';
-import { equipmentMetrics, iotSensorData, type NewEquipmentMetric, type NewIoTSensorData } from '@velocity/database/schema';
+import { db } from '@kiro/database';
+import { equipmentMetrics, iotSensorData, type NewEquipmentMetric, type NewIoTSensorData } from '@kiro/database/schema';
 import { EquipmentMetricDto, SensorDataDto } from './dto/sensor-data.dto';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class DataProcessingService {
         sensorType: sensorData.sensorType,
         measurementType: sensorData.measurementType,
         value: sensorData.value.toString(),
-        unit: sensorData.unit,
+        unit: sensorData.unit || null,
         location: sensorData.location,
         metadata: sensorData.metadata,
         timestamp: sensorData.timestamp || new Date(),
@@ -29,8 +29,8 @@ export class DataProcessingService {
       await this.checkForAlerts(sensorData, companyId);
 
     } catch (error) {
-      this.logger.error(`Failed to process sensor data: ${error.message}`, error.stack);
-hrow error;
+      this.logger.error(`Failed to process sensor data: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : undefined);
+      throw error;
     }
   }
 
@@ -40,9 +40,9 @@ hrow error;
         equipmentId: equipmentMetric.equipmentId,
         metricName: equipmentMetric.metricName,
         metricValue: equipmentMetric.metricValue.toString(),
-        unit: equipmentMetric.unit,
+        unit: equipmentMetric.unit || null,
         status: equipmentMetric.status || 'normal',
-        alertThreshold: equipmentMetric.alertThreshold?.toString(),
+        alertThreshold: equipmentMetric.alertThreshold?.toString() || null,
         metadata: equipmentMetric.metadata,
         timestamp: equipmentMetric.timestamp || new Date(),
         companyId,
@@ -56,7 +56,7 @@ hrow error;
       await this.checkEquipmentThresholds(equipmentMetric, companyId);
 
     } catch (error) {
-      this.logger.error(`Failed to process equipment metrics: ${error.message}`, error.stack);
+      this.logger.error(`Failed to process equipment metrics: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : undefined);
       throw error;
     }
   }
@@ -68,7 +68,7 @@ hrow error;
         sensorType: reading.sensorType,
         measurementType: reading.measurementType,
         value: reading.value.toString(),
-        unit: reading.unit,
+        unit: reading.unit || null,
         location: reading.location,
         metadata: reading.metadata,
         timestamp: reading.timestamp ? new Date(reading.timestamp) : new Date(),
@@ -86,7 +86,7 @@ hrow error;
       }
 
     } catch (error) {
-      this.logger.error(`Failed to process bulk sensor data: ${error.message}`, error.stack);
+      this.logger.error(`Failed to process bulk sensor data: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : undefined);
       throw error;
     }
   }
@@ -115,7 +115,7 @@ hrow error;
         }
       }
     } catch (error) {
-      this.logger.error(`Failed to check for alerts: ${error.message}`, error.stack);
+      this.logger.error(`Failed to check for alerts: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : undefined);
     }
   }
 
@@ -131,7 +131,7 @@ hrow error;
         });
       }
     } catch (error) {
-      this.logger.error(`Failed to check equipment thresholds: ${error.message}`, error.stack);
+      this.logger.error(`Failed to check equipment thresholds: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : undefined);
     }
   }
 
@@ -209,7 +209,7 @@ hrow error;
       // });
 
     } catch (error) {
-      this.logger.error(`Failed to create alert: ${error.message}`, error.stack);
+      this.logger.error(`Failed to create alert: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : undefined);
     }
   }
 
@@ -226,16 +226,18 @@ hrow error;
       // TODO: Implement actual equipment alert creation
 
     } catch (error) {
-      this.logger.error(`Failed to create equipment alert: ${error.message}`, error.stack);
+      this.logger.error(`Failed to create equipment alert: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : undefined);
     }
   }
 
-  async getRealtimeMetrics(companyId: string, timeRange: string = '1h'): Promise<any> {
+  async getRealtimeMetrics(_companyId: string, timeRange: string = '1h'): Promise<any> {
     try {
       // This would return real-time metrics for dashboards
       // Implementation would depend on your specific requirements
 
-      const query = `
+      // Example query structure - would be implemented with Drizzle ORM
+      // This would be the SQL query structure for reference:
+      /*
         SELECT
           device_id,
           sensor_type,
@@ -249,7 +251,7 @@ hrow error;
           AND timestamp >= NOW() - INTERVAL '${timeRange}'
         GROUP BY device_id, sensor_type, measurement_type
         ORDER BY device_id, sensor_type
-      `;
+      */
 
       // This is a raw query example - you'd use Drizzle ORM in practice
       // const results = await db.execute(sql`${query}`, [companyId]);
@@ -261,7 +263,7 @@ hrow error;
       };
 
     } catch (error) {
-      this.logger.error(`Failed to get realtime metrics: ${error.message}`, error.stack);
+      this.logger.error(`Failed to get realtime metrics: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : undefined);
       throw error;
     }
   }

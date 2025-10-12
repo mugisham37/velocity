@@ -1,4 +1,5 @@
 import {
+  Controller,
   Get,
   Param,
   ParseUUIDPipe,
@@ -6,7 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '../../swagger';
 import { CurrentCompany } from '../../auth/decorators/current-company.decorator';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';

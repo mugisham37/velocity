@@ -8,8 +8,8 @@ import { MqttGatewayService } from './mqtt-gateway.service';
 
 @Module({
   imports: [IoTDevicesModule],
-  providers:
-TGatewayService,
+  providers: [
+    IoTGatewayService,
     MqttGatewayService,
     HttpGatewayService,
     DataProcessingService,

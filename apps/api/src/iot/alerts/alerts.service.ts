@@ -1,11 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { db } from '@velocity/database';
+import { db, and, desc, eq } from '@kiro/database';
 import {
   iotAlerts,
   type IoTAlert,
   type NewIoTAlert,
-} from '@velocity/database/schema';
-import { and, desc, eq } from '@kiro/database';
+} from '@kiro/database/schema';
 
 @Injectable()
 export class IoTAlertsService {
@@ -14,14 +13,17 @@ export class IoTAlertsService {
   async create(alertData: NewIoTAlert): Promise<IoTAlert> {
     try {
       const [alert] = await db.insert(iotAlerts).values(alertData).returning();
+      if (!alert) {
+        throw new Error('Failed to create IoT alert');
+      }
       this.logger.log(
-        `Created IoT alert: ${alert.title} for device: ${alert.deviceId}`
+        `Created IoT alert: ${alert['title']} for device: ${alert['deviceId']}`
       );
       return alert;
     } catch (error) {
       this.logger.error(
-        `Failed to create IoT alert: ${error.message}`,
-        error.stack
+        `Failed to create IoT alert: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -37,8 +39,8 @@ export class IoTAlertsService {
         .limit(limit);
     } catch (error) {
       this.logger.error(
-        `Failed to fetch IoT alerts: ${error.message}`,
-        error.stack
+        `Failed to fetch IoT alerts: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
@@ -63,12 +65,16 @@ export class IoTAlertsService {
         )
         .returning();
 
+      if (!alert) {
+        throw new Error(`IoT alert with ID ${alertId} not found`);
+      }
+
       this.logger.log(`Acknowledged IoT alert: ${alertId}`);
       return alert;
     } catch (error) {
       this.logger.error(
-        `Failed to acknowledge IoT alert: ${error.message}`,
-        error.stack
+        `Failed to acknowledge IoT alert: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
       );
       throw error;
     }
