@@ -47,6 +47,12 @@ import {
   UpdateStockEntryDto,
   UpdateStockReconciliationDto,
   UpdateStockReservationDto,
+  StockEntryType,
+  StockEntryStatus,
+  ReservationType,
+  ReservationStatus,
+  ReconciliationType,
+  ReconciliationStatus,
 } from '../dto/stock-transaction.dto';
 
 @Injectable()
@@ -157,6 +163,8 @@ export class StockTransactionService {
       .insert(stockEntries)
       .values({
         ...entryData,
+        transactionDate: new Date(entryData.transactionDate),
+        postingDate: new Date(entryData.postingDate),
         totalValue: totalValue.toString(),
         createdBy: userId,
         updatedBy: userId,
@@ -180,9 +188,9 @@ export class StockTransactionService {
           return {
             stockEntryId: newEntry.id,
             itemId: item.itemId,
-            locationId: item.locationId,
-            fromLocationId: item.fromLocationId,
-            toLocationId: item.toLocationId,
+            locationId: item.locationId || null,
+            fromLocationId: item.fromLocationId || null,
+            toLocationId: item.toLocationId || null,
             qty: item.qty.toString(),
             uom: item.uom,
             conversionFactor: (item.conversionFactor || 1).toString(),
@@ -193,15 +201,15 @@ export class StockTransactionService {
             batchNumbers: item.batchNumbers,
             hasSerialNo: Boolean(item.serialNumbers?.length),
             hasBatchNo: Boolean(item.batchNumbers),
-            qualityInspection: item.qualityInspection,
+            qualityInspection: item.qualityInspection || null,
             inspectionRequired: item.inspectionRequired || false,
             qualityStatus: item.qualityStatus || 'Accepted',
-            remarks: item.remarks,
+            remarks: item.remarks || null,
             actualQtyBefore: currentStock.actualQty.toString(),
             actualQtyAfter: (
               parseFloat(currentStock.actualQty) +
-              (createStockEntryDto.entryType === 'Receipt' ||
-              createStockEntryDto.entryType === 'Adjustment'
+              (createStockEntryDto.entryType === StockEntryType.RECEIPT ||
+              createStockEntryDto.entryType === StockEntryType.ADJUSTMENT
                 ? stockUomQty
                 : -stockUomQty)
             ).toString(),
@@ -210,6 +218,10 @@ export class StockTransactionService {
       );
 
       await this.db.db.insert(stockEntryItems).values(stockEntryItemsData);
+    }
+
+    if (!newEntry) {
+      throw new Error('Failed to create stock entry');
     }
 
     return newEntry;
@@ -683,7 +695,7 @@ export class StockTransactionService {
         const adjustmentEntry = await this.createStockEntry(
           {
             entryNumber: `RECON-ADJ-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-            entryType: 'Adjustment',
+            entryType: StockEntryType.ADJUSTMENT,
             referenceType: 'Stock Reconciliation',
             referenceNumber: existingReconciliation.reconciliationNumber,
             referenceId: existingReconciliation.id,

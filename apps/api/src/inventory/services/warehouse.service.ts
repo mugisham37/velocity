@@ -7,7 +7,9 @@ import {
   warehouses,
   type Warehouse,
   type WarehouseLocation,
-
+  type WarehouseTransfer,
+  type WarehouseTransferItem,
+  type WarehousePerformanceMetric,
 } from '@kiro/database';
 import {
   BadRequestException,
@@ -27,7 +29,7 @@ import {
   lte,
   or,
   sql,
-} from '@kiro/database';
+} from 'drizzle-orm';
 import {
   CreateWarehouseDto,
   CreateWarehouseLocationDto,
@@ -51,12 +53,17 @@ export class WarehouseService {
     userId: string
   ): Promise<Warehouse> {
     // Check if warehouse code already exists for the company
-    const existingWarehouse = await this.db.query.warehouses.findFirst({
-      where: and(
-        eq(warehouses.warehouseCode, createWarehouseDto.warehouseCode),
-        eq(warehouses.companyId, createWarehouseDto.companyId)
-      ),
-    });
+    const existingWarehouse = await this.db.db
+      .select()
+      .from(warehouses)
+      .where(
+        and(
+          eq(warehouses.warehouseCode, createWarehouseDto.warehouseCode),
+          eq(warehouses.companyId, createWarehouseDto.companyId)
+        )
+      )
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (existingWarehouse) {
       throw new ConflictException(
@@ -66,19 +73,24 @@ export class WarehouseService {
 
     // Validate parent warehouse if provided
     if (createWarehouseDto.parentWarehouseId) {
-      const parentWarehouse = await this.db.query.warehouses.findFirst({
-        where: and(
-          eq(warehouses.id, createWarehouseDto.parentWarehouseId),
-          eq(warehouses.companyId, createWarehouseDto.companyId)
-        ),
-      });
+      const parentWarehouse = await this.db.db
+        .select()
+        .from(warehouses)
+        .where(
+          and(
+            eq(warehouses.id, createWarehouseDto.parentWarehouseId),
+            eq(warehouses.companyId, createWarehouseDto.companyId)
+          )
+        )
+        .limit(1)
+        .then(rows => rows[0] || null);
 
       if (!parentWarehouse) {
         throw new NotFoundException('Parent warehouse not found');
       }
     }
 
-    const [newWarehouse] = await this.db
+    const [newWarehouse] = await this.db.db
       .insert(warehouses)
       .values({
         ...createWarehouseDto,
@@ -95,9 +107,12 @@ export class WarehouseService {
     updateWarehouseDto: UpdateWarehouseDto,
     userId: string
   ): Promise<Warehouse> {
-    const existingWarehouse = await this.db.query.warehouses.findFirst({
-      where: eq(warehouses.id, id),
-    });
+    const existingWarehouse = await this.db.db
+      .select()
+      .from(warehouses)
+      .where(eq(warehouses.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!existingWarehouse) {
       throw new NotFoundException('Warehouse not found');
@@ -105,12 +120,17 @@ export class WarehouseService {
 
     // Validate parent warehouse if provided
     if (updateWarehouseDto.parentWarehouseId) {
-      const parentWarehouse = await this.db.query.warehouses.findFirst({
-        where: and(
-          eq(warehouses.id, updateWarehouseDto.parentWarehouseId),
-          eq(warehouses.companyId, existingWarehouse.companyId)
-        ),
-      });
+      const parentWarehouse = await this.db.db
+        .select()
+        .from(warehouses)
+        .where(
+          and(
+            eq(warehouses.id, updateWarehouseDto.parentWarehouseId),
+            eq(warehouses.companyId, existingWarehouse.companyId)
+          )
+        )
+        .limit(1)
+        .then(rows => rows[0] || null);
 
       if (!parentWarehouse) {
         throw new NotFoundException('Parent warehouse not found');
@@ -122,7 +142,7 @@ export class WarehouseService {
       }
     }
 
-    const [updatedWarehouse] = await this.db
+    const [updatedWarehouse] = await this.db.db
       .update(warehouses)
       .set({
         ...updateWarehouseDto,
@@ -141,25 +161,42 @@ export class WarehouseService {
       performanceMetrics?: WarehousePerformanceMetric[];
     }
   > {
-    const warehouse = await this.db.query.warehouses.findFirst({
-      where: eq(warehouses.id, id),
-      with: {
-        locations: {
-          where: eq(warehouseLocations.isActive, true),
-          orderBy: asc(warehouseLocations.locationName),
-        },
-        performanceMetrics: {
-          orderBy: desc(warehousePerformanceMetrics.metricDate),
-          limit: 12, // Last 12 periods
-        },
-      },
-    });
+    const warehouse = await this.db.db
+      .select()
+      .from(warehouses)
+      .where(eq(warehouses.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!warehouse) {
       throw new NotFoundException('Warehouse not found');
     }
 
-    return warehouse;
+    // Get locations separately
+    const locations = await this.db.db
+      .select()
+      .from(warehouseLocations)
+      .where(
+        and(
+          eq(warehouseLocations.warehouseId, id),
+          eq(warehouseLocations.isActive, true)
+        )
+      )
+      .orderBy(asc(warehouseLocations.locationName));
+
+    // Get performance metrics separately
+    const performanceMetrics = await this.db.db
+      .select()
+      .from(warehousePerformanceMetrics)
+      .where(eq(warehousePerformanceMetrics.warehouseId, id))
+      .orderBy(desc(warehousePerformanceMetrics.metricDate))
+      .limit(12);
+
+    return {
+      ...warehouse,
+      locations,
+      performanceMetrics,
+    };
   }
 
   async getWarehouses(
@@ -215,31 +252,43 @@ export class WarehouseService {
     const whereClause = and(...whereConditions);
 
     // Get total count
-    const [{ count: totalCount }] = await this.db
+    const [{ count: totalCount }] = await this.db.db
       .select({ count: count() })
       .from(warehouses)
       .where(whereClause);
 
     // Get warehouses with pagination and sorting
-    const orderBy =
-      sortOrder === 'desc' ? desc(warehouses[sortBy]) : asc(warehouses[sortBy]);
+    const sortColumn = warehouses[sortBy as keyof typeof warehouses] || warehouses.warehouseName;
+    const orderBy = sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
 
-    const warehousesList = await this.db.query.warehouses.findMany({
-      where: whereClause,
-      with: {
-        locations: {
-          where: eq(warehouseLocations.isActive, true),
-        },
-      },
-      orderBy,
-      limit,
-      offset,
-    });
+    const warehousesList = await this.db.db
+      .select()
+      .from(warehouses)
+      .where(whereClause)
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset);
+
+    // Get locations for each warehouse
+    const warehousesWithLocations = await Promise.all(
+      warehousesList.map(async (warehouse) => {
+        const locations = await this.db.db
+          .select()
+          .from(warehouseLocations)
+          .where(
+            and(
+              eq(warehouseLocations.warehouseId, warehouse.id),
+              eq(warehouseLocations.isActive, true)
+            )
+          );
+        return { ...warehouse, locations };
+      })
+    );
 
     const totalPages = Math.ceil(totalCount / limit);
 
     return {
-      warehouses: warehousesList,
+      warehouses: warehousesWithLocations,
       total: totalCount,
       page,
       limit,
@@ -249,39 +298,35 @@ export class WarehouseService {
 
   async getWarehouseHierarchy(companyId: string): Promise<Warehouse[]> {
     // Get root warehouses (no parent)
-    return this.db.query.warehouses.findMany({
-      where: and(
-        eq(warehouses.companyId, companyId),
-        sql`${warehouses.parentWarehouseId} IS NULL`
-      ),
-      with: {
-        childWarehouses: {
-          with: {
-            childWarehouses: {
-              with: {
-                childWarehouses: true, // Support up to 4 levels
-              },
-            },
-          },
-        },
-      },
-      orderBy: asc(warehouses.warehouseName),
-    });
+    return this.db.db
+      .select()
+      .from(warehouses)
+      .where(
+        and(
+          eq(warehouses.companyId, companyId),
+          sql`${warehouses.parentWarehouseId} IS NULL`
+        )
+      )
+      .orderBy(asc(warehouses.warehouseName));
   }
 
   async deleteWarehouse(id: string): Promise<void> {
-    const existingWarehouse = await this.db.query.warehouses.findFirst({
-      where: eq(warehouses.id, id),
-    });
+    const existingWarehouse = await this.db.db
+      .select()
+      .from(warehouses)
+      .where(eq(warehouses.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!existingWarehouse) {
       throw new NotFoundException('Warehouse not found');
     }
 
     // Check if warehouse has child warehouses
-    const childWarehouses = await this.db.query.warehouses.findMany({
-      where: eq(warehouses.parentWarehouseId, id),
-    });
+    const childWarehouses = await this.db.db
+      .select()
+      .from(warehouses)
+      .where(eq(warehouses.parentWarehouseId, id));
 
     if (childWarehouses.length > 0) {
       throw new BadRequestException(
@@ -291,7 +336,7 @@ export class WarehouseService {
 
     // Check if warehouse has active stock (this would be implemented based on stock levels)
     // For now, we'll just delete the warehouse
-    await this.db.delete(warehouses).where(eq(warehouses.id, id));
+    await this.db.db.delete(warehouses).where(eq(warehouses.id, id));
   }
 
   // Warehouse Location Management
@@ -300,12 +345,17 @@ export class WarehouseService {
     userId: string
   ): Promise<WarehouseLocation> {
     // Check if location code already exists in the warehouse
-    const existingLocation = await this.db.query.warehouseLocations.findFirst({
-      where: and(
-        eq(warehouseLocations.locationCode, createLocationDto.locationCode),
-        eq(warehouseLocations.warehouseId, createLocationDto.warehouseId)
-      ),
-    });
+    const existingLocation = await this.db.db
+      .select()
+      .from(warehouseLocations)
+      .where(
+        and(
+          eq(warehouseLocations.locationCode, createLocationDto.locationCode),
+          eq(warehouseLocations.warehouseId, createLocationDto.warehouseId)
+        )
+      )
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (existingLocation) {
       throw new ConflictException(
@@ -314,9 +364,12 @@ export class WarehouseService {
     }
 
     // Validate warehouse exists
-    const warehouse = await this.db.query.warehouses.findFirst({
-      where: eq(warehouses.id, createLocationDto.warehouseId),
-    });
+    const warehouse = await this.db.db
+      .select()
+      .from(warehouses)
+      .where(eq(warehouses.id, createLocationDto.warehouseId))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!warehouse) {
       throw new NotFoundException('Warehouse not found');
@@ -324,19 +377,24 @@ export class WarehouseService {
 
     // Validate parent location if provided
     if (createLocationDto.parentLocationId) {
-      const parentLocation = await this.db.query.warehouseLocations.findFirst({
-        where: and(
-          eq(warehouseLocations.id, createLocationDto.parentLocationId),
-          eq(warehouseLocations.warehouseId, createLocationDto.warehouseId)
-        ),
-      });
+      const parentLocation = await this.db.db
+        .select()
+        .from(warehouseLocations)
+        .where(
+          and(
+            eq(warehouseLocations.id, createLocationDto.parentLocationId),
+            eq(warehouseLocations.warehouseId, createLocationDto.warehouseId)
+          )
+        )
+        .limit(1)
+        .then(rows => rows[0] || null);
 
       if (!parentLocation) {
         throw new NotFoundException('Parent location not found');
       }
     }
 
-    const [newLocation] = await this.db
+    const [newLocation] = await this.db.db
       .insert(warehouseLocations)
       .values({
         ...createLocationDto,
@@ -353,9 +411,12 @@ export class WarehouseService {
     updateLocationDto: UpdateWarehouseLocationDto,
     userId: string
   ): Promise<WarehouseLocation> {
-    const existingLocation = await this.db.query.warehouseLocations.findFirst({
-      where: eq(warehouseLocations.id, id),
-    });
+    const existingLocation = await this.db.db
+      .select()
+      .from(warehouseLocations)
+      .where(eq(warehouseLocations.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!existingLocation) {
       throw new NotFoundException('Location not found');
@@ -363,12 +424,17 @@ export class WarehouseService {
 
     // Validate parent location if provided
     if (updateLocationDto.parentLocationId) {
-      const parentLocation = await this.db.query.warehouseLocations.findFirst({
-        where: and(
-          eq(warehouseLocations.id, updateLocationDto.parentLocationId),
-          eq(warehouseLocations.warehouseId, existingLocation.warehouseId)
-        ),
-      });
+      const parentLocation = await this.db.db
+        .select()
+        .from(warehouseLocations)
+        .where(
+          and(
+            eq(warehouseLocations.id, updateLocationDto.parentLocationId),
+            eq(warehouseLocations.warehouseId, existingLocation.warehouseId)
+          )
+        )
+        .limit(1)
+        .then(rows => rows[0] || null);
 
       if (!parentLocation) {
         throw new NotFoundException('Parent location not found');
@@ -380,7 +446,7 @@ export class WarehouseService {
       }
     }
 
-    const [updatedLocation] = await this.db
+    const [updatedLocation] = await this.db.db
       .update(warehouseLocations)
       .set({
         ...updateLocationDto,
@@ -467,27 +533,22 @@ export class WarehouseService {
       whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
     // Get total count
-    const [{ count: totalCount }] = await this.db
+    const [{ count: totalCount }] = await this.db.db
       .select({ count: count() })
       .from(warehouseLocations)
       .where(whereClause);
 
     // Get locations with pagination and sorting
-    const orderBy =
-      sortOrder === 'desc'
-        ? desc(warehouseLocations[sortBy])
-        : asc(warehouseLocations[sortBy]);
+    const sortColumn = warehouseLocations[sortBy as keyof typeof warehouseLocations] || warehouseLocations.locationName;
+    const orderBy = sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
 
-    const locationsList = await this.db.query.warehouseLocations.findMany({
-      where: whereClause,
-      with: {
-        warehouse: true,
-        parentLocation: true,
-      },
-      orderBy,
-      limit,
-      offset,
-    });
+    const locationsList = await this.db.db
+      .select()
+      .from(warehouseLocations)
+      .where(whereClause)
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset);
 
     const totalPages = Math.ceil(totalCount / limit);
 
@@ -504,39 +565,35 @@ export class WarehouseService {
     warehouseId: string
   ): Promise<WarehouseLocation[]> {
     // Get root locations (no parent)
-    return this.db.query.warehouseLocations.findMany({
-      where: and(
-        eq(warehouseLocations.warehouseId, warehouseId),
-        sql`${warehouseLocations.parentLocationId} IS NULL`
-      ),
-      with: {
-        childLocations: {
-          with: {
-            childLocations: {
-              with: {
-                childLocations: true, // Support up to 4 levels
-              },
-            },
-          },
-        },
-      },
-      orderBy: asc(warehouseLocations.locationName),
-    });
+    return this.db.db
+      .select()
+      .from(warehouseLocations)
+      .where(
+        and(
+          eq(warehouseLocations.warehouseId, warehouseId),
+          sql`${warehouseLocations.parentLocationId} IS NULL`
+        )
+      )
+      .orderBy(asc(warehouseLocations.locationName));
   }
 
   async deleteWarehouseLocation(id: string): Promise<void> {
-    const existingLocation = await this.db.query.warehouseLocations.findFirst({
-      where: eq(warehouseLocations.id, id),
-    });
+    const existingLocation = await this.db.db
+      .select()
+      .from(warehouseLocations)
+      .where(eq(warehouseLocations.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!existingLocation) {
       throw new NotFoundException('Location not found');
     }
 
     // Check if location has child locations
-    const childLocations = await this.db.query.warehouseLocations.findMany({
-      where: eq(warehouseLocations.parentLocationId, id),
-    });
+    const childLocations = await this.db.db
+      .select()
+      .from(warehouseLocations)
+      .where(eq(warehouseLocations.parentLocationId, id));
 
     if (childLocations.length > 0) {
       throw new BadRequestException(
@@ -546,7 +603,7 @@ export class WarehouseService {
 
     // Check if location has active stock (this would be implemented based on stock levels)
     // For now, we'll just delete the location
-    await this.db
+    await this.db.db
       .delete(warehouseLocations)
       .where(eq(warehouseLocations.id, id));
   }
@@ -557,12 +614,17 @@ export class WarehouseService {
     userId: string
   ): Promise<WarehouseTransfer> {
     // Check if transfer number already exists for the company
-    const existingTransfer = await this.db.query.warehouseTransfers.findFirst({
-      where: and(
-        eq(warehouseTransfers.transferNumber, createTransferDto.transferNumber),
-        eq(warehouseTransfers.companyId, createTransferDto.companyId)
-      ),
-    });
+    const existingTransfer = await this.db.db
+      .select()
+      .from(warehouseTransfers)
+      .where(
+        and(
+          eq(warehouseTransfers.transferNumber, createTransferDto.transferNumber),
+          eq(warehouseTransfers.companyId, createTransferDto.companyId)
+        )
+      )
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (existingTransfer) {
       throw new ConflictException(
@@ -572,18 +634,28 @@ export class WarehouseService {
 
     // Validate warehouses exist
     const [fromWarehouse, toWarehouse] = await Promise.all([
-      this.db.query.warehouses.findFirst({
-        where: and(
-          eq(warehouses.id, createTransferDto.fromWarehouseId),
-          eq(warehouses.companyId, createTransferDto.companyId)
-        ),
-      }),
-      this.db.query.warehouses.findFirst({
-        where: and(
-          eq(warehouses.id, createTransferDto.toWarehouseId),
-          eq(warehouses.companyId, createTransferDto.companyId)
-        ),
-      }),
+      this.db.db
+        .select()
+        .from(warehouses)
+        .where(
+          and(
+            eq(warehouses.id, createTransferDto.fromWarehouseId),
+            eq(warehouses.companyId, createTransferDto.companyId)
+          )
+        )
+        .limit(1)
+        .then(rows => rows[0] || null),
+      this.db.db
+        .select()
+        .from(warehouses)
+        .where(
+          and(
+            eq(warehouses.id, createTransferDto.toWarehouseId),
+            eq(warehouses.companyId, createTransferDto.companyId)
+          )
+        )
+        .limit(1)
+        .then(rows => rows[0] || null),
     ]);
 
     if (!fromWarehouse || !toWarehouse) {
@@ -598,7 +670,7 @@ export class WarehouseService {
 
     // Create transfer
     const { items, ...transferData } = createTransferDto;
-    const [newTransfer] = await this.db
+    const [newTransfer] = await this.db.db
       .insert(warehouseTransfers)
       .values({
         ...transferData,
@@ -612,10 +684,10 @@ export class WarehouseService {
       const transferItemsData = items.map(item => ({
         ...item,
         transferId: newTransfer.id,
-        totalCost: item.unitCost * item.requestedQty,
+        totalCost: (item.unitCost || 0) * item.requestedQty,
       }));
 
-      await this.db.insert(warehouseTransferItems).values(transferItemsData);
+      await this.db.db.insert(warehouseTransferItems).values(transferItemsData);
     }
 
     return newTransfer;
@@ -626,15 +698,18 @@ export class WarehouseService {
     updateTransferDto: UpdateWarehouseTransferDto,
     userId: string
   ): Promise<WarehouseTransfer> {
-    const existingTransfer = await this.db.query.warehouseTransfers.findFirst({
-      where: eq(warehouseTransfers.id, id),
-    });
+    const existingTransfer = await this.db.db
+      .select()
+      .from(warehouseTransfers)
+      .where(eq(warehouseTransfers.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!existingTransfer) {
       throw new NotFoundException('Transfer not found');
     }
 
-    const [updatedTransfer] = await this.db
+    const [updatedTransfer] = await this.db.db
       .update(warehouseTransfers)
       .set({
         ...updateTransferDto,
@@ -649,29 +724,30 @@ export class WarehouseService {
 
   async getWarehouseTransfer(id: string): Promise<
     WarehouseTransfer & {
-      transferItems?: (WarehouseTransferItem & { item: any })[];
+      transferItems?: WarehouseTransferItem[];
     }
   > {
-    const transfer = await this.db.query.warehouseTransfers.findFirst({
-      where: eq(warehouseTransfers.id, id),
-      with: {
-        fromWarehouse: true,
-        toWarehouse: true,
-        fromLocation: true,
-        toLocation: true,
-        transferItems: {
-          with: {
-            item: true,
-          },
-        },
-      },
-    });
+    const transfer = await this.db.db
+      .select()
+      .from(warehouseTransfers)
+      .where(eq(warehouseTransfers.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!transfer) {
       throw new NotFoundException('Transfer not found');
     }
 
-    return transfer;
+    // Get transfer items separately
+    const transferItems = await this.db.db
+      .select()
+      .from(warehouseTransferItems)
+      .where(eq(warehouseTransferItems.transferId, id));
+
+    return {
+      ...transfer,
+      transferItems,
+    };
   }
 
   async getWarehouseTransfers(
@@ -743,37 +819,38 @@ export class WarehouseService {
     const whereClause = and(...whereConditions);
 
     // Get total count
-    const [{ count: totalCount }] = await this.db
+    const [{ count: totalCount }] = await this.db.db
       .select({ count: count() })
       .from(warehouseTransfers)
       .where(whereClause);
 
     // Get transfers with pagination and sorting
-    const orderBy =
-      sortOrder === 'desc'
-        ? desc(warehouseTransfers[sortBy])
-        : asc(warehouseTransfers[sortBy]);
+    const sortColumn = warehouseTransfers[sortBy as keyof typeof warehouseTransfers] || warehouseTransfers.transferDate;
+    const orderBy = sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
 
-    const transfersList = await this.db.query.warehouseTransfers.findMany({
-      where: whereClause,
-      with: {
-        fromWarehouse: true,
-        toWarehouse: true,
-        transferItems: {
-          with: {
-            item: true,
-          },
-        },
-      },
-      orderBy,
-      limit,
-      offset,
-    });
+    const transfersList = await this.db.db
+      .select()
+      .from(warehouseTransfers)
+      .where(whereClause)
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset);
+
+    // Get transfer items for each transfer
+    const transfersWithItems = await Promise.all(
+      transfersList.map(async (transfer) => {
+        const transferItems = await this.db.db
+          .select()
+          .from(warehouseTransferItems)
+          .where(eq(warehouseTransferItems.transferId, transfer.id));
+        return { ...transfer, transferItems };
+      })
+    );
 
     const totalPages = Math.ceil(totalCount / limit);
 
     return {
-      transfers: transfersList,
+      transfers: transfersWithItems,
       total: totalCount,
       page,
       limit,
@@ -786,18 +863,23 @@ export class WarehouseService {
     itemId: string,
     updateItemDto: UpdateTransferItemDto
   ): Promise<WarehouseTransferItem> {
-    const existingItem = await this.db.query.warehouseTransferItems.findFirst({
-      where: and(
-        eq(warehouseTransferItems.transferId, transferId),
-        eq(warehouseTransferItems.itemId, itemId)
-      ),
-    });
+    const existingItem = await this.db.db
+      .select()
+      .from(warehouseTransferItems)
+      .where(
+        and(
+          eq(warehouseTransferItems.transferId, transferId),
+          eq(warehouseTransferItems.itemId, itemId)
+        )
+      )
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!existingItem) {
       throw new NotFoundException('Transfer item not found');
     }
 
-    const [updatedItem] = await this.db
+    const [updatedItem] = await this.db.db
       .update(warehouseTransferItems)
       .set({
         ...updateItemDto,
@@ -814,12 +896,17 @@ export class WarehouseService {
     warehouseCode: string,
     companyId: string
   ): Promise<Warehouse | null> {
-    return this.db.query.warehouses.findFirst({
-      where: and(
-        eq(warehouses.warehouseCode, warehouseCode),
-        eq(warehouses.companyId, companyId)
-      ),
-    });
+    return this.db.db
+      .select()
+      .from(warehouses)
+      .where(
+        and(
+          eq(warehouses.warehouseCode, warehouseCode),
+          eq(warehouses.companyId, companyId)
+        )
+      )
+      .limit(1)
+      .then(rows => rows[0] || null);
   }
 
   async getLocationByBarcode(
@@ -832,12 +919,12 @@ export class WarehouseService {
       whereConditions.push(eq(warehouseLocations.warehouseId, warehouseId));
     }
 
-    return this.db.query.warehouseLocations.findFirst({
-      where: and(...whereConditions),
-      with: {
-        warehouse: true,
-      },
-    });
+    return this.db.db
+      .select()
+      .from(warehouseLocations)
+      .where(and(...whereConditions))
+      .limit(1)
+      .then(rows => rows[0] || null);
   }
 
   async searchWarehouses(
@@ -845,18 +932,21 @@ export class WarehouseService {
     companyId: string,
     limit: number = 10
   ): Promise<Warehouse[]> {
-    return this.db.query.warehouses.findMany({
-      where: and(
-        eq(warehouses.companyId, companyId),
-        eq(warehouses.isActive, true),
-        or(
-          ilike(warehouses.warehouseCode, `%${searchTerm}%`),
-          ilike(warehouses.warehouseName, `%${searchTerm}%`)
+    return this.db.db
+      .select()
+      .from(warehouses)
+      .where(
+        and(
+          eq(warehouses.companyId, companyId),
+          eq(warehouses.isActive, true),
+          or(
+            ilike(warehouses.warehouseCode, `%${searchTerm}%`),
+            ilike(warehouses.warehouseName, `%${searchTerm}%`)
+          )
         )
-      ),
-      limit,
-      orderBy: asc(warehouses.warehouseName),
-    });
+      )
+      .limit(limit)
+      .orderBy(asc(warehouses.warehouseName));
   }
 
   async searchLocations(
@@ -877,14 +967,12 @@ export class WarehouseService {
       whereConditions.push(eq(warehouseLocations.warehouseId, warehouseId));
     }
 
-    return this.db.query.warehouseLocations.findMany({
-      where: and(...whereConditions),
-      with: {
-        warehouse: true,
-      },
-      limit,
-      orderBy: asc(warehouseLocations.locationName),
-    });
+    return this.db.db
+      .select()
+      .from(warehouseLocations)
+      .where(and(...whereConditions))
+      .limit(limit)
+      .orderBy(asc(warehouseLocations.locationName));
   }
 
   // Performance Analytics
@@ -893,14 +981,17 @@ export class WarehouseService {
     periodType: string = 'Monthly',
     limit: number = 12
   ): Promise<WarehousePerformanceMetric[]> {
-    return this.db.query.warehousePerformanceMetrics.findMany({
-      where: and(
-        eq(warehousePerformanceMetrics.warehouseId, warehouseId),
-        eq(warehousePerformanceMetrics.periodType, periodType)
-      ),
-      orderBy: desc(warehousePerformanceMetrics.metricDate),
-      limit,
-    });
+    return this.db.db
+      .select()
+      .from(warehousePerformanceMetrics)
+      .where(
+        and(
+          eq(warehousePerformanceMetrics.warehouseId, warehouseId),
+          eq(warehousePerformanceMetrics.periodType, periodType)
+        )
+      )
+      .orderBy(desc(warehousePerformanceMetrics.metricDate))
+      .limit(limit);
   }
 
   async calculateCapacityUtilization(
@@ -910,9 +1001,12 @@ export class WarehouseService {
     usedCapacity: number;
     totalCapacity: number;
   }> {
-    const warehouse = await this.db.query.warehouses.findFirst({
-      where: eq(warehouses.id, warehouseId),
-    });
+    const warehouse = await this.db.db
+      .select()
+      .from(warehouses)
+      .where(eq(warehouses.id, warehouseId))
+      .limit(1)
+      .then(rows => rows[0] || null);
 
     if (!warehouse || !warehouse.totalCapacity) {
       return { utilizationPercentage: 0, usedCapacity: 0, totalCapacity: 0 };

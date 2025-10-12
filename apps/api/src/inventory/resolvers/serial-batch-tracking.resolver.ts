@@ -49,7 +49,6 @@ export class SerialBatchTrackingResolver {
 
     return this.serialBatchTrackingService.createSerialNumber(
       input,
-      user.companyId,
       user.id
     );
   }
