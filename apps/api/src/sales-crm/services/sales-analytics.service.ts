@@ -10,6 +10,8 @@ import { and, eq, gte, lte, sql } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { BaseService } from '../../common/services/base.service';
+import { CacheService } from '../../common/services/cache.service';
+import { PerformanceMonitorService } from '../../common/services/performance-monitor.service';
 
 export interface SalesMetrics {
   totalLeads: number;
@@ -72,9 +74,11 @@ export class SalesAnalyticsService extends BaseService<any, any, any, any> {
 
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
-    logger: Logger
+    logger: Logger,
+    cacheService: CacheService,
+    performanceMonitor: PerformanceMonitorService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -148,40 +152,48 @@ export class SalesAnalyticsService extends BaseService<any, any, any, any> {
         )
       );
 
+    const leadData = leadMetrics || { totalLeads: 0, qualifiedLeads: 0, convertedLeads: 0 };
+    const oppData = opportunityMetrics || { 
+      totalOpportunities: 0, 
+      wonOpportunities: 0, 
+      lostOpportunities: 0,
+      totalPipelineValue: 0,
+      wonValue: 0,
+      averageDealSize: 0
+    };
+    const quotData = quotationMetrics || { totalQuotations: 0, acceptedQuotations: 0 };
+    const salesData = salesOrderMetrics || { totalSalesOrders: 0, totalRevenue: 0 };
+    const cycleData = salesCycleData || { averageCycleLength: 0 };
+
     return {
-      totalLeads: leadMetrics.totalLeads || 0,
-      qualifiedLeads: leadMetrics.qualifiedLeads || 0,
-      convertedLeads: leadMetrics.convertedLeads || 0,
+      totalLeads: leadData.totalLeads || 0,
+      qualifiedLeads: leadData.qualifiedLeads || 0,
+      convertedLeads: leadData.convertedLeads || 0,
       leadConversionRate:
-        leadMetrics.totalLeads > 0
-          ? (leadMetrics.convertedLeads / leadMetrics.totalLeads) * 100
+        (leadData.totalLeads || 0) > 0
+          ? ((leadData.convertedLeads || 0) / (leadData.totalLeads || 1)) * 100
           : 0,
-      totalOpportunities: opportunityMetrics.totalOpportunities || 0,
-      wonOpportunities: opportunityMetrics.wonOpportunities || 0,
-      lostOpportunities: opportunityMetrics.lostOpportunities || 0,
+      totalOpportunities: oppData.totalOpportunities || 0,
+      wonOpportunities: oppData.wonOpportunities || 0,
+      lostOpportunities: oppData.lostOpportunities || 0,
       winRate:
-        opportunityMetrics.wonOpportunities +
-          opportunityMetrics.lostOpportunities >
-        0
-          ? (opportunityMetrics.wonOpportunities /
-              (opportunityMetrics.wonOpportunities +
-                opportunityMetrics.lostOpportunities)) *
+        (oppData.wonOpportunities || 0) + (oppData.lostOpportunities || 0) > 0
+          ? ((oppData.wonOpportunities || 0) /
+              ((oppData.wonOpportunities || 0) + (oppData.lostOpportunities || 0))) *
             100
           : 0,
-      totalPipelineValue: opportunityMetrics.totalPipelineValue || 0,
-      wonValue: opportunityMetrics.wonValue || 0,
-      averageDealSize: opportunityMetrics.averageDealSize || 0,
-      salesCycleLength: salesCycleData.averageCycleLength || 0,
-      totalQuotations: quotationMetrics.totalQuotations || 0,
-      acceptedQuotations: quotationMetrics.acceptedQuotations || 0,
+      totalPipelineValue: oppData.totalPipelineValue || 0,
+      wonValue: oppData.wonValue || 0,
+      averageDealSize: oppData.averageDealSize || 0,
+      salesCycleLength: cycleData.averageCycleLength || 0,
+      totalQuotations: quotData.totalQuotations || 0,
+      acceptedQuotations: quotData.acceptedQuotations || 0,
       quotationAcceptanceRate:
-        quotationMetrics.totalQuotations > 0
-          ? (quotationMetrics.acceptedQuotations /
-              quotationMetrics.totalQuotations) *
-            100
+        (quotData.totalQuotations || 0) > 0
+          ? ((quotData.acceptedQuotations || 0) / (quotData.totalQuotations || 1)) * 100
           : 0,
-      totalSalesOrders: salesOrderMetrics.totalSalesOrders || 0,
-      totalRevenue: salesOrderMetrics.totalRevenue || 0,
+      totalSalesOrders: salesData.totalSalesOrders || 0,
+      totalRevenue: salesData.totalRevenue || 0,
     };
   }
 
@@ -260,7 +272,7 @@ export class SalesAnalyticsService extends BaseService<any, any, any, any> {
 
       monthOpportunities.forEach(opp => {
         const amount = parseFloat(opp.amount);
-        const probability = opp.probability / 100;
+        const probability = (opp.probability || 0) / 100;
         const historicalWinRate = winRateMap.get(opp.stage) || probability;
 
         forecastAmount += amount * historicalWinRate;
@@ -278,7 +290,7 @@ export class SalesAnalyticsService extends BaseService<any, any, any, any> {
         confidence:
           monthOpportunities.length > 0
             ? monthOpportunities.reduce(
-                (sum, opp) => sum + opp.probability,
+                (sum, opp) => sum + (opp.probability || 0),
                 0
               ) / monthOpportunities.length
             : 0,
@@ -370,7 +382,7 @@ export class SalesAnalyticsService extends BaseService<any, any, any, any> {
         t.assignedTo,
         {
           target: parseFloat(t.targetValue),
-          achieved: parseFloat(t.achievedValue),
+          achieved: parseFloat(t.achievedValue || '0'),
         },
       ])
     );
@@ -404,7 +416,7 @@ export class SalesAnalyticsService extends BaseService<any, any, any, any> {
   async createSalesTarget(
     data: CreateSalesTargetDto,
     companyId: string,
-    userId?: string
+    _userId?: string
   ): Promise<any> {
     const [target] = await this.database
       .insert(salesTargets)
@@ -415,9 +427,9 @@ export class SalesAnalyticsService extends BaseService<any, any, any, any> {
         startDate: data.startDate,
         endDate: data.endDate,
         targetValue: data.targetValue.toString(),
-        assignedTo: data.assignedTo,
-        territory: data.territory,
-        productCategory: data.productCategory,
+        assignedTo: data.assignedTo || null,
+        territory: data.territory || null,
+        productCategory: data.productCategory || null,
         companyId,
       })
       .returning();
@@ -465,7 +477,7 @@ export class SalesAnalyticsService extends BaseService<any, any, any, any> {
             )
           );
 
-        achievedValue = result.totalRevenue || 0;
+        achievedValue = result?.totalRevenue || 0;
       } else if (target.targetType === 'Deals') {
         const [result] = await this.database
           .select({
@@ -487,7 +499,7 @@ export class SalesAnalyticsService extends BaseService<any, any, any, any> {
             )
           );
 
-        achievedValue = result.totalDeals || 0;
+        achievedValue = result?.totalDeals || 0;
       }
 
       // Update target achievement

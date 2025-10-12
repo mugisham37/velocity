@@ -1,8 +1,8 @@
 import {
-  NewOpportunity,
-  Opportunity,
-  OpportunityActivity,
-  OpportunityCompetitor,
+  type NewOpportunity,
+  type Opportunity,
+  type OpportunityActivity,
+  type OpportunityCompetitor,
   customers,
   leads,
   opportunities,
@@ -18,6 +18,8 @@ import { Logger } from 'winston';
 import { AuditService } from '../../common/services/audit.service';
 import { BaseService } from '../../common/services/base.service';
 import { NotificationService } from '../../common/services/notification.service';
+import { CacheService } from '../../common/services/cache.service';
+import { PerformanceMonitorService } from '../../common/services/performance-monitor.service';
 
 export interface CreateOpportunityDto {
   name: string;
@@ -136,21 +138,23 @@ export interface OpportunityFilterDto {
 
 @Injectable()
 export class OpportunitiesService extends BaseService<
-  typeof opportunities,
+  any,
   Opportunity,
   NewOpportunity,
-  UpdateOpportunityDto
+  Record<string, any>
 > {
-  protected table = opportunities;
+  protected table = opportunities as any;
   protected tableName = 'opportunities';
 
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
     logger: Logger,
     private readonly auditService: AuditService,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
+    protected override readonly cacheService: CacheService,
+    protected override readonly performanceMonitor: PerformanceMonitorService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -202,25 +206,29 @@ export class OpportunitiesService extends BaseService<
         .values({
           opportunityCode,
           name: data.name,
-          customerId: data.customerId,
-          leadId: data.leadId,
+          customerId: data.customerId || null,
+          leadId: data.leadId || null,
           stage: data.stage || 'Prospecting',
           probability:
             data.probability ||
             this.getDefaultProbability(data.stage || 'Prospecting'),
           amount: data.amount.toString(),
           currency: data.currency || 'USD',
-          expectedCloseDate: data.expectedCloseDate,
-          source: data.source,
-          description: data.description,
-          nextStep: data.nextStep,
-          assignedTo: data.assignedTo || userId,
-          territory: data.territory,
-          competitorInfo: data.competitorInfo,
-          customFields: data.customFields,
+          expectedCloseDate: data.expectedCloseDate || null,
+          source: data.source || null,
+          description: data.description || null,
+          nextStep: data.nextStep || null,
+          assignedTo: data.assignedTo || userId || null,
+          territory: data.territory || null,
+          competitorInfo: data.competitorInfo || null,
+          customFields: data.customFields || null,
           companyId,
         })
         .returning();
+
+      if (!opportunity) {
+        throw new BadRequestException('Failed to create opportunity');
+      }
 
       // Create initial stage history
       await tx.insert(opportunityStageHistory).values({
@@ -285,14 +293,24 @@ export class OpportunitiesService extends BaseService<
       }
 
       // Log audit trail
-      await this.auditService.logAudit({
-        entityType: 'opportunities',
-        entityId: opportunity.id,
-        action: 'CREATE',
-        newValues: opportunity,
-        companyId,
-        userId,
-      });
+      if (userId) {
+        await this.auditService.logAudit({
+          entityType: 'opportunities',
+          entityId: opportunity.id,
+          action: 'CREATE',
+          newValues: opportunity,
+          companyId,
+          userId,
+        });
+      } else {
+        await this.auditService.logAudit({
+          entityType: 'opportunities',
+          entityId: opportunity.id,
+          action: 'CREATE',
+          newValues: opportunity,
+          companyId,
+        });
+      }
 
       return opportunity;
     });
@@ -310,14 +328,26 @@ export class OpportunitiesService extends BaseService<
     const oldOpportunity = await this.findByIdOrFail(id, companyId);
 
     return await this.transaction(async tx => {
+      // Prepare update data with proper type conversions
+      const updateData: any = { ...data, updatedAt: new Date() };
+
+      // Convert amount to string if provided
+      if (updateData.amount !== undefined) {
+        updateData.amount = updateData.amount.toString();
+      }
+
       // Update opportunity
       const [updatedOpportunity] = await tx
         .update(opportunities)
-        .set({ ...data, updatedAt: new Date() })
+        .set(updateData)
         .where(
           and(eq(opportunities.id, id), eq(opportunities.companyId, companyId))
         )
         .returning();
+
+      if (!updatedOpportunity) {
+        throw new BadRequestException('Failed to update opportunity');
+      }
 
       // Track stage changes
       if (data.stage && data.stage !== oldOpportunity.stage) {
@@ -373,15 +403,26 @@ export class OpportunitiesService extends BaseService<
       }
 
       // Log audit trail
-      await this.auditService.logAudit({
-        entityType: 'opportunities',
-        entityId: id,
-        action: 'UPDATE',
-        oldValues: oldOpportunity,
-        newValues: updatedOpportunity,
-        companyId,
-        userId,
-      });
+      if (userId) {
+        await this.auditService.logAudit({
+          entityType: 'opportunities',
+          entityId: id,
+          action: 'UPDATE',
+          oldValues: oldOpportunity,
+          newValues: updatedOpportunity,
+          companyId,
+          userId,
+        });
+      } else {
+        await this.auditService.logAudit({
+          entityType: 'opportunities',
+          entityId: id,
+          action: 'UPDATE',
+          oldValues: oldOpportunity,
+          newValues: updatedOpportunity,
+          companyId,
+        });
+      }
 
       return updatedOpportunity;
     });
@@ -404,16 +445,20 @@ export class OpportunitiesService extends BaseService<
         opportunityId: data.opportunityId,
         activityType: data.activityType,
         subject: data.subject,
-        description: data.description,
+        description: data.description || null,
         activityDate: data.activityDate,
-        duration: data.duration,
-        outcome: data.outcome,
-        nextAction: data.nextAction,
-        nextActionDate: data.nextActionDate,
+        duration: data.duration || null,
+        outcome: data.outcome || null,
+        nextAction: data.nextAction || null,
+        nextActionDate: data.nextActionDate || null,
         createdBy: userId,
         companyId,
       })
       .returning();
+
+    if (!activity) {
+      throw new BadRequestException('Failed to create activity');
+    }
 
     // Update opportunity's next step if provided
     if (data.nextAction) {
@@ -455,14 +500,18 @@ export class OpportunitiesService extends BaseService<
       .values({
         opportunityId: data.opportunityId,
         competitorName: data.competitorName,
-        strengths: data.strengths,
-        weaknesses: data.weaknesses,
-        pricing: data.pricing?.toString(),
-        winProbability: data.winProbability,
-        notes: data.notes,
+        strengths: data.strengths || null,
+        weaknesses: data.weaknesses || null,
+        pricing: data.pricing?.toString() || null,
+        winProbability: data.winProbability || null,
+        notes: data.notes || null,
         companyId,
       })
       .returning();
+
+    if (!competitor) {
+      throw new BadRequestException('Failed to create competitor');
+    }
 
     // Log audit trail
     await this.auditService.logAudit({
@@ -665,26 +714,29 @@ export class OpportunitiesService extends BaseService<
     }
 
     if (filter.search) {
-      conditions.push(
-        or(
-          like(opportunities.name, `%${filter.search}%`),
-          like(opportunities.description, `%${filter.search}%`),
-          like(opportunities.opportunityCode, `%${filter.search}%`)
-        )
+      const searchCondition = or(
+        like(opportunities.name, `%${filter.search}%`),
+        like(opportunities.description, `%${filter.search}%`),
+        like(opportunities.opportunityCode, `%${filter.search}%`)
       );
+      if (searchCondition) {
+        conditions.push(searchCondition);
+      }
     }
 
     // Get total count
-    const [{ count }] = await this.database
+    const countResult = await this.database
       .select({ count: sql<number>`count(*)` })
       .from(opportunities)
-      .where(and(...conditions));
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+    const count = countResult[0]?.count || 0;
 
     // Get paginated results
     const results = await this.database
       .select()
       .from(opportunities)
-      .where(and(...conditions))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(opportunities.createdAt))
       .limit(limit)
       .offset(offset);
@@ -702,7 +754,19 @@ export class OpportunitiesService extends BaseService<
     companyId: string,
     period?: { start: Date; end: Date }
   ): Promise<any> {
-    let query = this.database
+    const baseConditions = [
+      eq(opportunities.companyId, companyId),
+      sql`${opportunities.stage} NOT IN ('Closed Won', 'Closed Lost')`,
+    ];
+
+    if (period) {
+      baseConditions.push(
+        gte(opportunities.expectedCloseDate, period.start),
+        lte(opportunities.expectedCloseDate, period.end)
+      );
+    }
+
+    const query = this.database
       .select({
         stage: opportunities.stage,
         totalAmount: sql<number>`SUM(CAST(${opportunities.amount} AS DECIMAL))`,
@@ -711,24 +775,8 @@ export class OpportunitiesService extends BaseService<
         averageProbability: sql<number>`AVG(${opportunities.probability})`,
       })
       .from(opportunities)
-      .where(
-        and(
-          eq(opportunities.companyId, companyId),
-          sql`${opportunities.stage} NOT IN ('Closed Won', 'Closed Lost')`
-        )
-      )
+      .where(and(...baseConditions))
       .groupBy(opportunities.stage);
-
-    if (period) {
-      query = query.where(
-        and(
-          eq(opportunities.companyId, companyId),
-          gte(opportunities.expectedCloseDate, period.start),
-          lte(opportunities.expectedCloseDate, period.end),
-          sql`${opportunities.stage} NOT IN ('Closed Won', 'Closed Lost')`
-        )
-      );
-    }
 
     const forecastByStage = await query;
 
@@ -822,7 +870,7 @@ export class OpportunitiesService extends BaseService<
   private async generateOpportunityCode(companyId: string): Promise<string> {
     const prefix = 'OPP';
 
-    const [result] = await this.database
+    const result = await this.database
       .select({
         maxCode: sql<string>`MAX(CAST(SUBSTRING(${opportunities.opportunityCode}, 4) AS INTEGER))`,
       })
@@ -834,7 +882,8 @@ export class OpportunitiesService extends BaseService<
         )
       );
 
-    const nextNumber = result.maxCode ? parseInt(result.maxCode) + 1 : 1;
+    const maxCode = result[0]?.maxCode;
+    const nextNumber = maxCode ? parseInt(maxCode) + 1 : 1;
     return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 

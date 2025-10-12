@@ -395,14 +395,14 @@ export class LeadNurturingService extends BaseService<
         workflow: {
           steps: [
             {
-              id: 'reengagement-email',
+              id: 're-engagement-email',
               name: 'Re-engagement Email',
               type: 'email',
               delay: 0,
               config: {
                 subject: 'Still interested? Let\'s reconnect',
                 body: 'We haven\'t heard from you in a while. Are you still interested in learning more?',
-                templateId: 'reengagement-template',
+                templateId: 're-engagement-template',
               } as EmailStepConfig,
             },
             {

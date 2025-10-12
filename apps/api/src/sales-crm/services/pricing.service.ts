@@ -1,11 +1,11 @@
-import { Database, db } from '@kiro/database';
+
 import { Inject, Injectable } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 
 export interface PricingRule {
-  id: str;
-  e: string;
+  id: string;
+  name: string;
   type: 'volume' | 'customer' | 'product' | 'seasonal' | 'promotional';
   conditions: {
     minQuantity?: number;
@@ -42,29 +42,25 @@ export interface PricingResult {
 
 @Injectable()
 export class PricingService {
-  private database: Database;
-
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
     private readonly logger: Logger
-  ) {
-    this.database = db;
-  }
+  ) {}
 
   /**
    * Calculate dynamic pricing for an item
    */
   async calculatePrice(
     context: PricingContext,
-    companyId: string
+    _companyId: string
   ): Promise<PricingResult> {
     try {
-      this.logger.info('Calculating dynamic pricing', { context, companyId });
+      this.logger.info('Calculating dynamic pricing', { context, companyId: _companyId });
 
       // Get applicable pricing rules
       const applicableRules = await this.getApplicablePricingRules(
         context,
-        companyId
+        _companyId
       );
 
       // Sort rules by priority (higher priority first)
@@ -124,22 +120,22 @@ export class PricingService {
    */
   async calculateBulkPricing(
     items: PricingContext[],
-    companyId: string
+    _companyId: string
   ): Promise<PricingResult[]> {
     try {
       this.logger.info('Calculating bulk pricing', {
         itemCount: items.length,
-        companyId,
+        companyId: _companyId,
       });
 
       const results = await Promise.all(
-        items.map(item => this.calculatePrice(item, companyId))
+        items.map(item => this.calculatePrice(item, _companyId))
       );
 
       // Apply bulk discounts if applicable
       const bulkDiscountRules = await this.getBulkDiscountRules(
         items,
-        companyId
+        _companyId
       );
 
       if (bulkDiscountRules.length > 0) {
@@ -175,7 +171,10 @@ export class PricingService {
 
       return results;
     } catch (error) {
-      this.logger.error('Failed to calculate bulk pricing', { error, items });
+      this.logger.error('Failed to calculate bulk pricing', { 
+        error: error instanceof Error ? error.message : 'Unknown error', 
+        itemCount: items.length 
+      });
       throw error;
     }
   }
@@ -184,9 +183,9 @@ export class PricingService {
    * Get customer-specific pricing
    */
   async getCustomerPricing(
-    customerId: string,
-    itemCode: string,
-    companyId: string
+    _customerId: string,
+    _itemCode: string,
+    _companyId: string
   ): Promise<{ basePrice: number; currency: string } | null> {
     try {
       // This would typically query a customer-specific price list
@@ -194,9 +193,9 @@ export class PricingService {
       return null;
     } catch (error) {
       this.logger.error('Failed to get customer pricing', {
-        error,
-        customerId,
-        itemCode,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        customerId: _customerId,
+        itemCode: _itemCode,
       });
       throw error;
     }
@@ -208,8 +207,8 @@ export class PricingService {
   async validateDiscountLimits(
     discountPercent: number,
     discountAmount: number,
-    userId: string,
-    companyId: string
+    _userId: string,
+    _companyId: string
   ): Promise<{
     isValid: boolean;
     requiresApproval: boolean;
@@ -218,8 +217,8 @@ export class PricingService {
     try {
       // Get user's discount limits (this would come from user roles/permissions)
       const userDiscountLimit = await this.getUserDiscountLimit(
-        userId,
-        companyId
+        _userId,
+        _companyId
       );
 
       if (discountPercent > userDiscountLimit.maxDiscountPercent) {
@@ -241,10 +240,10 @@ export class PricingService {
       return { isValid: true, requiresApproval: false };
     } catch (error) {
       this.logger.error('Failed to validate discount limits', {
-        error,
+        error: error instanceof Error ? error.message : 'Unknown error',
         discountPercent,
         discountAmount,
-        userId,
+        userId: _userId,
       });
       throw error;
     }
@@ -255,7 +254,7 @@ export class PricingService {
    */
   private async getApplicablePricingRules(
     context: PricingContext,
-    companyId: string
+    _companyId: string
   ): Promise<PricingRule[]> {
     // This would typically query the database for pricing rules
     // For now, we'll return some mock rules
@@ -297,25 +296,25 @@ export class PricingService {
    */
   private isRuleApplicable(
     rule: PricingRule,
-    context: PricingContext
+    _context: PricingContext
   ): boolean {
     if (!rule.isActive) return false;
 
     const { conditions } = rule;
 
     // Check quantity conditions
-    if (conditions.minQuantity && context.quantity < conditions.minQuantity) {
+    if (conditions.minQuantity && _context.quantity < conditions.minQuantity) {
       return false;
     }
 
-    if (conditions.maxQuantity && context.quantity > conditions.maxQuantity) {
+    if (conditions.maxQuantity && _context.quantity > conditions.maxQuantity) {
       return false;
     }
 
     // Check customer conditions
     if (
       conditions.customerIds &&
-      !conditions.customerIds.includes(context.customerId)
+      !conditions.customerIds.includes(_context.customerId)
     ) {
       return false;
     }
@@ -323,17 +322,17 @@ export class PricingService {
     // Check product conditions
     if (
       conditions.productIds &&
-      !conditions.productIds.includes(context.itemCode)
+      !conditions.productIds.includes(_context.itemCode)
     ) {
       return false;
     }
 
     // Check date conditions
-    if (conditions.startDate && context.orderDate < conditions.startDate) {
+    if (conditions.startDate && _context.orderDate < conditions.startDate) {
       return false;
     }
 
-    if (conditions.endDate && context.orderDate > conditions.endDate) {
+    if (conditions.endDate && _context.orderDate > conditions.endDate) {
       return false;
     }
 
@@ -345,7 +344,7 @@ export class PricingService {
    */
   private calculateRuleDiscount(
     rule: PricingRule,
-    context: PricingContext,
+    _context: PricingContext,
     currentPrice: number
   ): { amount: number; percent: number } {
     const { discount } = rule;
@@ -365,8 +364,8 @@ export class PricingService {
    * Get bulk discount rules
    */
   private async getBulkDiscountRules(
-    items: PricingContext[],
-    companyId: string
+    _items: PricingContext[],
+    _companyId: string
   ): Promise<PricingRule[]> {
     // Mock bulk discount rules
     return [
@@ -387,7 +386,7 @@ export class PricingService {
    */
   private isBulkRuleApplicable(
     rule: PricingRule,
-    items: PricingContext[],
+    _items: PricingContext[],
     totalOrderValue: number
   ): boolean {
     if (!rule.isActive) return false;
@@ -421,8 +420,8 @@ export class PricingService {
    * Get user's discount limits
    */
   private async getUserDiscountLimit(
-    userId: string,
-    companyId: string
+    _userId: string,
+    _companyId: string
   ): Promise<{ maxDiscountPercent: number; maxDiscountAmount: number }> {
     // This would typically query user roles and permissions
     // For now, return default limits

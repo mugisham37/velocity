@@ -1,10 +1,10 @@
 import {
   DatabaseService,
-  NewPOSInvoice,
-  NewPOSInvoiceItem,
-  NewPOSProfile,
-  POSInvoice,
-  POSProfile,
+  type NewPOSInvoice,
+  type NewPOSInvoiceItem,
+  type NewPOSProfile,
+  type POSInvoice,
+  type POSProfile,
   posInvoiceItems,
   posInvoices,
   posProfiles,
@@ -19,6 +19,8 @@ import { and, desc, eq, sql } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { BaseService } from '../../common/services/base.service';
+import { CacheService } from '../../common/services/cache.service';
+import { PerformanceMonitorService } from '../../common/services/performance-monitor.service';
 import {
   BarcodeSearchDto,
   CreatePOSProfileDto,
@@ -39,9 +41,11 @@ export class POSService extends BaseService<any, any, any, any> {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
     logger: Logger,
+    cacheService: CacheService,
+    performanceMonitor: PerformanceMonitorService,
     private readonly db: DatabaseService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   // POS Profile Management
@@ -58,6 +62,7 @@ export class POSService extends BaseService<any, any, any, any> {
 
       const profileData: NewPOSProfile = {
         ...data,
+        maxDiscount: data.maxDiscount.toString(),
         companyId,
       };
 
@@ -66,13 +71,17 @@ export class POSService extends BaseService<any, any, any, any> {
         .values(profileData)
         .returning();
 
+      if (!profile) {
+        throw new BadRequestException('Failed to create POS profile');
+      }
+
       this.logger.info('POS profile created successfully', {
         profileId: profile.id,
       });
       return profile;
     } catch (error) {
       this.logger.error('Failed to create POS profile', {
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         data,
       });
       throw error;
@@ -106,19 +115,32 @@ export class POSService extends BaseService<any, any, any, any> {
         );
       }
 
+      const updateData: any = {
+        ...data,
+        updatedAt: new Date(),
+      };
+      
+      if (data.maxDiscount !== undefined) {
+        updateData.maxDiscount = data.maxDiscount.toString();
+      }
+
       const [updatedProfile] = await this.db.db
         .update(posProfiles)
-        .set({ ...data, updatedAt: new Date() })
+        .set(updateData)
         .where(
           and(eq(posProfiles.id, id), eq(posProfiles.companyId, companyId))
         )
         .returning();
 
+      if (!updatedProfile) {
+        throw new NotFoundException('POS profile not found');
+      }
+
       this.logger.info('POS profile updated successfully', { profileId: id });
       return updatedProfile;
     } catch (error) {
       this.logger.error('Failed to update POS profile', {
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         id,
         data,
       });
@@ -141,7 +163,7 @@ export class POSService extends BaseService<any, any, any, any> {
       return profile || null;
     } catch (error) {
       this.logger.error('Failed to get POS profile', {
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         id,
       });
       throw error;
@@ -159,7 +181,7 @@ export class POSService extends BaseService<any, any, any, any> {
       return profiles;
     } catch (error) {
       this.logger.error('Failed to get POS profiles', {
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         companyId,
       });
       throw error;
@@ -181,7 +203,7 @@ export class POSService extends BaseService<any, any, any, any> {
           )
         );
 
-      if (invoiceCount.count > 0) {
+      if (!invoiceCount || invoiceCount.count > 0) {
         throw new BadRequestException(
           'Cannot delete POS profile with existing invoices'
         );
@@ -194,10 +216,10 @@ export class POSService extends BaseService<any, any, any, any> {
         );
 
       this.logger.info('POS profile deleted successfully', { profileId: id });
-      return result.rowCount > 0;
+      return Array.isArray(result) ? result.length > 0 : true;
     } catch (error) {
       this.logger.error('Failed to delete POS profile', {
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         id,
       });
       throw error;
@@ -239,10 +261,10 @@ export class POSService extends BaseService<any, any, any, any> {
       const invoiceData: NewPOSInvoice = {
         invoiceCode,
         posProfileId: data.posProfileId,
-        customerId: data.customerId,
-        customerName: data.customerName,
-        customerPhone: data.customerPhone,
-        customerEmail: data.customerEmail,
+        customerId: data.customerId || null,
+        customerName: data.customerName || null,
+        customerPhone: data.customerPhone || null,
+        customerEmail: data.customerEmail || null,
         invoiceDate: new Date(),
         currency: profile.currency,
         subtotal: subtotal.toString(),
@@ -254,10 +276,10 @@ export class POSService extends BaseService<any, any, any, any> {
         paymentMethods: data.paymentMethods,
         loyaltyPointsEarned: await this.calculateLoyaltyPoints(
           grandTotal,
-          profile.loyaltyProgram
+          profile.loyaltyProgram || undefined
         ),
         loyaltyPointsRedeemed: data.loyaltyPointsRedeemed,
-        notes: data.notes,
+        notes: data.notes || null,
         isSynced: !data.isOffline,
         syncedAt: data.isOffline ? null : new Date(),
         cashierId: userId,
@@ -271,10 +293,10 @@ export class POSService extends BaseService<any, any, any, any> {
 
       // Create invoice items
       const itemsData: NewPOSInvoiceItem[] = data.items.map(item => ({
-        posInvoiceId: invoice.id,
+        posInvoiceId: invoice!.id,
         itemCode: item.itemCode,
         itemName: item.itemName,
-        barcode: item.barcode,
+        barcode: item.barcode || null,
         quantity: item.quantity.toString(),
         unitPrice: item.unitPrice.toString(),
         discountPercent: item.discountPercent.toString(),
@@ -286,11 +308,15 @@ export class POSService extends BaseService<any, any, any, any> {
           item.discountAmount +
           item.taxAmount
         ).toString(),
-        serialNumbers: item.serialNumbers,
+        serialNumbers: item.serialNumbers || null,
         companyId,
       }));
 
       await this.db.db.insert(posInvoiceItems).values(itemsData);
+
+      if (!invoice) {
+        throw new BadRequestException('Failed to create invoice');
+      }
 
       // Update inventory levels
       await this.updateInventoryLevels(
@@ -303,24 +329,24 @@ export class POSService extends BaseService<any, any, any, any> {
       if (data.customerId && profile.loyaltyProgram) {
         await this.processLoyaltyPoints(
           data.customerId,
-          invoiceData.loyaltyPointsEarned,
+          invoiceData.loyaltyPointsEarned || 0,
           data.loyaltyPointsRedeemed,
           companyId
         );
       }
 
       // Create accounting entries
-      await this.createAccountingEntries(invoice, profile, companyId);
+      await this.createAccountingEntries(invoice!, profile, companyId);
 
       this.logger.info('POS sale processed successfully', {
         invoiceId: invoice.id,
       });
 
       // Return complete invoice with items
-      return await this.getPOSInvoiceWithItems(invoice.id, companyId);
+      return await this.getPOSInvoiceWithItems(invoice!.id, companyId);
     } catch (error) {
       this.logger.error('Failed to process POS sale', {
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         data,
       });
       throw error;
@@ -350,7 +376,7 @@ export class POSService extends BaseService<any, any, any, any> {
         price: 10.99,
         availableQuantity: 100,
         description: 'Sample item description',
-        imageUrl: null,
+        imageUrl: '',
         taxRate: 8.25,
         isActive: true,
       };
@@ -358,7 +384,7 @@ export class POSService extends BaseService<any, any, any, any> {
       return mockItem;
     } catch (error) {
       this.logger.error('Failed to lookup item by barcode', {
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         barcodeData,
       });
       throw error;
@@ -406,11 +432,12 @@ export class POSService extends BaseService<any, any, any, any> {
 
           successfulSyncs++;
         } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           this.logger.error('Failed to sync transaction', {
-            error: error.message,
+            error: errorMessage,
             localId: transaction.localId,
           });
-          errors.push(`Transaction ${transaction.localId}: ${error.message}`);
+          errors.push(`Transaction ${transaction.localId}: ${errorMessage}`);
           failedSyncs++;
         }
       }
@@ -427,7 +454,7 @@ export class POSService extends BaseService<any, any, any, any> {
       return result;
     } catch (error) {
       this.logger.error('Failed to sync offline transactions', {
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -436,7 +463,7 @@ export class POSService extends BaseService<any, any, any, any> {
   // Loyalty Program Management
   async getLoyaltyPointsBalance(
     customerId: string,
-    companyId: string
+    _companyId: string
   ): Promise<LoyaltyPointsBalance> {
     try {
       // This would integrate with a loyalty points service
@@ -453,7 +480,7 @@ export class POSService extends BaseService<any, any, any, any> {
       return balance;
     } catch (error) {
       this.logger.error('Failed to get loyalty points balance', {
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         customerId,
       });
       throw error;
@@ -479,19 +506,19 @@ export class POSService extends BaseService<any, any, any, any> {
 
       // Generate loyalty message if applicable
       const loyaltyMessage =
-        invoice.loyaltyPointsEarned > 0
+        invoice.loyaltyPointsEarned && invoice.loyaltyPointsEarned > 0
           ? `You earned ${invoice.loyaltyPointsEarned} loyalty points!`
           : undefined;
 
       return {
-        invoice,
+        invoice: invoice as any,
         receiptTemplate,
         qrCode,
-        loyaltyMessage,
+        ...(loyaltyMessage && { loyaltyMessage }),
       };
     } catch (error) {
       this.logger.error('Failed to generate receipt', {
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         invoiceId,
       });
       throw error;
@@ -500,8 +527,8 @@ export class POSService extends BaseService<any, any, any, any> {
 
   // Private helper methods
   private async validatePOSProfileReferences(
-    data: CreatePOSProfileDto | UpdatePOSProfileDto,
-    companyId: string
+    _data: CreatePOSProfileDto | UpdatePOSProfileDto,
+    _companyId: string
   ): Promise<void> {
     // In a real implementation, this would validate that:
     // - warehouseId exists and belongs to company
@@ -550,7 +577,7 @@ export class POSService extends BaseService<any, any, any, any> {
         )
       );
 
-    const sequence = String(result.count + 1).padStart(4, '0');
+    const sequence = String((result?.count || 0) + 1).padStart(4, '0');
     return `${prefix}-${sequence}`;
   }
 
@@ -567,7 +594,7 @@ export class POSService extends BaseService<any, any, any, any> {
   private async updateInventoryLevels(
     items: any[],
     warehouseId: string,
-    companyId: string
+    _companyId: string
   ): Promise<void> {
     // This would integrate with inventory service to update stock levels
     // Mock implementation for now
@@ -581,7 +608,7 @@ export class POSService extends BaseService<any, any, any, any> {
     customerId: string,
     pointsEarned: number,
     pointsRedeemed: number,
-    companyId: string
+    _companyId: string
   ): Promise<void> {
     // This would integrate with loyalty points service
     // Mock implementation for now
@@ -595,7 +622,7 @@ export class POSService extends BaseService<any, any, any, any> {
   private async createAccountingEntries(
     invoice: POSInvoice,
     profile: POSProfile,
-    companyId: string
+    _companyId: string
   ): Promise<void> {
     // This would create GL entries for the sale
     // Mock implementation for now
@@ -632,8 +659,8 @@ export class POSService extends BaseService<any, any, any, any> {
   }
 
   private async findInvoiceByLocalId(
-    localId: string,
-    companyId: string
+    _localId: string,
+    _companyId: string
   ): Promise<POSInvoice | null> {
     // This would check for existing invoices with the same local ID
     // Mock implementation for now
@@ -642,7 +669,7 @@ export class POSService extends BaseService<any, any, any, any> {
 
   private async markTransactionAsSynced(
     localId: string,
-    companyId: string
+    _companyId: string
   ): Promise<void> {
     // This would mark the transaction as synced in a tracking table
     // Mock implementation for now
@@ -661,7 +688,7 @@ export class POSService extends BaseService<any, any, any, any> {
     `;
   }
 
-  private async generateReceiptQRCode(invoice: POSInvoice): Promise<string> {
+  private async generateReceiptQRCode(_invoice: POSInvoice): Promise<string> {
     // This would generate a QR code for the receipt
     return `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`;
   }

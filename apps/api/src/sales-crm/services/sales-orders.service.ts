@@ -1,8 +1,8 @@
 import {
-  NewSalesOrder,
-  NewSalesOrderItem,
-  SalesOrder,
-  SalesOrderItem,
+  type NewSalesOrder,
+  type NewSalesOrderItem,
+  type SalesOrder,
+  type SalesOrderItem,
   salesOrderItems,
   salesOrders,
 } from '@kiro/database';
@@ -13,7 +13,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  SQL,
+  type SQL,
   and,
   desc,
   eq,
@@ -28,8 +28,10 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import {
   BaseService,
-  PaginationOptions,
+  type PaginationOptions,
 } from '../../common/services/base.service';
+import { CacheService } from '../../common/services/cache.service';
+import { PerformanceMonitorService } from '../../common/services/performance-monitor.service';
 import {
   CreateSalesOrderInput,
   OrderAmendmentInput,
@@ -42,19 +44,21 @@ import {
 
 @Injectable()
 export class SalesOrdersService extends BaseService<
-  typeof salesOrders,
+  any,
   SalesOrder,
   NewSalesOrder,
   Partial<NewSalesOrder>
 > {
-  protected table = salesOrders;
+  protected table = salesOrders as any;
   protected tableName = 'sales_orders';
 
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
-    logger: Logger
+    logger: Logger,
+    cacheService: CacheService,
+    performanceMonitor: PerformanceMonitorService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -82,13 +86,13 @@ export class SalesOrdersService extends BaseService<
         const salesOrderData: NewSalesOrder = {
           salesOrderCode,
           customerId: data.customerId,
-          quotationId: data.quotationId,
-          opportunityId: data.opportunityId,
+          quotationId: data.quotationId || null,
+          opportunityId: data.opportunityId || null,
           status: 'Draft',
           orderDate: data.orderDate,
-          deliveryDate: data.deliveryDate,
+          deliveryDate: data.deliveryDate || null,
           currency: data.currency || 'USD',
-          exchangeRate: data.exchangeRate || 1.0,
+          exchangeRate: (data.exchangeRate || 1.0).toString(),
           subtotal: subtotal.toString(),
           totalTax: totalTax.toString(),
           totalDiscount: totalDiscount.toString(),
@@ -100,10 +104,10 @@ export class SalesOrdersService extends BaseService<
           ).toString(),
           billingAddress: data.billingAddress,
           shippingAddress: data.shippingAddress,
-          terms: data.terms,
-          notes: data.notes,
-          internalNotes: data.internalNotes,
-          assignedTo: data.assignedTo,
+          terms: data.terms || null,
+          notes: data.notes || null,
+          internalNotes: data.internalNotes || null,
+          assignedTo: data.assignedTo || null,
           companyId,
         };
 
@@ -111,6 +115,10 @@ export class SalesOrdersService extends BaseService<
           .insert(salesOrders)
           .values(salesOrderData)
           .returning();
+
+        if (!salesOrder) {
+          throw new BadRequestException('Failed to create sales order');
+        }
 
         // Create sales order items
         const itemsData: NewSalesOrderItem[] = data.items.map((item, index) => {
@@ -131,7 +139,7 @@ export class SalesOrdersService extends BaseService<
             salesOrderId: salesOrder.id,
             itemCode: item.itemCode,
             itemName: item.itemName,
-            description: item.description,
+            description: item.description || null,
             quantity: item.quantity.toString(),
             deliveredQuantity: '0',
             invoicedQuantity: '0',
@@ -141,7 +149,7 @@ export class SalesOrdersService extends BaseService<
             taxPercent: (item.taxPercent || 0).toString(),
             taxAmount: taxAmount.toString(),
             lineTotal: lineTotal.toString(),
-            notes: item.notes,
+            notes: item.notes || null,
             sortOrder: item.sortOrder || index,
             companyId,
           };
@@ -159,11 +167,12 @@ export class SalesOrdersService extends BaseService<
           itemsCount: createdItems.length,
         });
 
-        return { ...salesOrder, items: createdItems };
+        return { ...salesOrder, items: createdItems } as SalesOrder & { items: SalesOrderItem[] };
       } catch (error) {
-        this.logger.error('Failed to create sales order', { error, data });
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        this.logger.error('Failed to create sales order', { error: errorMessage, data });
         throw new BadRequestException(
-          `Failed to create sales order: ${error.message}`
+          `Failed to create sales order: ${errorMessage}`
         );
       }
     });
@@ -200,23 +209,27 @@ export class SalesOrdersService extends BaseService<
           );
         }
 
-        let updateData: Partial<NewSalesOrder> = {
-          customerId: data.customerId,
-          status: data.status,
-          orderDate: data.orderDate,
-          deliveryDate: data.deliveryDate,
-          currency: data.currency,
-          exchangeRate: data.exchangeRate,
-          shippingCharges: data.shippingCharges?.toString(),
-          advanceAmount: data.advanceAmount?.toString(),
-          billingAddress: data.billingAddress,
-          shippingAddress: data.shippingAddress,
-          terms: data.terms,
-          notes: data.notes,
-          internalNotes: data.internalNotes,
-          assignedTo: data.assignedTo,
-          updatedAt: new Date(),
-        };
+        let updateData: Partial<NewSalesOrder> = {};
+        
+        if (data.customerId !== undefined) {
+          updateData.customerId = data.customerId;
+        }
+        
+        if (data.status !== undefined) updateData.status = data.status;
+        if (data.orderDate !== undefined) updateData.orderDate = data.orderDate;
+        if (data.deliveryDate !== undefined) updateData.deliveryDate = data.deliveryDate;
+        if (data.currency !== undefined) updateData.currency = data.currency;
+        if (data.exchangeRate !== undefined) updateData.exchangeRate = data.exchangeRate.toString();
+        if (data.shippingCharges !== undefined) updateData.shippingCharges = data.shippingCharges.toString();
+        if (data.advanceAmount !== undefined) updateData.advanceAmount = data.advanceAmount.toString();
+        if (data.billingAddress !== undefined) updateData.billingAddress = data.billingAddress;
+        if (data.shippingAddress !== undefined) updateData.shippingAddress = data.shippingAddress;
+        if (data.terms !== undefined) updateData.terms = data.terms;
+        if (data.notes !== undefined) updateData.notes = data.notes;
+        if (data.internalNotes !== undefined) updateData.internalNotes = data.internalNotes;
+        if (data.assignedTo !== undefined) updateData.assignedTo = data.assignedTo;
+        
+        updateData.updatedAt = new Date();
 
         // Handle status changes
         if (data.status) {
@@ -276,7 +289,7 @@ export class SalesOrdersService extends BaseService<
                 salesOrderId: id,
                 itemCode: item.itemCode,
                 itemName: item.itemName,
-                description: item.description,
+                description: item.description || null,
                 quantity: item.quantity.toString(),
                 deliveredQuantity: '0',
                 invoicedQuantity: '0',
@@ -286,7 +299,7 @@ export class SalesOrdersService extends BaseService<
                 taxPercent: (item.taxPercent || 0).toString(),
                 taxAmount: taxAmount.toString(),
                 lineTotal: lineTotal.toString(),
-                notes: item.notes,
+                notes: item.notes || null,
                 sortOrder: item.sortOrder || index,
                 companyId,
               };
@@ -321,7 +334,7 @@ export class SalesOrdersService extends BaseService<
 
         this.logger.info('Updated sales order', { salesOrderId: id });
 
-        return { ...updatedSalesOrder, items };
+        return { ...updatedSalesOrder, items } as SalesOrder & { items: SalesOrderItem[] };
       } catch (error) {
         this.logger.error('Failed to update sales order', { error, id, data });
         throw error;
@@ -449,7 +462,7 @@ export class SalesOrdersService extends BaseService<
                 salesOrderId: data.salesOrderId,
                 itemCode: item.itemCode,
                 itemName: item.itemName,
-                description: item.description,
+                description: item.description || null,
                 quantity: item.quantity.toString(),
                 deliveredQuantity: '0',
                 invoicedQuantity: '0',
@@ -459,7 +472,7 @@ export class SalesOrdersService extends BaseService<
                 taxPercent: (item.taxPercent || 0).toString(),
                 taxAmount: taxAmount.toString(),
                 lineTotal: lineTotal.toString(),
-                notes: item.notes,
+                notes: item.notes || null,
                 sortOrder: item.sortOrder || index + 1000, // Add high sort order for new items
                 companyId,
               };
@@ -483,8 +496,8 @@ export class SalesOrdersService extends BaseService<
         const { subtotal, totalTax, totalDiscount, grandTotal } =
           this.calculateTotalsFromItems(items);
 
-        const shippingCharges = parseFloat(salesOrder.shippingCharges);
-        const advanceAmount = parseFloat(salesOrder.advanceAmount);
+        const shippingCharges = parseFloat(salesOrder.shippingCharges || '0');
+        const advanceAmount = parseFloat(salesOrder.advanceAmount || '0');
         const finalGrandTotal = grandTotal + shippingCharges;
         const balanceAmount = finalGrandTotal - advanceAmount;
 
@@ -513,7 +526,7 @@ export class SalesOrdersService extends BaseService<
           salesOrderId: data.salesOrderId,
         });
 
-        return { ...updatedSalesOrder, items };
+        return { ...updatedSalesOrder, items } as SalesOrder & { items: SalesOrderItem[] };
       } catch (error) {
         this.logger.error('Failed to process order amendment', { error, data });
         throw error;
@@ -611,7 +624,7 @@ export class SalesOrdersService extends BaseService<
           or(
             ilike(salesOrders.salesOrderCode, `%${filters.search}%`),
             ilike(salesOrders.notes, `%${filters.search}%`)
-          )
+          )!
         );
       }
 
@@ -715,7 +728,7 @@ export class SalesOrdersService extends BaseService<
       );
 
       const deliveredQuantity = salesOrderWithItems.items.reduce(
-        (sum, item) => sum + parseFloat(item.deliveredQuantity),
+        (sum, item) => sum + parseFloat(item.deliveredQuantity || '0'),
         0
       );
 
@@ -725,7 +738,7 @@ export class SalesOrdersService extends BaseService<
 
       const items = salesOrderWithItems.items.map(item => {
         const orderedQty = parseFloat(item.quantity);
-        const deliveredQty = parseFloat(item.deliveredQuantity);
+        const deliveredQty = parseFloat(item.deliveredQuantity || '0');
         const pendingQty = orderedQty - deliveredQty;
         const itemFulfillmentPercentage =
           orderedQty > 0 ? (deliveredQty / orderedQty) * 100 : 0;
@@ -776,7 +789,7 @@ export class SalesOrdersService extends BaseService<
       .limit(1);
 
     let nextNumber = 1;
-    if (lastOrder.length > 0) {
+    if (lastOrder.length > 0 && lastOrder[0]) {
       const lastCode = lastOrder[0].salesOrderCode;
       const lastNumber = parseInt(lastCode.split('-').pop() || '0');
       nextNumber = lastNumber + 1;
@@ -825,8 +838,8 @@ export class SalesOrdersService extends BaseService<
     items.forEach(item => {
       const itemSubtotal =
         parseFloat(item.unitPrice) * parseFloat(item.quantity);
-      const discountAmount = parseFloat(item.discountAmount);
-      const taxAmount = parseFloat(item.taxAmount);
+      const discountAmount = parseFloat(item.discountAmount || '0');
+      const taxAmount = parseFloat(item.taxAmount || '0');
 
       subtotal += itemSubtotal;
       totalDiscount += discountAmount;

@@ -346,14 +346,14 @@ export class LeadsService extends BaseService<
           updatedLead,
           companyId
         );
-        const [rescored] = await tx
+        const [reScored] = await tx
           .update(leads)
           .set({ score: newScore, updatedAt: new Date() })
           .where(eq(leads.id, id))
           .returning();
         
-        if (rescored) {
-          finalUpdatedLead = rescored;
+        if (reScored) {
+          finalUpdatedLead = reScored;
         }
       }
 

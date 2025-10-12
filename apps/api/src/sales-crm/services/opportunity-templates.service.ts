@@ -1,14 +1,17 @@
 import {
-  NewOpportunityTemplate,
-  OpportunityTemplate,
+  type NewOpportunityTemplate,
+  type OpportunityTemplate,
   opportunityTemplateActivities,
   opportunityTemplateStages,
   opportunityTemplates,
 } from '@kiro/database';
 import { and, eq, sql } from '@kiro/database';
+import { Inject, Injectable } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { BaseService } from '../../common/services/base.service';
+import { CacheService } from '../../common/services/cache.service';
+import { PerformanceMonitorService } from '../../common/services/performance-monitor.service';
 
 export interface CreateOpportunityTemplateDto {
   name: string;
@@ -52,19 +55,21 @@ export interface OpportunityTemplateWithDetails {
 
 @Injectable()
 export class OpportunityTemplatesService extends BaseService<
-  typeof opportunityTemplates,
+  any,
   OpportunityTemplate,
   NewOpportunityTemplate,
   any
 > {
-  protected table = opportunityTemplates;
+  protected table = opportunityTemplates as any;
   protected tableName = 'opportunity_templates';
 
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
-    logger: Logger
+    logger: Logger,
+    cacheService: CacheService,
+    performanceMonitor: PerformanceMonitorService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -81,13 +86,13 @@ export class OpportunityTemplatesService extends BaseService<
         .insert(opportunityTemplates)
         .values({
           name: data.name,
-          description: data.description,
-          productLine: data.productLine,
-          industry: data.industry,
+          description: data.description || null,
+          productLine: data.productLine || null,
+          industry: data.industry || null,
           dealType: data.dealType,
-          averageDealSize: data.averageDealSize?.toString(),
-          averageSalesCycle: data.averageSalesCycle,
-          customFields: data.customFields,
+          averageDealSize: data.averageDealSize?.toString() || null,
+          averageSalesCycle: data.averageSalesCycle || null,
+          customFields: data.customFields || null,
           companyId,
           createdBy: userId,
         })
@@ -99,13 +104,13 @@ export class OpportunityTemplatesService extends BaseService<
         const [stage] = await tx
           .insert(opportunityTemplateStages)
           .values({
-            templateId: template.id,
+            templateId: template!.id,
             stageName: stageData.stageName,
             stageOrder: stageData.stageOrder,
             defaultProbability: stageData.defaultProbability,
-            requiredActivities: stageData.requiredActivities,
-            exitCriteria: stageData.exitCriteria,
-            averageDuration: stageData.averageDuration,
+            requiredActivities: stageData.requiredActivities || null,
+            exitCriteria: stageData.exitCriteria || null,
+            averageDuration: stageData.averageDuration || null,
             isRequired: stageData.isRequired,
             companyId,
           })
@@ -119,14 +124,14 @@ export class OpportunityTemplatesService extends BaseService<
         const [activity] = await tx
           .insert(opportunityTemplateActivities)
           .values({
-            templateId: template.id,
+            templateId: template!.id,
             activityName: activityData.activityName,
             activityType: activityData.activityType,
-            description: activityData.description,
+            description: activityData.description || null,
             isRequired: activityData.isRequired,
-            daysFromStageStart: activityData.daysFromStageStart,
-            estimatedDuration: activityData.estimatedDuration,
-            assignedRole: activityData.assignedRole,
+            daysFromStageStart: activityData.daysFromStageStart || null,
+            estimatedDuration: activityData.estimatedDuration || null,
+            assignedRole: activityData.assignedRole || null,
             companyId,
           })
           .returning();
@@ -134,7 +139,7 @@ export class OpportunityTemplatesService extends BaseService<
       }
 
       return {
-        template,
+        template: template!,
         stages,
         activities,
       };
@@ -234,29 +239,28 @@ export class OpportunityTemplatesService extends BaseService<
       companyId
     );
 
-    await this.transaction(async tx => {
+    await this.transaction(async _tx => {
       // Update opportunity with template defaults
-      await tx
-        .update(sql`opportunities`)
-        .set({
-          template_id: templateId,
-          updated_at: new Date(),
-        })
-        .where(and(eq(sql`id`, opportunityId), eq(sql`company_id`, companyId)));
+      await this.database.execute(sql`
+        UPDATE opportunities 
+        SET template_id = ${templateId}, updated_at = ${new Date()}
+        WHERE id = ${opportunityId} AND company_id = ${companyId}
+      `);
 
       // Create template-based activities
       for (const activity of templateDetails.activities) {
         if (activity.isRequired) {
-          await tx.insert(sql`opportunity_activities`).values({
-            opportunity_id: opportunityId,
-            activity_type: activity.activityType,
-            subject: activity.activityName,
-            description: activity.description,
-            activity_date: sql`NOW() + INTERVAL '${activity.daysFromStageStart || 0} days'`,
-            duration: activity.estimatedDuration,
-            created_by: userId,
-            company_id: companyId,
-          });
+          await this.database.execute(sql`
+            INSERT INTO opportunity_activities (
+              opportunity_id, activity_type, subject, description, 
+              activity_date, duration, created_by, company_id
+            ) VALUES (
+              ${opportunityId}, ${activity.activityType}, ${activity.activityName}, 
+              ${activity.description}, 
+              NOW() + INTERVAL '${activity.daysFromStageStart || 0} days',
+              ${activity.estimatedDuration}, ${userId}, ${companyId}
+            )
+          `);
         }
       }
 
@@ -265,15 +269,16 @@ export class OpportunityTemplatesService extends BaseService<
         if (stage.requiredActivities?.length > 0) {
           // Create tasks for required activities in each stage
           for (const requiredActivity of stage.requiredActivities) {
-            await tx.insert(sql`opportunity_activities`).values({
-              opportunity_id: opportunityId,
-              activity_type: 'Task',
-              subject: requiredActivity,
-              description: `Required activity for ${stage.stageName} stage`,
-              activity_date: new Date(),
-              created_by: userId,
-              company_id: companyId,
-            });
+            await this.database.execute(sql`
+              INSERT INTO opportunity_activities (
+                opportunity_id, activity_type, subject, description, 
+                activity_date, created_by, company_id
+              ) VALUES (
+                ${opportunityId}, 'Task', ${requiredActivity}, 
+                ${'Required activity for ' + stage.stageName + ' stage'},
+                ${new Date()}, ${userId}, ${companyId}
+              )
+            `);
           }
         }
       }
@@ -287,63 +292,55 @@ export class OpportunityTemplatesService extends BaseService<
     templateId: string,
     companyId: string
   ): Promise<any> {
-    const performance = await this.database
-      .select({
-        totalOpportunities: sql<number>`COUNT(*)`,
-        wonOpportunities: sql<number>`COUNT(*) FILTER (WHERE stage = 'Closed Won')`,
-        lostOpportunities: sql<number>`COUNT(*) FILTER (WHERE stage = 'Closed Lost')`,
-        averageAmount: sql<number>`AVG(CAST(amount AS DECIMAL))`,
-        totalValue: sql<number>`SUM(CAST(amount AS DECIMAL))`,
-        wonValue: sql<number>`SUM(CAST(amount AS DECIMAL)) FILTER (WHERE stage = 'Closed Won')`,
-        averageSalesCycle: sql<number>`
-          AVG(EXTRACT(EPOCH FROM (actual_close_date - created_at)) / 86400)
-          FILTER (WHERE stage = 'Closed Won' AND actual_close_date IS NOT NULL)
-        `,
-        winRate: sql<number>`
-          CASE
-            WHEN COUNT(*) FILTER (WHERE stage IN ('Closed Won', 'Closed Lost')) > 0
-            THEN (COUNT(*) FILTER (WHERE stage = 'Closed Won') * 100.0 /
-                  COUNT(*) FILTER (WHERE stage IN ('Closed Won', 'Closed Lost')))
-            ELSE 0
-          END
-        `,
-      })
-      .from(sql`opportunities`)
-      .where(
-        and(eq(sql`template_id`, templateId), eq(sql`company_id`, companyId))
-      );
+    const performance = await this.database.execute(sql`
+      SELECT 
+        COUNT(*) as total_opportunities,
+        COUNT(*) FILTER (WHERE stage = 'Closed Won') as won_opportunities,
+        COUNT(*) FILTER (WHERE stage = 'Closed Lost') as lost_opportunities,
+        AVG(CAST(amount AS DECIMAL)) as average_amount,
+        SUM(CAST(amount AS DECIMAL)) as total_value,
+        SUM(CAST(amount AS DECIMAL)) FILTER (WHERE stage = 'Closed Won') as won_value,
+        AVG(EXTRACT(EPOCH FROM (actual_close_date - created_at)) / 86400)
+          FILTER (WHERE stage = 'Closed Won' AND actual_close_date IS NOT NULL) as average_sales_cycle,
+        CASE
+          WHEN COUNT(*) FILTER (WHERE stage IN ('Closed Won', 'Closed Lost')) > 0
+          THEN (COUNT(*) FILTER (WHERE stage = 'Closed Won') * 100.0 /
+                COUNT(*) FILTER (WHERE stage IN ('Closed Won', 'Closed Lost')))
+          ELSE 0
+        END as win_rate
+      FROM opportunities
+      WHERE template_id = ${templateId} AND company_id = ${companyId}
+    `);
 
     // Get stage performance
-    const stagePerformance = await this.database
-      .select({
-        stage: sql<string>`stage`,
-        count: sql<number>`COUNT(*)`,
-        averageTimeInStage: sql<number>`
-          AVG(
-            CASE
-              WHEN stage_history.to_stage IS NOT NULL
-              THEN EXTRACT(EPOCH FROM (stage_history.changed_at - opportunities.created_at)) / 86400
-              ELSE EXTRACT(EPOCH FROM (NOW() - opportunities.created_at)) / 86400
-            END
-          )
-        `,
-      })
-      .from(sql`opportunities`)
-      .leftJoin(
-        sql`opportunity_stage_history stage_history`,
-        sql`stage_history.opportunity_id = opportunities.id AND stage_history.from_stage = opportunities.stage`
-      )
-      .where(
-        and(
-          eq(sql`opportunities.template_id`, templateId),
-          eq(sql`opportunities.company_id`, companyId)
-        )
-      )
-      .groupBy(sql`opportunities.stage`);
+    const stagePerformance = await this.database.execute(sql`
+      SELECT 
+        o.stage,
+        COUNT(*) as count,
+        AVG(
+          CASE
+            WHEN sh.to_stage IS NOT NULL
+            THEN EXTRACT(EPOCH FROM (sh.changed_at - o.created_at)) / 86400
+            ELSE EXTRACT(EPOCH FROM (NOW() - o.created_at)) / 86400
+          END
+        ) as average_time_in_stage
+      FROM opportunities o
+      LEFT JOIN opportunity_stage_history sh ON sh.opportunity_id = o.id AND sh.from_stage = o.stage
+      WHERE o.template_id = ${templateId} AND o.company_id = ${companyId}
+      GROUP BY o.stage
+    `);
 
+    const perfData = performance[0] as any;
     return {
-      ...performance[0],
-      stagePerformance,
+      totalOpportunities: perfData?.total_opportunities || 0,
+      wonOpportunities: perfData?.won_opportunities || 0,
+      lostOpportunities: perfData?.lost_opportunities || 0,
+      averageAmount: perfData?.average_amount || 0,
+      totalValue: perfData?.total_value || 0,
+      wonValue: perfData?.won_value || 0,
+      averageSalesCycle: perfData?.average_sales_cycle || 0,
+      winRate: perfData?.win_rate || 0,
+      stagePerformance: stagePerformance as any[],
     };
   }
 
@@ -361,40 +358,50 @@ export class OpportunityTemplatesService extends BaseService<
       companyId
     );
 
-    return await this.createTemplate(
-      {
-        name: newName,
-        description: `Cloned from ${originalTemplate.template.name}`,
-        productLine: originalTemplate.template.productLine,
-        industry: originalTemplate.template.industry,
-        dealType: originalTemplate.template.dealType as any,
-        averageDealSize: originalTemplate.template.averageDealSize
-          ? parseFloat(originalTemplate.template.averageDealSize)
-          : undefined,
-        averageSalesCycle: originalTemplate.template.averageSalesCycle,
-        stages: originalTemplate.stages.map(stage => ({
-          stageName: stage.stageName,
-          stageOrder: stage.stageOrder,
-          defaultProbability: stage.defaultProbability,
-          requiredActivities: stage.requiredActivities,
-          exitCriteria: stage.exitCriteria,
-          averageDuration: stage.averageDuration,
-          isRequired: stage.isRequired,
-        })),
-        activities: originalTemplate.activities.map(activity => ({
-          activityName: activity.activityName,
-          activityType: activity.activityType,
-          description: activity.description,
-          isRequired: activity.isRequired,
-          daysFromStageStart: activity.daysFromStageStart,
-          estimatedDuration: activity.estimatedDuration,
-          assignedRole: activity.assignedRole,
-        })),
-        customFields: originalTemplate.template.customFields,
-      },
-      companyId,
-      userId
-    );
+    const cloneData: CreateOpportunityTemplateDto = {
+      name: newName,
+      description: `Cloned from ${originalTemplate.template.name}`,
+      dealType: originalTemplate.template.dealType as any,
+      stages: originalTemplate.stages.map(stage => ({
+        stageName: stage.stageName,
+        stageOrder: stage.stageOrder,
+        defaultProbability: stage.defaultProbability,
+        requiredActivities: stage.requiredActivities,
+        exitCriteria: stage.exitCriteria,
+        averageDuration: stage.averageDuration,
+        isRequired: stage.isRequired,
+      })),
+      activities: originalTemplate.activities.map(activity => ({
+        activityName: activity.activityName,
+        activityType: activity.activityType,
+        description: activity.description,
+        isRequired: activity.isRequired,
+        daysFromStageStart: activity.daysFromStageStart,
+        estimatedDuration: activity.estimatedDuration,
+        assignedRole: activity.assignedRole,
+      })),
+      customFields:
+        (originalTemplate.template.customFields as Record<string, any>) ||
+        undefined,
+    };
+
+    // Add optional fields only if they exist
+    if (originalTemplate.template.productLine) {
+      cloneData.productLine = originalTemplate.template.productLine;
+    }
+    if (originalTemplate.template.industry) {
+      cloneData.industry = originalTemplate.template.industry;
+    }
+    if (originalTemplate.template.averageDealSize) {
+      cloneData.averageDealSize = parseFloat(
+        originalTemplate.template.averageDealSize
+      );
+    }
+    if (originalTemplate.template.averageSalesCycle) {
+      cloneData.averageSalesCycle = originalTemplate.template.averageSalesCycle;
+    }
+
+    return await this.createTemplate(cloneData, companyId, userId);
   }
 
   /**
@@ -411,8 +418,10 @@ export class OpportunityTemplatesService extends BaseService<
   ): Promise<OpportunityTemplate | null> {
     // Simple recommendation logic - can be enhanced with ML
     const templates = await this.getTemplatesByCriteria(companyId, {
-      industry: opportunityData.industry,
-      productLine: opportunityData.productLine,
+      ...(opportunityData.industry && { industry: opportunityData.industry }),
+      ...(opportunityData.productLine && {
+        productLine: opportunityData.productLine,
+      }),
       dealSizeRange: {
         min: opportunityData.amount * 0.5,
         max: opportunityData.amount * 2,
@@ -424,7 +433,9 @@ export class OpportunityTemplatesService extends BaseService<
       return (
         (
           await this.getTemplatesByCriteria(companyId, {
-            industry: opportunityData.industry,
+            ...(opportunityData.industry && {
+              industry: opportunityData.industry,
+            }),
           })
         )[0] || null
       );

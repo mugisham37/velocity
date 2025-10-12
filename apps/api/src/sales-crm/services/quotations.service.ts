@@ -1,10 +1,10 @@
 import {
-  NewQuotation,
-  NewQuotationItem,
-  NewSalesOrder,
-  NewSalesOrderItem,
-  Quotation,
-  QuotationItem,
+  type NewQuotation,
+  type NewQuotationItem,
+  type NewSalesOrder,
+  type NewSalesOrderItem,
+  type Quotation,
+  type QuotationItem,
   quotationItems,
   quotations,
   salesOrderItems,
@@ -16,13 +16,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { SQL, and, desc, eq, gte, ilike, inArray, lte, or } from '@kiro/database';
+import { type SQL, and, desc, eq, gte, ilike, inArray, lte, or, sql } from '@kiro/database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import {
   BaseService,
-  PaginationOptions,
+  type PaginationOptions,
 } from '../../common/services/base.service';
+import { CacheService } from '../../common/services/cache.service';
+import { PerformanceMonitorService } from '../../common/services/performance-monitor.service';
 import {
   ConvertToSalesOrderInput,
   CreateQuotationInput,
@@ -34,19 +36,21 @@ import {
 
 @Injectable()
 export class QuotationsService extends BaseService<
-  typeof quotations,
+  any,
   Quotation,
   NewQuotation,
   Partial<NewQuotation>
 > {
-  protected table = quotations;
+  protected table = quotations as any;
   protected tableName = 'quotations';
 
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
-    logger: Logger
+    logger: Logger,
+    cacheService: CacheService,
+    performanceMonitor: PerformanceMonitorService
   ) {
-    super(logger);
+    super(logger, cacheService, performanceMonitor);
   }
 
   /**
@@ -72,19 +76,19 @@ export class QuotationsService extends BaseService<
         const quotationData: NewQuotation = {
           quotationCode,
           customerId: data.customerId,
-          opportunityId: data.opportunityId,
+          opportunityId: data.opportunityId || null,
           status: 'Draft',
           validUntil: data.validUntil,
           currency: data.currency || 'USD',
-          exchangeRate: data.exchangeRate || 1.0,
+          exchangeRate: (data.exchangeRate || 1.0).toString(),
           subtotal: subtotal.toString(),
           totalTax: totalTax.toString(),
           totalDiscount: totalDiscount.toString(),
           grandTotal: grandTotal.toString(),
-          terms: data.terms,
-          notes: data.notes,
-          internalNotes: data.internalNotes,
-          assignedTo: data.assignedTo,
+          terms: data.terms || null,
+          notes: data.notes || null,
+          internalNotes: data.internalNotes || null,
+          assignedTo: data.assignedTo || null,
           companyId,
         };
 
@@ -92,6 +96,10 @@ export class QuotationsService extends BaseService<
           .insert(quotations)
           .values(quotationData)
           .returning();
+
+        if (!quotation) {
+          throw new BadRequestException('Failed to create quotation');
+        }
 
         // Create quotation items
         const itemsData: NewQuotationItem[] = data.items.map((item, index) => {
@@ -112,7 +120,7 @@ export class QuotationsService extends BaseService<
             quotationId: quotation.id,
             itemCode: item.itemCode,
             itemName: item.itemName,
-            description: item.description,
+            description: item.description || null,
             quantity: item.quantity.toString(),
             unitPrice: item.unitPrice.toString(),
             discountPercent: (item.discountPercent || 0).toString(),
@@ -120,7 +128,7 @@ export class QuotationsService extends BaseService<
             taxPercent: (item.taxPercent || 0).toString(),
             taxAmount: taxAmount.toString(),
             lineTotal: lineTotal.toString(),
-            notes: item.notes,
+            notes: item.notes || null,
             sortOrder: item.sortOrder || index,
             companyId,
           };
@@ -138,11 +146,12 @@ export class QuotationsService extends BaseService<
           itemsCount: createdItems.length,
         });
 
-        return { ...quotation, items: createdItems };
+        return { ...quotation, items: createdItems } as Quotation & { items: QuotationItem[] };
       } catch (error) {
-        this.logger.error('Failed to create quotation', { error, data });
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        this.logger.error('Failed to create quotation', { error: errorMessage, data });
         throw new BadRequestException(
-          `Failed to create quotation: ${error.message}`
+          `Failed to create quotation: ${errorMessage}`
         );
       }
     });
@@ -174,20 +183,26 @@ export class QuotationsService extends BaseService<
           );
         }
 
-        let updateData: Partial<NewQuotation> = {
-          customerId: data.customerId,
-          opportunityId: data.opportunityId,
-          status: data.status,
-          validUntil: data.validUntil,
-          currency: data.currency,
-          exchangeRate: data.exchangeRate,
-          terms: data.terms,
-          notes: data.notes,
-          internalNotes: data.internalNotes,
-          assignedTo: data.assignedTo,
-          rejectionReason: data.rejectionReason,
-          updatedAt: new Date(),
-        };
+        let updateData: Partial<NewQuotation> = {};
+        
+        if (data.customerId !== undefined) {
+          updateData.customerId = data.customerId;
+        }
+        if (data.opportunityId !== undefined) {
+          updateData.opportunityId = data.opportunityId;
+        }
+        
+        if (data.status !== undefined) updateData.status = data.status;
+        if (data.validUntil !== undefined) updateData.validUntil = data.validUntil;
+        if (data.currency !== undefined) updateData.currency = data.currency;
+        if (data.exchangeRate !== undefined) updateData.exchangeRate = data.exchangeRate.toString();
+        if (data.terms !== undefined) updateData.terms = data.terms;
+        if (data.notes !== undefined) updateData.notes = data.notes;
+        if (data.internalNotes !== undefined) updateData.internalNotes = data.internalNotes;
+        if (data.assignedTo !== undefined) updateData.assignedTo = data.assignedTo;
+        if (data.rejectionReason !== undefined) updateData.rejectionReason = data.rejectionReason;
+        
+        updateData.updatedAt = new Date();
 
         // Handle status changes
         if (data.status) {
@@ -247,7 +262,7 @@ export class QuotationsService extends BaseService<
                 quotationId: id,
                 itemCode: item.itemCode,
                 itemName: item.itemName,
-                description: item.description,
+                description: item.description || null,
                 quantity: item.quantity.toString(),
                 unitPrice: item.unitPrice.toString(),
                 discountPercent: (item.discountPercent || 0).toString(),
@@ -255,7 +270,7 @@ export class QuotationsService extends BaseService<
                 taxPercent: (item.taxPercent || 0).toString(),
                 taxAmount: taxAmount.toString(),
                 lineTotal: lineTotal.toString(),
-                notes: item.notes,
+                notes: item.notes || null,
                 sortOrder: item.sortOrder || index,
                 companyId,
               };
@@ -290,7 +305,7 @@ export class QuotationsService extends BaseService<
 
         this.logger.info('Updated quotation', { quotationId: id });
 
-        return { ...updatedQuotation, items };
+        return { ...updatedQuotation, items } as Quotation & { items: QuotationItem[] };
       } catch (error) {
         this.logger.error('Failed to update quotation', { error, id, data });
         throw error;
@@ -341,7 +356,7 @@ export class QuotationsService extends BaseService<
           opportunityId: quotation.opportunityId,
           status: 'Draft',
           orderDate: data.orderDate || new Date(),
-          deliveryDate: data.deliveryDate,
+          deliveryDate: data.deliveryDate || null,
           currency: quotation.currency,
           exchangeRate: quotation.exchangeRate,
           subtotal: quotation.subtotal,
@@ -362,6 +377,10 @@ export class QuotationsService extends BaseService<
           .insert(salesOrders)
           .values(salesOrderData)
           .returning();
+
+        if (!salesOrder) {
+          throw new BadRequestException('Failed to create sales order');
+        }
 
         // Create sales order items from quotation items
         const salesOrderItemsData: NewSalesOrderItem[] = quotation.items.map(
@@ -397,7 +416,7 @@ export class QuotationsService extends BaseService<
           salesOrderId: salesOrder.id,
         });
 
-        return { ...salesOrder, items: createdSalesOrderItems };
+        return { ...salesOrder, items: createdSalesOrderItems } as any;
       } catch (error) {
         this.logger.error('Failed to convert quotation to sales order', {
           error,
@@ -486,7 +505,7 @@ export class QuotationsService extends BaseService<
           or(
             ilike(quotations.quotationCode, `%${filters.search}%`),
             ilike(quotations.notes, `%${filters.search}%`)
-          )
+          )!
         );
       }
 
@@ -584,7 +603,7 @@ export class QuotationsService extends BaseService<
       .limit(1);
 
     let nextNumber = 1;
-    if (lastQuotation.length > 0) {
+    if (lastQuotation.length > 0 && lastQuotation[0]) {
       const lastCode = lastQuotation[0].quotationCode;
       const lastNumber = parseInt(lastCode.split('-').pop() || '0');
       nextNumber = lastNumber + 1;
@@ -613,7 +632,7 @@ export class QuotationsService extends BaseService<
       .limit(1);
 
     let nextNumber = 1;
-    if (lastOrder.length > 0) {
+    if (lastOrder.length > 0 && lastOrder[0]) {
       const lastCode = lastOrder[0].salesOrderCode;
       const lastNumber = parseInt(lastCode.split('-').pop() || '0');
       nextNumber = lastNumber + 1;
