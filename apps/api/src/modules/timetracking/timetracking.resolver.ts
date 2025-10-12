@@ -1,7 +1,7 @@
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { UseGuards } from '@nestjs/common';
-import { Args, Context, Mutation } from '@nestjs/graphql';
-import {
+import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
+import type {
   CreateTimeCategory,
   CreateTimeEntry,
   CreateTimeReport,
@@ -19,7 +19,7 @@ import {
   UpdateTimeTrackingSettings,
   UpdateTimesheet,
   UtilizationReport,
-} from '@packages/shared/types/timetracking';
+} from '@kiro/shared';
 import { TimeTrackingService } from './timetracking.service';
 
 @Resolver('Timesheet')

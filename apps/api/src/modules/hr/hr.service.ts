@@ -496,7 +496,7 @@ export class HRService {
       })
       .returning();
 
-    return this.getDepartmentById(newDepartment!.id);
+    return this.getDepartmentById(newDepartment!['id']);
   }
 
   async updateDepartment(

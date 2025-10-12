@@ -1,3 +1,4 @@
+import { DatabaseService } from '@kiro/database';
 import {
   timeApprovals,
   timeCategories,
@@ -11,7 +12,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
+import type {
   CreateTimeEntry,
   CreateTimesheet,
   ProjectTimeReport,
@@ -20,38 +21,158 @@ import {
   UpdateTimeEntry,
   UpdateTimesheet,
   UtilizationReport,
-} from '@packages/shared/types/timetracking';
+  CreateTimeCategory,
+  UpdateTimeCategory,
+  TimeCategory,
+  UpdateTimeTrackingSettings,
+  TimeTrackingSettings,
+  CreateTimeReport,
+  TimeReport,
+  TimeLog,
+  Timer,
+} from '@kiro/shared';
 import { and, asc, between, desc, eq, gte, lte, sql } from '@kiro/database';
 
 @Injectable()
 export class TimeTrackingService {
+  constructor(private readonly db: DatabaseService) {}
+
+  // Helper function to transform database timesheet to type-safe Timesheet
+  private transformTimesheet(dbTimesheet: any): Timesheet {
+    return {
+      id: dbTimesheet.id,
+      timesheetCode: dbTimesheet.timesheetCode,
+      employeeId: dbTimesheet.employeeId,
+      startDate: dbTimesheet.startDate,
+      endDate: dbTimesheet.endDate,
+      status: dbTimesheet.status as any,
+      totalHours: parseFloat(dbTimesheet.totalHours || '0'),
+      billableHours: parseFloat(dbTimesheet.billableHours || '0'),
+      nonBillableHours: parseFloat(dbTimesheet.nonBillableHours || '0'),
+      approvedBy: dbTimesheet.approvedBy || undefined,
+      approvedAt: dbTimesheet.approvedAt?.toISOString() || undefined,
+      submittedAt: dbTimesheet.submittedAt?.toISOString() || undefined,
+      companyId: dbTimesheet.companyId,
+      notes: dbTimesheet.notes || undefined,
+      createdAt: dbTimesheet.createdAt.toISOString(),
+      updatedAt: dbTimesheet.updatedAt.toISOString(),
+    };
+  }
+
+  // Helper function to transform database time entry to type-safe TimeEntry
+  private transformTimeEntry(dbEntry: any): TimeEntry {
+    return {
+      id: dbEntry.id,
+      timesheetId: dbEntry.timesheetId,
+      projectId: dbEntry.projectId || undefined,
+      taskId: dbEntry.taskId || undefined,
+      activityType: dbEntry.activityType,
+      description: dbEntry.description || undefined,
+      startTime: dbEntry.startTime.toISOString(),
+      endTime: dbEntry.endTime?.toISOString() || undefined,
+      duration: parseFloat(dbEntry.duration),
+      isBillable: dbEntry.isBillable,
+      hourlyRate: dbEntry.hourlyRate
+        ? parseFloat(dbEntry.hourlyRate)
+        : undefined,
+      location: dbEntry.location || undefined,
+      gpsCoordinates: dbEntry.gpsCoordinates || undefined,
+      isManualEntry: dbEntry.isManualEntry,
+      deviceInfo: dbEntry.deviceInfo || undefined,
+      attachments: dbEntry.attachments || undefined,
+      customFields: dbEntry.customFields || undefined,
+      createdAt: dbEntry.createdAt.toISOString(),
+      updatedAt: dbEntry.updatedAt.toISOString(),
+    };
+  }
+
+  // Helper function to transform database time category to type-safe TimeCategory
+  private transformTimeCategory(dbCategory: any): TimeCategory {
+    return {
+      id: dbCategory.id,
+      categoryName: dbCategory.categoryName,
+      categoryCode: dbCategory.categoryCode,
+      description: dbCategory.description || undefined,
+      isBillable: dbCategory.isBillable,
+      defaultHourlyRate: dbCategory.defaultHourlyRate
+        ? parseFloat(dbCategory.defaultHourlyRate)
+        : undefined,
+      color: dbCategory.color || undefined,
+      companyId: dbCategory.companyId,
+      isActive: dbCategory.isActive,
+      createdAt: dbCategory.createdAt.toISOString(),
+      updatedAt: dbCategory.updatedAt.toISOString(),
+    };
+  }
+
+  // Helper function to transform database time tracking settings to type-safe TimeTrackingSettings
+  private transformTimeTrackingSettings(dbSettings: any): TimeTrackingSettings {
+    return {
+      id: dbSettings.id,
+      companyId: dbSettings.companyId,
+      requireProjectSelection: dbSettings.requireProjectSelection,
+      requireTaskSelection: dbSettings.requireTaskSelection,
+      allowManualTimeEntry: dbSettings.allowManualTimeEntry,
+      requireGpsTracking: dbSettings.requireGpsTracking,
+      maxDailyHours: parseFloat(dbSettings.maxDailyHours),
+      maxWeeklyHours: parseFloat(dbSettings.maxWeeklyHours),
+      timesheetPeriod: dbSettings.timesheetPeriod as any,
+      autoSubmitTimesheets: dbSettings.autoSubmitTimesheets,
+      requireApproval: dbSettings.requireApproval,
+      approvalWorkflow: dbSettings.approvalWorkflow || undefined,
+      overtimeRules: dbSettings.overtimeRules || undefined,
+      roundingRules: dbSettings.roundingRules || undefined,
+      createdAt: dbSettings.createdAt.toISOString(),
+      updatedAt: dbSettings.updatedAt.toISOString(),
+    };
+  }
+
+  // Helper function to transform database time report to type-safe TimeReport
+  private transformTimeReport(dbReport: any): TimeReport {
+    return {
+      id: dbReport.id,
+      reportName: dbReport.reportName,
+      reportType: dbReport.reportType as any,
+      parameters: dbReport.parameters,
+      generatedBy: dbReport.generatedBy,
+      companyId: dbReport.companyId,
+      reportData: dbReport.reportData || undefined,
+      isScheduled: dbReport.isScheduled,
+      scheduleConfig: dbReport.scheduleConfig || undefined,
+      createdAt: dbReport.createdAt.toISOString(),
+    };
+  }
+
   // Timesheet Management
   async createTimesheet(
     companyId: string,
     data: CreateTimesheet
   ): Promise<Timesheet> {
     // Generate timesheet code
-    const timesheetCount = await db
+    const timesheetCount = await this.db.db
       .select({ count: sql<number>`count(*)` })
       .from(timesheets)
       .where(eq(timesheets.companyId, companyId));
 
-    const timesheetCode = `TS-${new Date().getFullYear()}-${String(timesheetCount[0].count + 1).padStart(4, '0')}`;
+    const timesheetCode = `TS-${new Date().getFullYear()}-${String(timesheetCount[0]!.count + 1).padStart(4, '0')}`;
 
-    const [timesheet] = await db
+    const [timesheet] = await this.db.db
       .insert(timesheets)
       .values({
-        ...data,
+        employeeId: data.employeeId,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        notes: data.notes || null,
         timesheetCode,
         companyId,
         status: 'Draft',
-        totalHours: 0,
-        billableHours: 0,
-        nonBillableHours: 0,
+        totalHours: '0',
+        billableHours: '0',
+        nonBillableHours: '0',
       })
       .returning();
 
-    return timesheet as Timesheet;
+    return this.transformTimesheet(timesheet);
   }
 
   async updateTimesheet(
@@ -59,12 +180,25 @@ export class TimeTrackingService {
     companyId: string,
     data: UpdateTimesheet
   ): Promise<Timesheet> {
-    const [timesheet] = await db
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+
+    if (data.employeeId !== undefined) updateData.employeeId = data.employeeId;
+    if (data.startDate !== undefined) updateData.startDate = data.startDate;
+    if (data.endDate !== undefined) updateData.endDate = data.endDate;
+    if (data.notes !== undefined) updateData.notes = data.notes || null;
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.totalHours !== undefined)
+      updateData.totalHours = data.totalHours.toString();
+    if (data.billableHours !== undefined)
+      updateData.billableHours = data.billableHours.toString();
+    if (data.nonBillableHours !== undefined)
+      updateData.nonBillableHours = data.nonBillableHours.toString();
+
+    const [timesheet] = await this.db.db
       .update(timesheets)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(and(eq(timesheets.id, id), eq(timesheets.companyId, companyId)))
       .returning();
 
@@ -72,10 +206,11 @@ export class TimeTrackingService {
       throw new NotFoundException('Timesheet not found');
     }
 
-    return timesheet as Timesheet;
+    return this.transformTimesheet(timesheet);
   }
+
   async getTimesheet(id: string, companyId: string): Promise<Timesheet> {
-    const [timesheet] = await db
+    const [timesheet] = await this.db.db
       .select()
       .from(timesheets)
       .where(and(eq(timesheets.id, id), eq(timesheets.companyId, companyId)));
@@ -84,11 +219,11 @@ export class TimeTrackingService {
       throw new NotFoundException('Timesheet not found');
     }
 
-    return timesheet as Timesheet;
+    return this.transformTimesheet(timesheet);
   }
 
   async getTimesheets(companyId: string, filters?: any): Promise<Timesheet[]> {
-    let query = db
+    let query = this.db.db
       .select()
       .from(timesheets)
       .where(eq(timesheets.companyId, companyId));
@@ -111,7 +246,7 @@ export class TimeTrackingService {
     }
 
     const result = await query.orderBy(desc(timesheets.createdAt));
-    return result as Timesheet[];
+    return result.map(timesheet => this.transformTimesheet(timesheet));
   }
 
   async submitTimesheet(id: string, companyId: string): Promise<Timesheet> {
@@ -126,7 +261,7 @@ export class TimeTrackingService {
     // Calculate totals
     await this.recalculateTimesheetTotals(id);
 
-    const [timesheet] = await db
+    const [timesheet] = await this.db.db
       .update(timesheets)
       .set({
         status: 'Submitted',
@@ -140,13 +275,13 @@ export class TimeTrackingService {
       throw new NotFoundException('Timesheet not found');
     }
 
-    return timesheet as Timesheet;
+    return this.transformTimesheet(timesheet);
   }
 
   // Time Entry Management
   async createTimeEntry(data: CreateTimeEntry): Promise<TimeEntry> {
     // Validate timesheet exists and is editable
-    const timesheet = await db
+    const timesheet = await this.db.db
       .select()
       .from(timesheets)
       .where(eq(timesheets.id, data.timesheetId))
@@ -156,7 +291,7 @@ export class TimeTrackingService {
       throw new NotFoundException('Timesheet not found');
     }
 
-    if (timesheet[0].status !== 'Draft') {
+    if (timesheet[0]!.status !== 'Draft') {
       throw new BadRequestException(
         'Cannot add entries to submitted timesheet'
       );
@@ -169,24 +304,73 @@ export class TimeTrackingService {
       data.duration
     );
 
-    const [entry] = await db
+    const [entry] = await this.db.db
       .insert(timeEntries)
-      .values(data)
+      .values({
+        timesheetId: data.timesheetId,
+        projectId: data.projectId || null,
+        taskId: data.taskId || null,
+        activityType: data.activityType,
+        description: data.description || null,
+        startTime: new Date(data.startTime),
+        endTime: data.endTime ? new Date(data.endTime) : null,
+        duration: data.duration.toString(),
+        isBillable: data.isBillable,
+        hourlyRate: data.hourlyRate?.toString() || null,
+        location: data.location || null,
+        gpsCoordinates: data.gpsCoordinates || null,
+        isManualEntry: data.isManualEntry,
+        deviceInfo: data.deviceInfo || null,
+        attachments: data.attachments || null,
+        customFields: data.customFields || null,
+      })
       .returning();
 
     // Recalculate timesheet totals
     await this.recalculateTimesheetTotals(data.timesheetId);
 
-    return entry as TimeEntry;
+    return this.transformTimeEntry(entry);
   }
 
   async updateTimeEntry(id: string, data: UpdateTimeEntry): Promise<TimeEntry> {
-    const [entry] = await db
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+
+    if (data.timesheetId !== undefined)
+      updateData.timesheetId = data.timesheetId;
+    if (data.projectId !== undefined)
+      updateData.projectId = data.projectId || null;
+    if (data.taskId !== undefined) updateData.taskId = data.taskId || null;
+    if (data.activityType !== undefined)
+      updateData.activityType = data.activityType;
+    if (data.description !== undefined)
+      updateData.description = data.description || null;
+    if (data.startTime !== undefined)
+      updateData.startTime = new Date(data.startTime);
+    if (data.endTime !== undefined)
+      updateData.endTime = data.endTime ? new Date(data.endTime) : null;
+    if (data.duration !== undefined)
+      updateData.duration = data.duration.toString();
+    if (data.isBillable !== undefined) updateData.isBillable = data.isBillable;
+    if (data.hourlyRate !== undefined)
+      updateData.hourlyRate = data.hourlyRate?.toString() || null;
+    if (data.location !== undefined)
+      updateData.location = data.location || null;
+    if (data.gpsCoordinates !== undefined)
+      updateData.gpsCoordinates = data.gpsCoordinates || null;
+    if (data.isManualEntry !== undefined)
+      updateData.isManualEntry = data.isManualEntry;
+    if (data.deviceInfo !== undefined)
+      updateData.deviceInfo = data.deviceInfo || null;
+    if (data.attachments !== undefined)
+      updateData.attachments = data.attachments || null;
+    if (data.customFields !== undefined)
+      updateData.customFields = data.customFields || null;
+
+    const [entry] = await this.db.db
       .update(timeEntries)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(timeEntries.id, id))
       .returning();
 
@@ -197,11 +381,11 @@ export class TimeTrackingService {
     // Recalculate timesheet totals
     await this.recalculateTimesheetTotals(entry.timesheetId);
 
-    return entry as TimeEntry;
+    return this.transformTimeEntry(entry);
   }
 
   async deleteTimeEntry(id: string): Promise<void> {
-    const [entry] = await db
+    const [entry] = await this.db.db
       .select()
       .from(timeEntries)
       .where(eq(timeEntries.id, id));
@@ -210,20 +394,20 @@ export class TimeTrackingService {
       throw new NotFoundException('Time entry not found');
     }
 
-    await db.delete(timeEntries).where(eq(timeEntries.id, id));
+    await this.db.db.delete(timeEntries).where(eq(timeEntries.id, id));
 
     // Recalculate timesheet totals
     await this.recalculateTimesheetTotals(entry.timesheetId);
   }
 
   async getTimesheetEntries(timesheetId: string): Promise<TimeEntry[]> {
-    const entries = await db
+    const entries = await this.db.db
       .select()
       .from(timeEntries)
       .where(eq(timeEntries.timesheetId, timesheetId))
       .orderBy(asc(timeEntries.startTime));
 
-    return entries as TimeEntry[];
+    return entries.map(entry => this.transformTimeEntry(entry));
   }
 
   // Time Tracking with Mobile Support
@@ -232,7 +416,7 @@ export class TimeTrackingService {
     projectId?: string,
     taskId?: string,
     activityType?: string
-  ): Promise<any> {
+  ): Promise<Timer> {
     // Check if user has active timer
     const activeTimer = await this.getActiveTimer(userId);
     if (activeTimer) {
@@ -241,9 +425,8 @@ export class TimeTrackingService {
       );
     }
 
-    const timer = {
+    const timer: Timer = {
       id: crypto.randomUUID(),
-      userId,
       projectId,
       taskId,
       activityType: activityType || 'General',
@@ -253,7 +436,7 @@ export class TimeTrackingService {
     };
 
     // Store in cache/session (implementation depends on your caching strategy)
-    // For now, we'll return the timer object
+    await this.updateActiveTimer(userId, timer);
     return timer;
   }
 
@@ -295,7 +478,7 @@ export class TimeTrackingService {
     return timeEntry;
   }
 
-  async logTime(userId: string, timeLog: any): Promise<TimeEntry> {
+  async logTime(userId: string, timeLog: TimeLog): Promise<TimeEntry> {
     // Find or create current timesheet
     const currentTimesheet = await this.getCurrentTimesheet(userId);
 
@@ -321,7 +504,7 @@ export class TimeTrackingService {
     approverId: string,
     comments?: string
   ): Promise<void> {
-    const timesheet = await db
+    const timesheet = await this.db.db
       .select()
       .from(timesheets)
       .where(eq(timesheets.id, timesheetId))
@@ -331,24 +514,24 @@ export class TimeTrackingService {
       throw new NotFoundException('Timesheet not found');
     }
 
-    if (timesheet[0].status !== 'Submitted') {
+    if (timesheet[0]!.status !== 'Submitted') {
       throw new BadRequestException(
         'Only submitted timesheets can be approved'
       );
     }
 
     // Create approval record
-    await db.insert(timeApprovals).values({
+    await this.db.db.insert(timeApprovals).values({
       timesheetId,
       approverId,
       status: 'Approved',
-      comments,
-      approvedHours: timesheet[0].totalHours,
+      comments: comments || null,
+      approvedHours: timesheet[0]!.totalHours,
       approvalLevel: 1,
     });
 
     // Update timesheet status
-    await db
+    await this.db.db
       .update(timesheets)
       .set({
         status: 'Approved',
@@ -364,7 +547,7 @@ export class TimeTrackingService {
     approverId: string,
     comments: string
   ): Promise<void> {
-    const timesheet = await db
+    const timesheet = await this.db.db
       .select()
       .from(timesheets)
       .where(eq(timesheets.id, timesheetId))
@@ -374,24 +557,24 @@ export class TimeTrackingService {
       throw new NotFoundException('Timesheet not found');
     }
 
-    if (timesheet[0].status !== 'Submitted') {
+    if (timesheet[0]!.status !== 'Submitted') {
       throw new BadRequestException(
         'Only submitted timesheets can be rejected'
       );
     }
 
     // Create approval record
-    await db.insert(timeApprovals).values({
+    await this.db.db.insert(timeApprovals).values({
       timesheetId,
       approverId,
       status: 'Rejected',
-      comments,
-      rejectedHours: timesheet[0].totalHours,
+      comments: comments || null,
+      rejectedHours: timesheet[0]!.totalHours,
       approvalLevel: 1,
     });
 
     // Update timesheet status
-    await db
+    await this.db.db
       .update(timesheets)
       .set({
         status: 'Rejected',
@@ -407,7 +590,7 @@ export class TimeTrackingService {
     endDate: string,
     employeeId?: string
   ): Promise<UtilizationReport[]> {
-    let query = db
+    let query = this.db.db
       .select({
         employeeId: timesheets.employeeId,
         totalHours: sql<number>`SUM(${timesheets.totalHours})`,
@@ -450,7 +633,7 @@ export class TimeTrackingService {
     startDate: string,
     endDate: string
   ): Promise<ProjectTimeReport> {
-    const projectEntries = await db
+    const projectEntries = await this.db.db
       .select()
       .from(timeEntries)
       .innerJoin(timesheets, eq(timeEntries.timesheetId, timesheets.id))
@@ -463,17 +646,18 @@ export class TimeTrackingService {
       );
 
     const totalHours = projectEntries.reduce(
-      (sum, entry) => sum + entry.time_entries.duration,
+      (sum, entry) => sum + parseFloat(entry.time_entries.duration),
       0
     );
     const billableHours = projectEntries
       .filter(entry => entry.time_entries.isBillable)
-      .reduce((sum, entry) => sum + entry.time_entries.duration, 0);
+      .reduce((sum, entry) => sum + parseFloat(entry.time_entries.duration), 0);
 
     const totalCost = projectEntries.reduce(
       (sum, entry) =>
         sum +
-        entry.time_entries.duration * (entry.time_entries.hourlyRate || 0),
+        parseFloat(entry.time_entries.duration) *
+          parseFloat(entry.time_entries.hourlyRate || '0'),
       0
     );
 
@@ -482,7 +666,8 @@ export class TimeTrackingService {
       .reduce(
         (sum, entry) =>
           sum +
-          entry.time_entries.duration * (entry.time_entries.hourlyRate || 0),
+          parseFloat(entry.time_entries.duration) *
+            parseFloat(entry.time_entries.hourlyRate || '0'),
         0
       );
 
@@ -500,11 +685,11 @@ export class TimeTrackingService {
   }
 
   // Helper Methods
-  private async getCurrentTimesheet(userId: string): Promise<Timesheet> {
+  async getCurrentTimesheet(userId: string): Promise<Timesheet> {
     const currentWeekStart = this.getCurrentWeekStart();
     const currentWeekEnd = this.getCurrentWeekEnd();
 
-    let [timesheet] = await db
+    let [timesheet] = await this.db.db
       .select()
       .from(timesheets)
       .where(
@@ -525,7 +710,7 @@ export class TimeTrackingService {
       return newTimesheet;
     }
 
-    return timesheet as Timesheet;
+    return this.transformTimesheet(timesheet);
   }
 
   private async recalculateTimesheetTotals(timesheetId: string): Promise<void> {
@@ -537,12 +722,12 @@ export class TimeTrackingService {
       .reduce((sum, entry) => sum + entry.duration, 0);
     const nonBillableHours = totalHours - billableHours;
 
-    await db
+    await this.db.db
       .update(timesheets)
       .set({
-        totalHours,
-        billableHours,
-        nonBillableHours,
+        totalHours: totalHours.toString(),
+        billableHours: billableHours.toString(),
+        nonBillableHours: nonBillableHours.toString(),
         updatedAt: new Date(),
       })
       .where(eq(timesheets.id, timesheetId));
@@ -558,22 +743,19 @@ export class TimeTrackingService {
     const dayEnd = new Date(date);
     dayEnd.setHours(23, 59, 59, 999);
 
-    const dayEntries = await db
+    const dayEntries = await this.db.db
       .select()
       .from(timeEntries)
       .where(
         and(
           eq(timeEntries.timesheetId, timesheetId),
-          between(
-            timeEntries.startTime,
-            dayStart.toISOString(),
-            dayEnd.toISOString()
-          )
+          gte(timeEntries.startTime, dayStart),
+          lte(timeEntries.startTime, dayEnd)
         )
       );
 
     const currentDayHours = dayEntries.reduce(
-      (sum, entry) => sum + entry.duration,
+      (sum, entry) => sum + parseFloat(entry.duration),
       0
     );
     const totalDayHours = currentDayHours + additionalHours;
@@ -589,7 +771,7 @@ export class TimeTrackingService {
     const diff = now.getDate() - dayOfWeek;
     const weekStart = new Date(now.setDate(diff));
     weekStart.setHours(0, 0, 0, 0);
-    return weekStart.toISOString().split('T')[0];
+    return weekStart.toISOString().split('T')[0]!;
   }
 
   private getCurrentWeekEnd(): string {
@@ -598,25 +780,33 @@ export class TimeTrackingService {
     const diff = now.getDate() - dayOfWeek + 6;
     const weekEnd = new Date(now.setDate(diff));
     weekEnd.setHours(23, 59, 59, 999);
-    return weekEnd.toISOString().split('T')[0];
+    return weekEnd.toISOString().split('T')[0]!;
   }
 
-  private async getActiveTimer(userId: string): Promise<any> {
+  async getActiveTimer(_userId: string): Promise<Timer | null> {
     // Implementation depends on your caching strategy
     // This could be stored in Redis, database, or memory
     return null; // Placeholder
   }
 
-  private async clearActiveTimer(userId: string): Promise<void> {
+  private async clearActiveTimer(_userId: string): Promise<void> {
     // Implementation depends on your caching strategy
     // Clear the active timer for the user
+  }
+
+  private async updateActiveTimer(
+    _userId: string,
+    _timer: Timer
+  ): Promise<void> {
+    // Implementation depends on your caching strategy
+    // Store the updated timer for the user
   }
 
   // Additional methods for complete time tracking implementation
 
   // Time Entry Management
   async getTimeEntries(filters?: any): Promise<TimeEntry[]> {
-    let query = db.select().from(timeEntries);
+    let query = this.db.db.select().from(timeEntries);
 
     if (filters?.timesheetId) {
       query = query.where(eq(timeEntries.timesheetId, filters.timesheetId));
@@ -641,11 +831,11 @@ export class TimeTrackingService {
     }
 
     const result = await query.orderBy(desc(timeEntries.startTime));
-    return result as TimeEntry[];
+    return result.map(entry => this.transformTimeEntry(entry));
   }
 
   async getTimeEntry(id: string): Promise<TimeEntry> {
-    const [entry] = await db
+    const [entry] = await this.db.db
       .select()
       .from(timeEntries)
       .where(eq(timeEntries.id, id));
@@ -654,7 +844,7 @@ export class TimeTrackingService {
       throw new NotFoundException('Time entry not found');
     }
 
-    return entry as TimeEntry;
+    return this.transformTimeEntry(entry);
   }
 
   // Time Category Management
@@ -662,27 +852,46 @@ export class TimeTrackingService {
     companyId: string,
     data: CreateTimeCategory
   ): Promise<TimeCategory> {
-    const [category] = await db
+    const [category] = await this.db.db
       .insert(timeCategories)
       .values({
-        ...data,
+        categoryName: data.categoryName,
+        categoryCode: data.categoryCode,
+        description: data.description || null,
+        isBillable: data.isBillable,
+        defaultHourlyRate: data.defaultHourlyRate?.toString() || null,
+        color: data.color || null,
         companyId,
+        isActive: true,
       })
       .returning();
 
-    return category as TimeCategory;
+    return this.transformTimeCategory(category);
   }
 
   async updateTimeCategory(
     id: string,
     data: UpdateTimeCategory
   ): Promise<TimeCategory> {
-    const [category] = await db
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+
+    if (data.categoryName !== undefined)
+      updateData.categoryName = data.categoryName;
+    if (data.categoryCode !== undefined)
+      updateData.categoryCode = data.categoryCode;
+    if (data.description !== undefined)
+      updateData.description = data.description || null;
+    if (data.isBillable !== undefined) updateData.isBillable = data.isBillable;
+    if (data.defaultHourlyRate !== undefined)
+      updateData.defaultHourlyRate = data.defaultHourlyRate?.toString() || null;
+    if (data.color !== undefined) updateData.color = data.color || null;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
+    const [category] = await this.db.db
       .update(timeCategories)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(timeCategories.id, id))
       .returning();
 
@@ -690,11 +899,11 @@ export class TimeTrackingService {
       throw new NotFoundException('Time category not found');
     }
 
-    return category as TimeCategory;
+    return this.transformTimeCategory(category);
   }
 
   async getTimeCategory(id: string): Promise<TimeCategory> {
-    const [category] = await db
+    const [category] = await this.db.db
       .select()
       .from(timeCategories)
       .where(eq(timeCategories.id, id));
@@ -703,11 +912,11 @@ export class TimeTrackingService {
       throw new NotFoundException('Time category not found');
     }
 
-    return category as TimeCategory;
+    return this.transformTimeCategory(category);
   }
 
   async getTimeCategories(companyId: string): Promise<TimeCategory[]> {
-    const categories = await db
+    const categories = await this.db.db
       .select()
       .from(timeCategories)
       .where(
@@ -718,36 +927,32 @@ export class TimeTrackingService {
       )
       .orderBy(asc(timeCategories.categoryName));
 
-    return categories as TimeCategory[];
+    return categories.map(category => this.transformTimeCategory(category));
   }
 
   async deleteTimeCategory(id: string): Promise<void> {
     // Soft delete by setting isActive to false
-    const result = await db
+    await this.db.db
       .update(timeCategories)
       .set({
         isActive: false,
         updatedAt: new Date(),
       })
       .where(eq(timeCategories.id, id));
-
-    if (result.rowCount === 0) {
-      throw new NotFoundException('Time category not found');
-    }
   }
 
   // Time Tracking Settings
   async getTimeTrackingSettings(
     companyId: string
   ): Promise<TimeTrackingSettings> {
-    let [settings] = await db
+    let [settings] = await this.db.db
       .select()
       .from(timeTrackingSettings)
       .where(eq(timeTrackingSettings.companyId, companyId));
 
     if (!settings) {
       // Create default settings
-      [settings] = await db
+      [settings] = await this.db.db
         .insert(timeTrackingSettings)
         .values({
           companyId,
@@ -755,8 +960,8 @@ export class TimeTrackingService {
           requireTaskSelection: false,
           allowManualTimeEntry: true,
           requireGpsTracking: false,
-          maxDailyHours: 24,
-          maxWeeklyHours: 168,
+          maxDailyHours: '24',
+          maxWeeklyHours: '168',
           timesheetPeriod: 'Weekly',
           autoSubmitTimesheets: false,
           requireApproval: true,
@@ -764,19 +969,45 @@ export class TimeTrackingService {
         .returning();
     }
 
-    return settings as TimeTrackingSettings;
+    return this.transformTimeTrackingSettings(settings);
   }
 
   async updateTimeTrackingSettings(
     companyId: string,
     data: UpdateTimeTrackingSettings
   ): Promise<TimeTrackingSettings> {
-    const [settings] = await db
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+
+    if (data.requireProjectSelection !== undefined)
+      updateData.requireProjectSelection = data.requireProjectSelection;
+    if (data.requireTaskSelection !== undefined)
+      updateData.requireTaskSelection = data.requireTaskSelection;
+    if (data.allowManualTimeEntry !== undefined)
+      updateData.allowManualTimeEntry = data.allowManualTimeEntry;
+    if (data.requireGpsTracking !== undefined)
+      updateData.requireGpsTracking = data.requireGpsTracking;
+    if (data.maxDailyHours !== undefined)
+      updateData.maxDailyHours = data.maxDailyHours.toString();
+    if (data.maxWeeklyHours !== undefined)
+      updateData.maxWeeklyHours = data.maxWeeklyHours.toString();
+    if (data.timesheetPeriod !== undefined)
+      updateData.timesheetPeriod = data.timesheetPeriod;
+    if (data.autoSubmitTimesheets !== undefined)
+      updateData.autoSubmitTimesheets = data.autoSubmitTimesheets;
+    if (data.requireApproval !== undefined)
+      updateData.requireApproval = data.requireApproval;
+    if (data.approvalWorkflow !== undefined)
+      updateData.approvalWorkflow = data.approvalWorkflow || null;
+    if (data.overtimeRules !== undefined)
+      updateData.overtimeRules = data.overtimeRules || null;
+    if (data.roundingRules !== undefined)
+      updateData.roundingRules = data.roundingRules || null;
+
+    const [settings] = await this.db.db
       .update(timeTrackingSettings)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(timeTrackingSettings.companyId, companyId))
       .returning();
 
@@ -784,7 +1015,7 @@ export class TimeTrackingService {
       throw new NotFoundException('Time tracking settings not found');
     }
 
-    return settings as TimeTrackingSettings;
+    return this.transformTimeTrackingSettings(settings);
   }
 
   // Enhanced Timer Management with Mobile Support
@@ -839,107 +1070,6 @@ export class TimeTrackingService {
     return resumedTimer;
   }
 
-  // GPS and Mobile Integration
-  async logTimeWithGPS(
-    userId: string,
-    timeLog: TimeLog & { gpsCoordinates?: any }
-  ): Promise<TimeEntry> {
-    // Validate GPS coordinates if required
-    const settings = await this.getTimeTrackingSettings('default-company'); // TODO: Get actual company
-
-    if (settings.requireGpsTracking && !timeLog.gpsCoordinates) {
-      throw new BadRequestException(
-        'GPS coordinates are required for time tracking'
-      );
-    }
-
-    // Find or create current timesheet
-    const currentTimesheet = await this.getCurrentTimesheet(userId);
-
-    const timeEntryData: CreateTimeEntry = {
-      timesheetId: currentTimesheet.id,
-      projectId: timeLog.projectId,
-      taskId: timeLog.taskId,
-      activityType: timeLog.activityType,
-      description: timeLog.description,
-      startTime: timeLog.startTime || new Date().toISOString(),
-      endTime: timeLog.endTime,
-      duration: timeLog.duration,
-      isBillable: timeLog.isBillable ?? true,
-      gpsCoordinates: timeLog.gpsCoordinates,
-      isManualEntry: true,
-    };
-
-    return this.createTimeEntry(timeEntryData);
-  }
-
-  // Time Entry Validation
-  async validateTimeEntry(data: CreateTimeEntry): Promise<void> {
-    // Validate project and task selection requirements
-    const settings = await this.getTimeTrackingSettings('default-company'); // TODO: Get actual company
-
-    if (settings.requireProjectSelection && !data.projectId) {
-      throw new BadRequestException('Project selection is required');
-    }
-
-    if (settings.requireTaskSelection && !data.taskId) {
-      throw new BadRequestException('Task selection is required');
-    }
-
-    // Validate daily and weekly hour limits
-    await this.validateHourLimits(data.timesheetId, data.duration);
-  }
-
-  private async validateHourLimits(
-    timesheetId: string,
-    additionalHours: number
-  ): Promise<void> {
-    const settings = await this.getTimeTrackingSettings('default-company'); // TODO: Get actual company
-    const timesheet = await this.getTimesheet(timesheetId, 'default-company'); // TODO: Get actual company
-
-    // Check daily limits
-    const currentDayHours = await this.getDailyHours(timesheetId, new Date());
-    if (currentDayHours + additionalHours > settings.maxDailyHours) {
-      throw new BadRequestException(
-        `Daily hour limit of ${settings.maxDailyHours} hours exceeded`
-      );
-    }
-
-    // Check weekly limits
-    const currentWeekHours = timesheet.totalHours;
-    if (currentWeekHours + additionalHours > settings.maxWeeklyHours) {
-      throw new BadRequestException(
-        `Weekly hour limit of ${settings.maxWeeklyHours} hours exceeded`
-      );
-    }
-  }
-
-  private async getDailyHours(
-    timesheetId: string,
-    date: Date
-  ): Promise<number> {
-    const dayStart = new Date(date);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(date);
-    dayEnd.setHours(23, 59, 59, 999);
-
-    const dayEntries = await db
-      .select()
-      .from(timeEntries)
-      .where(
-        and(
-          eq(timeEntries.timesheetId, timesheetId),
-          between(
-            timeEntries.startTime,
-            dayStart.toISOString(),
-            dayEnd.toISOString()
-          )
-        )
-      );
-
-    return dayEntries.reduce((sum, entry) => sum + entry.duration, 0);
-  }
-
   // Report Generation
   async generateTimeReport(
     companyId: string,
@@ -953,22 +1083,22 @@ export class TimeTrackingService {
       case 'Utilization':
         reportData = await this.generateUtilizationReport(
           companyId,
-          data.parameters.startDate,
-          data.parameters.endDate,
-          data.parameters.employeeId
+          data.parameters['startDate'],
+          data.parameters['endDate'],
+          data.parameters['employeeId']
         );
         break;
       case 'Project':
         reportData = await this.generateProjectTimeReport(
-          data.parameters.projectId,
-          data.parameters.startDate,
-          data.parameters.endDate
+          data.parameters['projectId'],
+          data.parameters['startDate'],
+          data.parameters['endDate']
         );
         break;
       // Add more report types as needed
     }
 
-    const [report] = await db
+    const [report] = await this.db.db
       .insert(timeReports)
       .values({
         ...data,
@@ -978,17 +1108,17 @@ export class TimeTrackingService {
       })
       .returning();
 
-    return report as TimeReport;
+    return this.transformTimeReport(report);
   }
 
   async getTimeReports(companyId: string): Promise<TimeReport[]> {
-    const reports = await db
+    const reports = await this.db.db
       .select()
       .from(timeReports)
       .where(eq(timeReports.companyId, companyId))
       .orderBy(desc(timeReports.createdAt));
 
-    return reports as TimeReport[];
+    return reports.map(report => this.transformTimeReport(report));
   }
 
   // Timesheet Management
@@ -1001,67 +1131,8 @@ export class TimeTrackingService {
       );
     }
 
-    const result = await db
+    await this.db.db
       .delete(timesheets)
       .where(and(eq(timesheets.id, id), eq(timesheets.companyId, companyId)));
-
-    if (result.rowCount === 0) {
-      throw new NotFoundException('Timesheet not found');
-    }
-  }
-
-  // Helper methods for timer management
-  private async updateActiveTimer(userId: string, timer: Timer): Promise<void> {
-    // Implementation depends on your caching strategy
-    // Store the updated timer for the user
-  }
-
-  // Integration with Payroll
-  async getPayrollTimeData(
-    companyId: string,
-    employeeId: string,
-    startDate: string,
-    endDate: string
-  ): Promise<any> {
-    const approvedTimesheets = await db
-      .select()
-      .from(timesheets)
-      .where(
-        and(
-          eq(timesheets.companyId, companyId),
-          eq(timesheets.employeeId, employeeId),
-          eq(timesheets.status, 'Approved'),
-          between(timesheets.startDate, startDate, endDate)
-        )
-      );
-
-    const totalRegularHours = approvedTimesheets.reduce(
-      (sum, ts) => sum + ts.totalHours,
-      0
-    );
-
-    // Calculate overtime based on company rules
-    const settings = await this.getTimeTrackingSettings(companyId);
-    const overtimeRules = settings.overtimeRules as any;
-
-    let overtimeHours = 0;
-    if (overtimeRules?.enabled) {
-      const weeklyLimit = overtimeRules.weeklyLimit || 40;
-      overtimeHours = Math.max(0, totalRegularHours - weeklyLimit);
-    }
-
-    return {
-      employeeId,
-      period: { startDate, endDate },
-      regularHours: totalRegularHours - overtimeHours,
-      overtimeHours,
-      totalHours: totalRegularHours,
-      timesheets: approvedTimesheets.map(ts => ({
-        id: ts.id,
-        timesheetCode: ts.timesheetCode,
-        totalHours: ts.totalHours,
-        billableHours: ts.billableHours,
-      })),
-    };
   }
 }

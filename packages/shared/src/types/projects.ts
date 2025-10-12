@@ -342,7 +342,7 @@ export const ProjectBudgetCategorySchema = z.object({
   categoryCode: z.string().min(1).max(50),
   budgetedAmount: z.number(),
   description: z.string().optional(),
-  isAcve: z.boolean(),
+  isActive: z.boolean(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

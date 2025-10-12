@@ -71,7 +71,7 @@ export class ProjectsService {
 
     // If created from template, copy template structure
     if (data.templateId) {
-      await this.applyProjectTemplate(project!.id, data.templateId);
+      await this.applyProjectTemplate(project!['id'], data.templateId);
     }
 
     return project as Project;
@@ -132,13 +132,9 @@ export class ProjectsService {
   }
 
   async deleteProject(id: string, companyId: string): Promise<void> {
-    const result = await this.db.db
+    await this.db.db
       .delete(projects)
       .where(and(eq(projects.id, id), eq(projects.companyId, companyId)));
-
-    if (result.rowCount === 0) {
-      throw new NotFoundException('Project not found');
-    }
   }
 
   // Work Breakdown Structure (WBS)
@@ -192,7 +188,7 @@ export class ProjectsService {
     }
 
     // Update project progress when task is updated
-    await this.updateProjectProgress(task.projectId);
+    await this.updateProjectProgress(task['projectId']);
 
     return task as ProjectTask;
   }
@@ -233,19 +229,15 @@ export class ProjectsService {
       throw new BadRequestException('Cannot delete task with dependencies');
     }
 
-    const result = await this.db.db
+    await this.db.db
       .delete(projectTasks)
       .where(eq(projectTasks.id, id));
-
-    if (result.rowCount === 0) {
-      throw new NotFoundException('Task not found');
-    }
   }
 
   // Task Dependencies
   async createTaskDependency(data: CreateTaskDependency): Promise<void> {
     // Validate tasks exist
-    const [predecessor, successor] = await Promise.all([
+    await Promise.all([
       this.getTask(data.predecessorTaskId),
       this.getTask(data.successorTaskId),
     ]);
@@ -269,7 +261,7 @@ export class ProjectsService {
     predecessorId: string,
     successorId: string
   ): Promise<void> {
-    const result = await this.db.db
+    await this.db.db
       .delete(taskDependencies)
       .where(
         and(
@@ -277,10 +269,6 @@ export class ProjectsService {
           eq(taskDependencies.successorTaskId, successorId)
         )
       );
-
-    if (result.rowCount === 0) {
-      throw new NotFoundException('Dependency not found');
-    }
   }
 
   // Gantt Chart Data
@@ -466,8 +454,12 @@ export class ProjectsService {
     data: CreateProjectTemplate
   ): Promise<void> {
     await this.db.db.insert(projectTemplates).values({
-      ...data,
       companyId,
+      templateName: data.templateName,
+      description: data.description || null,
+      category: data.category || null,
+      isPublic: data.isPublic,
+      templateData: data.templateData,
     });
   }
 
@@ -555,11 +547,18 @@ export class ProjectsService {
 
   // Team Management
   async addTeamMember(data: CreateProjectTeamMember): Promise<void> {
-    await this.db.db.insert(projectTeamMembers).values(data);
+    await this.db.db.insert(projectTeamMembers).values({
+      projectId: data.projectId,
+      userId: data.userId,
+      role: data.role,
+      allocationPercentage: data.allocationPercentage.toString(),
+      startDate: data.startDate || null,
+      endDate: data.endDate || null,
+    });
   }
 
   async removeTeamMember(projectId: string, userId: string): Promise<void> {
-    const result = await this.db.db
+    await this.db.db
       .delete(projectTeamMembers)
       .where(
         and(
@@ -567,10 +566,6 @@ export class ProjectsService {
           eq(projectTeamMembers.userId, userId)
         )
       );
-
-    if (result.rowCount === 0) {
-      throw new NotFoundException('Team member not found');
-    }
   }
 
   async getTeamMembers(projectId: string): Promise<any[]> {
@@ -585,7 +580,10 @@ export class ProjectsService {
   // Milestones
   async createMilestone(data: CreateProjectMilestone): Promise<void> {
     await this.db.db.insert(projectMilestones).values({
-      ...data,
+      projectId: data.projectId,
+      milestoneName: data.milestoneName,
+      description: data.description || null,
+      targetDate: data.targetDate,
       status: 'Pending',
       isCompleted: false,
     });
@@ -595,12 +593,21 @@ export class ProjectsService {
     id: string,
     data: UpdateProjectMilestone
   ): Promise<void> {
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+    
+    if (data.projectId !== undefined) updateData.projectId = data.projectId;
+    if (data.milestoneName !== undefined) updateData.milestoneName = data.milestoneName;
+    if (data.description !== undefined) updateData.description = data.description || null;
+    if (data.targetDate !== undefined) updateData.targetDate = data.targetDate;
+    if (data.actualDate !== undefined) updateData.actualDate = data.actualDate || null;
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.isCompleted !== undefined) updateData.isCompleted = data.isCompleted;
+
     const [milestone] = await this.db.db
       .update(projectMilestones)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(projectMilestones.id, id))
       .returning();
 
@@ -630,7 +637,7 @@ export class ProjectsService {
       )
       .where(eq(projectTasks.projectId, projectId));
 
-    return dependencies.map(d => d.task_dependencies);
+    return dependencies.map(d => d['task_dependencies']);
   }
 
   private async wouldCreateCircularDependency(
@@ -736,7 +743,26 @@ export class ProjectsService {
       .where(eq(projectBudgets.projectId, projectId))
       .orderBy(desc(projectBudgets.createdAt));
 
-    return budgets as ProjectBudget[];
+    return budgets.map(budget => ({
+      id: budget.id,
+      projectId: budget.projectId,
+      budgetName: budget.budgetName,
+      budgetType: budget.budgetType as 'Original' | 'Revised' | 'Approved',
+      totalBudget: parseFloat(budget.totalBudget),
+      laborBudget: parseFloat(budget.laborBudget || '0'),
+      materialBudget: parseFloat(budget.materialBudget || '0'),
+      overheadBudget: parseFloat(budget.overheadBudget || '0'),
+      contingencyBudget: parseFloat(budget.contingencyBudget || '0'),
+      status: budget.status as 'Draft' | 'Submitted' | 'Approved' | 'Rejected',
+      approvedBy: budget.approvedBy || undefined,
+      approvedAt: budget.approvedAt?.toISOString() || undefined,
+      budgetPeriodStart: budget.budgetPeriodStart || undefined,
+      budgetPeriodEnd: budget.budgetPeriodEnd || undefined,
+      notes: budget.notes || undefined,
+      createdBy: budget.createdBy,
+      createdAt: budget.createdAt.toISOString(),
+      updatedAt: budget.updatedAt.toISOString(),
+    }));
   }
 
   async getBudgetCategories(budgetId: string, companyId: string): Promise<ProjectBudgetCategory[]> {
@@ -763,7 +789,17 @@ export class ProjectsService {
       .where(eq(projectBudgetCategories.budgetId, budgetId))
       .orderBy(asc(projectBudgetCategories.categoryName));
 
-    return categories as ProjectBudgetCategory[];
+    return categories.map(category => ({
+      id: category.id,
+      budgetId: category.budgetId,
+      categoryName: category.categoryName,
+      categoryCode: category.categoryCode,
+      budgetedAmount: parseFloat(category.budgetedAmount),
+      description: category.description || undefined,
+      isActive: category.isActive || false,
+      createdAt: category.createdAt.toISOString(),
+      updatedAt: category.updatedAt.toISOString(),
+    }));
   }
 
   async getProjectCosts(projectId: string, companyId: string, filter?: any): Promise<ProjectCost[]> {
@@ -784,7 +820,30 @@ export class ProjectsService {
     }
 
     const costs = await query.orderBy(desc(projectCosts.costDate));
-    return costs as ProjectCost[];
+    return costs.map(cost => ({
+      id: cost.id,
+      projectId: cost.projectId,
+      taskId: cost.taskId || undefined,
+      budgetCategoryId: cost.budgetCategoryId || undefined,
+      costType: cost.costType as 'Labor' | 'Material' | 'Overhead' | 'Travel' | 'Other',
+      costDate: cost.costDate,
+      description: cost.description,
+      quantity: parseFloat(cost.quantity || '1'),
+      unitCost: parseFloat(cost.unitCost),
+      totalCost: parseFloat(cost.totalCost),
+      isBillable: cost.isBillable || false,
+      billingRate: cost.billingRate ? parseFloat(cost.billingRate) : undefined,
+      billableAmount: cost.billableAmount ? parseFloat(cost.billableAmount) : undefined,
+      invoiceId: cost.invoiceId || undefined,
+      status: cost.status as 'Pending' | 'Approved' | 'Invoiced' | 'Paid',
+      approvedBy: cost.approvedBy || undefined,
+      approvedAt: cost.approvedAt?.toISOString() || undefined,
+      attachments: cost.attachments as string[] || undefined,
+      customFields: cost.customFields as Record<string, any> || undefined,
+      createdBy: cost.createdBy,
+      createdAt: cost.createdAt.toISOString(),
+      updatedAt: cost.updatedAt.toISOString(),
+    }));
   }
 
   async getProjectRevenue(projectId: string, companyId: string): Promise<ProjectRevenue[]> {
@@ -797,7 +856,24 @@ export class ProjectsService {
       .where(eq(projectRevenue.projectId, projectId))
       .orderBy(desc(projectRevenue.revenueDate));
 
-    return revenue as ProjectRevenue[];
+    return revenue.map(rev => ({
+      id: rev.id,
+      projectId: rev.projectId,
+      revenueType: rev.revenueType as 'Fixed' | 'TimeAndMaterial' | 'Milestone' | 'Recurring',
+      description: rev.description,
+      revenueDate: rev.revenueDate,
+      amount: parseFloat(rev.amount),
+      recognizedAmount: parseFloat(rev.recognizedAmount || '0'),
+      milestoneId: rev.milestoneId || undefined,
+      invoiceId: rev.invoiceId || undefined,
+      status: rev.status as 'Planned' | 'Recognized' | 'Invoiced' | 'Collected',
+      recognitionMethod: rev.recognitionMethod as 'Percentage' | 'Milestone' | 'Completed',
+      recognitionPercentage: parseFloat(rev.recognitionPercentage || '0'),
+      notes: rev.notes || undefined,
+      createdBy: rev.createdBy,
+      createdAt: rev.createdAt.toISOString(),
+      updatedAt: rev.updatedAt.toISOString(),
+    }));
   }
 
   async getProjectInvoices(projectId: string, companyId: string): Promise<ProjectInvoice[]> {
@@ -810,17 +886,38 @@ export class ProjectsService {
       .where(eq(projectInvoices.projectId, projectId))
       .orderBy(desc(projectInvoices.invoiceDate));
 
-    return invoices as ProjectInvoice[];
+    return invoices.map(invoice => ({
+      id: invoice.id,
+      projectId: invoice.projectId,
+      invoiceNumber: invoice.invoiceNumber,
+      invoiceDate: invoice.invoiceDate,
+      dueDate: invoice.dueDate,
+      billingPeriodStart: invoice.billingPeriodStart || undefined,
+      billingPeriodEnd: invoice.billingPeriodEnd || undefined,
+      subtotal: parseFloat(invoice.subtotal),
+      taxAmount: parseFloat(invoice.taxAmount || '0'),
+      totalAmount: parseFloat(invoice.totalAmount),
+      paidAmount: parseFloat(invoice.paidAmount || '0'),
+      status: invoice.status as 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled',
+      paymentTerms: invoice.paymentTerms || undefined,
+      notes: invoice.notes || undefined,
+      customerId: invoice.customerId || undefined,
+      sentAt: invoice.sentAt?.toISOString() || undefined,
+      paidAt: invoice.paidAt?.toISOString() || undefined,
+      createdBy: invoice.createdBy,
+      createdAt: invoice.createdAt.toISOString(),
+      updatedAt: invoice.updatedAt.toISOString(),
+    }));
   }
 
   async calculateProjectProfitability(projectId: string, companyId: string): Promise<ProjectProfitability> {
     // Validate project access
-    const project = await this.getProject(projectId, companyId);
+    await this.getProject(projectId, companyId);
 
     // Get total revenue
     const revenueData = await this.db.db
       .select({
-        totalRevenue: sql<number>`COALESCE(SUM(${projectRevenue.amount}), 0)`,
+        totalRevenue: sql<string>`COALESCE(SUM(${projectRevenue.amount}), 0)`,
       })
       .from(projectRevenue)
       .where(eq(projectRevenue.projectId, projectId));
@@ -828,51 +925,82 @@ export class ProjectsService {
     // Get total costs
     const costData = await this.db.db
       .select({
-        totalCosts: sql<number>`COALESCE(SUM(${projectCosts.totalCost}), 0)`,
+        totalCosts: sql<string>`COALESCE(SUM(${projectCosts.totalCost}), 0)`,
       })
       .from(projectCosts)
       .where(eq(projectCosts.projectId, projectId));
 
-    const totalRevenue = revenueData[0]?.totalRevenue || 0;
-    const totalCosts = costData[0]?.totalCosts || 0;
+    const totalRevenue = parseFloat(revenueData[0]?.totalRevenue || '0');
+    const totalCosts = parseFloat(costData[0]?.totalCosts || '0');
     const grossProfit = totalRevenue - totalCosts;
-    const profitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+    const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
     return {
+      id: crypto.randomUUID(),
       projectId,
-      projectName: project.projectName,
+      analysisDate: new Date().toISOString().split('T')[0]!,
       totalRevenue,
       totalCosts,
       grossProfit,
-      profitMargin,
-      calculatedAt: new Date().toISOString(),
-    } as ProjectProfitability;
+      grossMargin,
+      laborCosts: 0,
+      materialCosts: 0,
+      overheadCosts: 0,
+      budgetVariance: 0,
+      scheduleVariance: 0,
+      earnedValue: 0,
+      actualCost: totalCosts,
+      plannedValue: 0,
+      costPerformanceIndex: 1,
+      schedulePerformanceIndex: 1,
+      estimateAtCompletion: undefined,
+      estimateToComplete: undefined,
+      createdAt: new Date().toISOString(),
+    };
   }
 
   async getProjectFinancialSummary(projectId: string, companyId: string): Promise<ProjectFinancialSummary> {
     const profitability = await this.calculateProjectProfitability(projectId, companyId);
+    const project = await this.getProject(projectId, companyId);
     
     // Get budget information
     const budgets = await this.getProjectBudgets(projectId, companyId);
-    const totalBudget = budgets.reduce((sum, budget) => sum + (budget.totalAmount || 0), 0);
+    const totalBudget = budgets.reduce((sum, budget) => sum + budget.totalBudget, 0);
     
     // Get invoice information
     const invoices = await this.getProjectInvoices(projectId, companyId);
-    const totalInvoiced = invoices.reduce((sum, invoice) => sum + (invoice.totalAmount || 0), 0);
-    const totalPaid = invoices.reduce((sum, invoice) => sum + (invoice.paidAmount || 0), 0);
+    const totalInvoiced = invoices.reduce((sum, invoice) => sum + invoice.totalAmount, 0);
+    const totalPaid = invoices.reduce((sum, invoice) => sum + invoice.paidAmount, 0);
 
     return {
       projectId,
+      projectName: project.projectName,
       totalBudget,
-      totalRevenue: profitability.totalRevenue,
       totalCosts: profitability.totalCosts,
-      totalInvoiced,
-      totalPaid,
+      totalRevenue: profitability.totalRevenue,
       grossProfit: profitability.grossProfit,
-      profitMargin: profitability.profitMargin,
+      grossMargin: profitability.grossMargin,
       budgetVariance: totalBudget - profitability.totalCosts,
-      outstandingAmount: totalInvoiced - totalPaid,
-    } as ProjectFinancialSummary;
+      costsByCategory: {
+        labor: 0,
+        material: 0,
+        overhead: 0,
+        travel: 0,
+        other: 0,
+      },
+      invoicesSummary: {
+        totalInvoiced,
+        totalPaid,
+        outstanding: totalInvoiced - totalPaid,
+        overdue: 0,
+      },
+      profitabilityMetrics: {
+        costPerformanceIndex: profitability.costPerformanceIndex,
+        schedulePerformanceIndex: profitability.schedulePerformanceIndex,
+        earnedValue: profitability.earnedValue,
+        estimateAtCompletion: profitability.estimateAtCompletion || 0,
+      },
+    };
   }
 
   async createProjectBudget(companyId: string, userId: string, data: CreateProjectBudget): Promise<ProjectBudget> {
@@ -882,21 +1010,64 @@ export class ProjectsService {
     const [budget] = await this.db.db
       .insert(projectBudgets)
       .values({
-        ...data,
+        projectId: data.projectId,
+        budgetName: data.budgetName,
+        budgetType: data.budgetType,
+        totalBudget: data.totalBudget.toString(),
+        laborBudget: data.laborBudget.toString(),
+        materialBudget: data.materialBudget.toString(),
+        overheadBudget: data.overheadBudget.toString(),
+        contingencyBudget: data.contingencyBudget.toString(),
+        budgetPeriodStart: data.budgetPeriodStart || null,
+        budgetPeriodEnd: data.budgetPeriodEnd || null,
+        notes: data.notes || null,
         createdBy: userId,
       })
       .returning();
 
-    return budget as ProjectBudget;
+    return {
+      id: budget!.id,
+      projectId: budget!.projectId,
+      budgetName: budget!.budgetName,
+      budgetType: budget!.budgetType as 'Original' | 'Revised' | 'Approved',
+      totalBudget: parseFloat(budget!.totalBudget),
+      laborBudget: parseFloat(budget!.laborBudget || '0'),
+      materialBudget: parseFloat(budget!.materialBudget || '0'),
+      overheadBudget: parseFloat(budget!.overheadBudget || '0'),
+      contingencyBudget: parseFloat(budget!.contingencyBudget || '0'),
+      status: budget!.status as 'Draft' | 'Submitted' | 'Approved' | 'Rejected',
+      approvedBy: budget!.approvedBy || undefined,
+      approvedAt: budget!.approvedAt?.toISOString() || undefined,
+      budgetPeriodStart: budget!.budgetPeriodStart || undefined,
+      budgetPeriodEnd: budget!.budgetPeriodEnd || undefined,
+      notes: budget!.notes || undefined,
+      createdBy: budget!.createdBy,
+      createdAt: budget!.createdAt.toISOString(),
+      updatedAt: budget!.updatedAt.toISOString(),
+    };
   }
 
   async updateProjectBudget(id: string, companyId: string, data: UpdateProjectBudget): Promise<ProjectBudget> {
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+    
+    if (data.projectId !== undefined) updateData.projectId = data.projectId;
+    if (data.budgetName !== undefined) updateData.budgetName = data.budgetName;
+    if (data.budgetType !== undefined) updateData.budgetType = data.budgetType;
+    if (data.totalBudget !== undefined) updateData.totalBudget = data.totalBudget.toString();
+    if (data.laborBudget !== undefined) updateData.laborBudget = data.laborBudget.toString();
+    if (data.materialBudget !== undefined) updateData.materialBudget = data.materialBudget.toString();
+    if (data.overheadBudget !== undefined) updateData.overheadBudget = data.overheadBudget.toString();
+    if (data.contingencyBudget !== undefined) updateData.contingencyBudget = data.contingencyBudget.toString();
+    if (data.budgetPeriodStart !== undefined) updateData.budgetPeriodStart = data.budgetPeriodStart || null;
+    if (data.budgetPeriodEnd !== undefined) updateData.budgetPeriodEnd = data.budgetPeriodEnd || null;
+    if (data.notes !== undefined) updateData.notes = data.notes || null;
+    if (data.status !== undefined) updateData.status = data.status;
+
     const [budget] = await this.db.db
       .update(projectBudgets)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(
         and(
           eq(projectBudgets.id, id),
@@ -911,7 +1082,26 @@ export class ProjectsService {
       throw new NotFoundException('Project budget not found');
     }
 
-    return budget as ProjectBudget;
+    return {
+      id: budget.id,
+      projectId: budget.projectId,
+      budgetName: budget.budgetName,
+      budgetType: budget.budgetType as 'Original' | 'Revised' | 'Approved',
+      totalBudget: parseFloat(budget.totalBudget),
+      laborBudget: parseFloat(budget.laborBudget || '0'),
+      materialBudget: parseFloat(budget.materialBudget || '0'),
+      overheadBudget: parseFloat(budget.overheadBudget || '0'),
+      contingencyBudget: parseFloat(budget.contingencyBudget || '0'),
+      status: budget.status as 'Draft' | 'Submitted' | 'Approved' | 'Rejected',
+      approvedBy: budget.approvedBy || undefined,
+      approvedAt: budget.approvedAt?.toISOString() || undefined,
+      budgetPeriodStart: budget.budgetPeriodStart || undefined,
+      budgetPeriodEnd: budget.budgetPeriodEnd || undefined,
+      notes: budget.notes || undefined,
+      createdBy: budget.createdBy,
+      createdAt: budget.createdAt.toISOString(),
+      updatedAt: budget.updatedAt.toISOString(),
+    };
   }
 
   async approveProjectBudget(budgetId: string, approverId: string, companyId: string): Promise<ProjectBudget> {
@@ -937,7 +1127,26 @@ export class ProjectsService {
       throw new NotFoundException('Project budget not found');
     }
 
-    return budget as ProjectBudget;
+    return {
+      id: budget.id,
+      projectId: budget.projectId,
+      budgetName: budget.budgetName,
+      budgetType: budget.budgetType as 'Original' | 'Revised' | 'Approved',
+      totalBudget: parseFloat(budget.totalBudget),
+      laborBudget: parseFloat(budget.laborBudget || '0'),
+      materialBudget: parseFloat(budget.materialBudget || '0'),
+      overheadBudget: parseFloat(budget.overheadBudget || '0'),
+      contingencyBudget: parseFloat(budget.contingencyBudget || '0'),
+      status: budget.status as 'Draft' | 'Submitted' | 'Approved' | 'Rejected',
+      approvedBy: budget.approvedBy || undefined,
+      approvedAt: budget.approvedAt?.toISOString() || undefined,
+      budgetPeriodStart: budget.budgetPeriodStart || undefined,
+      budgetPeriodEnd: budget.budgetPeriodEnd || undefined,
+      notes: budget.notes || undefined,
+      createdBy: budget.createdBy,
+      createdAt: budget.createdAt.toISOString(),
+      updatedAt: budget.updatedAt.toISOString(),
+    };
   }
 
   async createBudgetCategory(data: CreateProjectBudgetCategory, companyId: string): Promise<ProjectBudgetCategory> {
@@ -960,10 +1169,26 @@ export class ProjectsService {
 
     const [category] = await this.db.db
       .insert(projectBudgetCategories)
-      .values(data)
+      .values({
+        budgetId: data.budgetId,
+        categoryName: data.categoryName,
+        categoryCode: data.categoryCode,
+        budgetedAmount: data.budgetedAmount.toString(),
+        description: data.description || null,
+      })
       .returning();
 
-    return category as ProjectBudgetCategory;
+    return {
+      id: category!.id,
+      budgetId: category!.budgetId,
+      categoryName: category!.categoryName,
+      categoryCode: category!.categoryCode,
+      budgetedAmount: parseFloat(category!.budgetedAmount),
+      description: category!.description || undefined,
+      isActive: category!.isActive || false,
+      createdAt: category!.createdAt.toISOString(),
+      updatedAt: category!.updatedAt.toISOString(),
+    };
   }
 
   async createProjectCost(data: CreateProjectCost, userId: string, companyId: string): Promise<ProjectCost> {
@@ -973,21 +1198,74 @@ export class ProjectsService {
     const [cost] = await this.db.db
       .insert(projectCosts)
       .values({
-        ...data,
+        projectId: data.projectId,
+        taskId: data.taskId || null,
+        budgetCategoryId: data.budgetCategoryId || null,
+        costType: data.costType,
+        costDate: data.costDate,
+        description: data.description,
+        quantity: data.quantity.toString(),
+        unitCost: data.unitCost.toString(),
+        totalCost: data.totalCost.toString(),
+        isBillable: data.isBillable,
+        billingRate: data.billingRate?.toString() || null,
+        billableAmount: data.billableAmount?.toString() || null,
+        attachments: data.attachments || null,
+        customFields: data.customFields || null,
         createdBy: userId,
       })
       .returning();
 
-    return cost as ProjectCost;
+    return {
+      id: cost!.id,
+      projectId: cost!.projectId,
+      taskId: cost!.taskId || undefined,
+      budgetCategoryId: cost!.budgetCategoryId || undefined,
+      costType: cost!.costType as 'Labor' | 'Material' | 'Overhead' | 'Travel' | 'Other',
+      costDate: cost!.costDate,
+      description: cost!.description,
+      quantity: parseFloat(cost!.quantity || '1'),
+      unitCost: parseFloat(cost!.unitCost),
+      totalCost: parseFloat(cost!.totalCost),
+      isBillable: cost!.isBillable || false,
+      billingRate: cost!.billingRate ? parseFloat(cost!.billingRate) : undefined,
+      billableAmount: cost!.billableAmount ? parseFloat(cost!.billableAmount) : undefined,
+      invoiceId: cost!.invoiceId || undefined,
+      status: cost!.status as 'Pending' | 'Approved' | 'Invoiced' | 'Paid',
+      approvedBy: cost!.approvedBy || undefined,
+      approvedAt: cost!.approvedAt?.toISOString() || undefined,
+      attachments: cost!.attachments as string[] || undefined,
+      customFields: cost!.customFields as Record<string, any> || undefined,
+      createdBy: cost!.createdBy,
+      createdAt: cost!.createdAt.toISOString(),
+      updatedAt: cost!.updatedAt.toISOString(),
+    };
   }
 
   async updateProjectCost(id: string, data: UpdateProjectCost, companyId: string): Promise<ProjectCost> {
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+    
+    if (data.projectId !== undefined) updateData.projectId = data.projectId;
+    if (data.taskId !== undefined) updateData.taskId = data.taskId || null;
+    if (data.budgetCategoryId !== undefined) updateData.budgetCategoryId = data.budgetCategoryId || null;
+    if (data.costType !== undefined) updateData.costType = data.costType;
+    if (data.costDate !== undefined) updateData.costDate = data.costDate;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.quantity !== undefined) updateData.quantity = data.quantity.toString();
+    if (data.unitCost !== undefined) updateData.unitCost = data.unitCost.toString();
+    if (data.totalCost !== undefined) updateData.totalCost = data.totalCost.toString();
+    if (data.isBillable !== undefined) updateData.isBillable = data.isBillable;
+    if (data.billingRate !== undefined) updateData.billingRate = data.billingRate?.toString() || null;
+    if (data.billableAmount !== undefined) updateData.billableAmount = data.billableAmount?.toString() || null;
+    if (data.attachments !== undefined) updateData.attachments = data.attachments || null;
+    if (data.customFields !== undefined) updateData.customFields = data.customFields || null;
+    if (data.status !== undefined) updateData.status = data.status;
+
     const [cost] = await this.db.db
       .update(projectCosts)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(
         and(
           eq(projectCosts.id, id),
@@ -1002,7 +1280,30 @@ export class ProjectsService {
       throw new NotFoundException('Project cost not found');
     }
 
-    return cost as ProjectCost;
+    return {
+      id: cost.id,
+      projectId: cost.projectId,
+      taskId: cost.taskId || undefined,
+      budgetCategoryId: cost.budgetCategoryId || undefined,
+      costType: cost.costType as 'Labor' | 'Material' | 'Overhead' | 'Travel' | 'Other',
+      costDate: cost.costDate,
+      description: cost.description,
+      quantity: parseFloat(cost.quantity || '1'),
+      unitCost: parseFloat(cost.unitCost),
+      totalCost: parseFloat(cost.totalCost),
+      isBillable: cost.isBillable || false,
+      billingRate: cost.billingRate ? parseFloat(cost.billingRate) : undefined,
+      billableAmount: cost.billableAmount ? parseFloat(cost.billableAmount) : undefined,
+      invoiceId: cost.invoiceId || undefined,
+      status: cost.status as 'Pending' | 'Approved' | 'Invoiced' | 'Paid',
+      approvedBy: cost.approvedBy || undefined,
+      approvedAt: cost.approvedAt?.toISOString() || undefined,
+      attachments: cost.attachments as string[] || undefined,
+      customFields: cost.customFields as Record<string, any> || undefined,
+      createdBy: cost.createdBy,
+      createdAt: cost.createdAt.toISOString(),
+      updatedAt: cost.updatedAt.toISOString(),
+    };
   }
 
   async approveProjectCost(costId: string, approverId: string, companyId: string): Promise<ProjectCost> {
@@ -1028,7 +1329,30 @@ export class ProjectsService {
       throw new NotFoundException('Project cost not found');
     }
 
-    return cost as ProjectCost;
+    return {
+      id: cost.id,
+      projectId: cost.projectId,
+      taskId: cost.taskId || undefined,
+      budgetCategoryId: cost.budgetCategoryId || undefined,
+      costType: cost.costType as 'Labor' | 'Material' | 'Overhead' | 'Travel' | 'Other',
+      costDate: cost.costDate,
+      description: cost.description,
+      quantity: parseFloat(cost.quantity || '1'),
+      unitCost: parseFloat(cost.unitCost),
+      totalCost: parseFloat(cost.totalCost),
+      isBillable: cost.isBillable || false,
+      billingRate: cost.billingRate ? parseFloat(cost.billingRate) : undefined,
+      billableAmount: cost.billableAmount ? parseFloat(cost.billableAmount) : undefined,
+      invoiceId: cost.invoiceId || undefined,
+      status: cost.status as 'Pending' | 'Approved' | 'Invoiced' | 'Paid',
+      approvedBy: cost.approvedBy || undefined,
+      approvedAt: cost.approvedAt?.toISOString() || undefined,
+      attachments: cost.attachments as string[] || undefined,
+      customFields: cost.customFields as Record<string, any> || undefined,
+      createdBy: cost.createdBy,
+      createdAt: cost.createdAt.toISOString(),
+      updatedAt: cost.updatedAt.toISOString(),
+    };
   }
 
   async createProjectRevenue(data: CreateProjectRevenue, userId: string, companyId: string): Promise<ProjectRevenue> {
@@ -1038,21 +1362,59 @@ export class ProjectsService {
     const [revenue] = await this.db.db
       .insert(projectRevenue)
       .values({
-        ...data,
+        projectId: data.projectId,
+        revenueType: data.revenueType,
+        description: data.description,
+        revenueDate: data.revenueDate,
+        amount: data.amount.toString(),
+        milestoneId: data.milestoneId || null,
+        recognitionMethod: data.recognitionMethod,
+        recognitionPercentage: data.recognitionPercentage.toString(),
+        notes: data.notes || null,
         createdBy: userId,
       })
       .returning();
 
-    return revenue as ProjectRevenue;
+    return {
+      id: revenue!.id,
+      projectId: revenue!.projectId,
+      revenueType: revenue!.revenueType as 'Fixed' | 'TimeAndMaterial' | 'Milestone' | 'Recurring',
+      description: revenue!.description,
+      revenueDate: revenue!.revenueDate,
+      amount: parseFloat(revenue!.amount),
+      recognizedAmount: parseFloat(revenue!.recognizedAmount || '0'),
+      milestoneId: revenue!.milestoneId || undefined,
+      invoiceId: revenue!.invoiceId || undefined,
+      status: revenue!.status as 'Planned' | 'Recognized' | 'Invoiced' | 'Collected',
+      recognitionMethod: revenue!.recognitionMethod as 'Percentage' | 'Milestone' | 'Completed',
+      recognitionPercentage: parseFloat(revenue!.recognitionPercentage || '0'),
+      notes: revenue!.notes || undefined,
+      createdBy: revenue!.createdBy,
+      createdAt: revenue!.createdAt.toISOString(),
+      updatedAt: revenue!.updatedAt.toISOString(),
+    };
   }
 
   async updateProjectRevenue(id: string, data: UpdateProjectRevenue, companyId: string): Promise<ProjectRevenue> {
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+    
+    if (data.projectId !== undefined) updateData.projectId = data.projectId;
+    if (data.revenueType !== undefined) updateData.revenueType = data.revenueType;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.revenueDate !== undefined) updateData.revenueDate = data.revenueDate;
+    if (data.amount !== undefined) updateData.amount = data.amount.toString();
+    if (data.recognizedAmount !== undefined) updateData.recognizedAmount = data.recognizedAmount.toString();
+    if (data.milestoneId !== undefined) updateData.milestoneId = data.milestoneId || null;
+    if (data.recognitionMethod !== undefined) updateData.recognitionMethod = data.recognitionMethod;
+    if (data.recognitionPercentage !== undefined) updateData.recognitionPercentage = data.recognitionPercentage.toString();
+    if (data.notes !== undefined) updateData.notes = data.notes || null;
+    if (data.status !== undefined) updateData.status = data.status;
+
     const [revenue] = await this.db.db
       .update(projectRevenue)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(
         and(
           eq(projectRevenue.id, id),
@@ -1067,17 +1429,50 @@ export class ProjectsService {
       throw new NotFoundException('Project revenue not found');
     }
 
-    return revenue as ProjectRevenue;
+    return {
+      id: revenue.id,
+      projectId: revenue.projectId,
+      revenueType: revenue.revenueType as 'Fixed' | 'TimeAndMaterial' | 'Milestone' | 'Recurring',
+      description: revenue.description,
+      revenueDate: revenue.revenueDate,
+      amount: parseFloat(revenue.amount),
+      recognizedAmount: parseFloat(revenue.recognizedAmount || '0'),
+      milestoneId: revenue.milestoneId || undefined,
+      invoiceId: revenue.invoiceId || undefined,
+      status: revenue.status as 'Planned' | 'Recognized' | 'Invoiced' | 'Collected',
+      recognitionMethod: revenue.recognitionMethod as 'Percentage' | 'Milestone' | 'Completed',
+      recognitionPercentage: parseFloat(revenue.recognitionPercentage || '0'),
+      notes: revenue.notes || undefined,
+      createdBy: revenue.createdBy,
+      createdAt: revenue.createdAt.toISOString(),
+      updatedAt: revenue.updatedAt.toISOString(),
+    };
   }
 
   async createProjectInvoice(data: CreateProjectInvoice, userId: string, companyId: string): Promise<ProjectInvoice> {
     // Validate project access
     await this.getProject(data.projectId, companyId);
 
+    // Calculate totals from line items
+    const subtotal = data.lineItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+    const taxAmount = data.lineItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice * item.taxRate), 0);
+    const totalAmount = subtotal + taxAmount;
+
     const [invoice] = await this.db.db
       .insert(projectInvoices)
       .values({
-        ...data,
+        projectId: data.projectId,
+        invoiceNumber: data.invoiceNumber,
+        invoiceDate: data.invoiceDate,
+        dueDate: data.dueDate,
+        billingPeriodStart: data.billingPeriodStart || null,
+        billingPeriodEnd: data.billingPeriodEnd || null,
+        subtotal: subtotal.toString(),
+        taxAmount: taxAmount.toString(),
+        totalAmount: totalAmount.toString(),
+        paymentTerms: data.paymentTerms || null,
+        notes: data.notes || null,
+        customerId: data.customerId || null,
         createdBy: userId,
       })
       .returning();
@@ -1085,25 +1480,61 @@ export class ProjectsService {
     // Create line items if provided
     if (data.lineItems && data.lineItems.length > 0) {
       const lineItemsData = data.lineItems.map(item => ({
-        ...item,
         invoiceId: invoice!.id,
+        taskId: item.taskId || null,
+        costId: item.costId || null,
+        description: item.description,
+        quantity: item.quantity.toString(),
+        unitPrice: item.unitPrice.toString(),
+        lineTotal: (item.quantity * item.unitPrice).toString(),
+        taxRate: item.taxRate.toString(),
+        taxAmount: (item.quantity * item.unitPrice * item.taxRate).toString(),
       }));
 
       await this.db.db.insert(projectInvoiceLineItems).values(lineItemsData);
     }
 
-    return invoice as ProjectInvoice;
+    return {
+      id: invoice!.id,
+      projectId: invoice!.projectId,
+      invoiceNumber: invoice!.invoiceNumber,
+      invoiceDate: invoice!.invoiceDate,
+      dueDate: invoice!.dueDate,
+      billingPeriodStart: invoice!.billingPeriodStart || undefined,
+      billingPeriodEnd: invoice!.billingPeriodEnd || undefined,
+      subtotal: parseFloat(invoice!.subtotal),
+      taxAmount: parseFloat(invoice!.taxAmount || '0'),
+      totalAmount: parseFloat(invoice!.totalAmount),
+      paidAmount: parseFloat(invoice!.paidAmount || '0'),
+      status: invoice!.status as 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled',
+      paymentTerms: invoice!.paymentTerms || undefined,
+      notes: invoice!.notes || undefined,
+      customerId: invoice!.customerId || undefined,
+      sentAt: invoice!.sentAt?.toISOString() || undefined,
+      paidAt: invoice!.paidAt?.toISOString() || undefined,
+      createdBy: invoice!.createdBy,
+      createdAt: invoice!.createdAt.toISOString(),
+      updatedAt: invoice!.updatedAt.toISOString(),
+    };
   }
 
   async updateInvoiceStatus(invoiceId: string, status: string, companyId: string, paidAmount?: number): Promise<ProjectInvoice> {
+    const updateData: any = {
+      status,
+      updatedAt: new Date(),
+    };
+
+    if (paidAmount !== undefined) {
+      updateData.paidAmount = paidAmount.toString();
+    }
+
+    if (status === 'Paid') {
+      updateData.paidAt = new Date();
+    }
+
     const [invoice] = await this.db.db
       .update(projectInvoices)
-      .set({
-        status,
-        paidAmount: paidAmount !== undefined ? paidAmount : sql`${projectInvoices.paidAmount}`,
-        paidDate: status === 'Paid' ? new Date().toISOString().split('T')[0] : sql`${projectInvoices.paidDate}`,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(
         and(
           eq(projectInvoices.id, invoiceId),
@@ -1118,7 +1549,28 @@ export class ProjectsService {
       throw new NotFoundException('Project invoice not found');
     }
 
-    return invoice as ProjectInvoice;
+    return {
+      id: invoice.id,
+      projectId: invoice.projectId,
+      invoiceNumber: invoice.invoiceNumber,
+      invoiceDate: invoice.invoiceDate,
+      dueDate: invoice.dueDate,
+      billingPeriodStart: invoice.billingPeriodStart || undefined,
+      billingPeriodEnd: invoice.billingPeriodEnd || undefined,
+      subtotal: parseFloat(invoice.subtotal),
+      taxAmount: parseFloat(invoice.taxAmount || '0'),
+      totalAmount: parseFloat(invoice.totalAmount),
+      paidAmount: parseFloat(invoice.paidAmount || '0'),
+      status: invoice.status as 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled',
+      paymentTerms: invoice.paymentTerms || undefined,
+      notes: invoice.notes || undefined,
+      customerId: invoice.customerId || undefined,
+      sentAt: invoice.sentAt?.toISOString() || undefined,
+      paidAt: invoice.paidAt?.toISOString() || undefined,
+      createdBy: invoice.createdBy,
+      createdAt: invoice.createdAt.toISOString(),
+      updatedAt: invoice.updatedAt.toISOString(),
+    };
   }
 
   async generateTimeAndMaterialInvoice(
@@ -1159,11 +1611,11 @@ export class ProjectsService {
 
     // Create line items from costs
     const lineItems = billableCosts.map(cost => ({
-      taskId: cost.taskId,
-      costId: cost.id,
+      taskId: cost.taskId || undefined,
+      costId: cost.id || undefined,
       description: cost.description,
-      quantity: cost.quantity,
-      unitPrice: cost.billingRate || cost.unitCost,
+      quantity: parseFloat(cost.quantity || '1'),
+      unitPrice: parseFloat(cost.billingRate || cost.unitCost),
       taxRate: 0, // Default tax rate
     }));
 
