@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/di";
+} from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -28,7 +28,7 @@ import {
   Wifi
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-port {
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -208,7 +208,7 @@ export default function POSProfilesPage() {
         const newProfile: POSProfile = {
           ...formData,
           id: `profile-${Date.now()}`,
-          warehouseName: warehouses.find(w => w.id === formData.warehouseId)?.name,
+          warehouseName: warehouses.find(w => w.id === formData.warehouseId)?.name || '',
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),

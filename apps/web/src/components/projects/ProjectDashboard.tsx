@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { GET_PROJECTS } from '@/graphql/projects';
 import { useQuery } from '@apollo/client';
-import { Project, ProjectStatusType } from '@packages/shared/types/projects';
-import { Calendar, Plus, Target, TrendingUp } from 'lucide-react';
+import type { Project, ProjectStatusType } from '@kiro/shared/types/projects';
+import { Calendar, Plus, Target, TrendingUp, Users } from 'lucide-react';
 import React, { useState } from 'react';
 import { CreateProjectModal } from './CreateProjectModal';
 import { ProjectList } from './ProjectList';
@@ -61,7 +61,7 @@ export function ProjectDashboard({ className }: ProjectDashboardProps) {
   ];
 
   const getStatusColor = (status: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       Draft: 'bg-gray-100 text-gray-800',
       Planning: 'bg-blue-100 text-blue-800',
       Active: 'bg-green-100 text-green-800',
@@ -73,7 +73,7 @@ export function ProjectDashboard({ className }: ProjectDashboardProps) {
   };
 
   const getPriorityColor = (priority: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       Low: 'bg-green-100 text-green-800',
       Medium: 'bg-yellow-100 text-yellow-800',
       High: 'bg-orange-100 text-orange-800',
@@ -102,8 +102,8 @@ export function ProjectDashboard({ className }: ProjectDashboardProps) {
   }
 
   return (
-    <div className={className}></div>
-  {/* Header */}
+    <div className={className}>
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Project Management</h1>

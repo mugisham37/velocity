@@ -24,7 +24,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-impInput } from '@/components/ui/input';
+import { Input } from '@/components/ui/input';
+import type { TimeEntry } from '@kiro/shared/types/timetracking';
 
 interface Timer {
   id: string;
@@ -37,18 +38,7 @@ interface Timer {
   elapsedTime: number;
 }
 
-interface TimeEntry {
-  id: string;
-  projectId?: string;
-  taskId?: string;
-  activityType: string;
-  description?: string;
-  startTime: string;
-  endTime?: string;
-  duration: number;
-  isBillable: boolean;
-  location?: string;
-}
+
 
 interface MobileTimeTrackerProps {
   className?: string;
@@ -102,8 +92,9 @@ export function MobileTimeTracker({ className }: MobileTimeTrackerProps) {
         clearInterval(timerInterval);
         setTimerInterval(null);
       }
+      return undefined;
     }
-  }, [activeTimer?.isRunning]);
+  }, [activeTimer?.isRunning, timerInterval]);
 
   const formatTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -150,8 +141,9 @@ export function MobileTimeTracker({ className }: MobileTimeTrackerProps) {
       const duration = elapsedSeconds / 3600; // Convert to hours
       const entry: TimeEntry = {
         id: crypto.randomUUID(),
-        projectId: activeTimer.projectId,
-        taskId: activeTimer.taskId,
+        timesheetId: 'default-timesheet',
+        projectId: activeTimer.projectId || undefined,
+        taskId: activeTimer.taskId || undefined,
         activityType: activeTimer.activityType,
         description: activeTimer.description,
         startTime: activeTimer.startTime,
@@ -159,6 +151,9 @@ export function MobileTimeTracker({ className }: MobileTimeTrackerProps) {
         duration,
         isBillable: true,
         location: currentLocation,
+        isManualEntry: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
       setTodayEntries(prev => [entry, ...prev]);
@@ -177,6 +172,7 @@ export function MobileTimeTracker({ className }: MobileTimeTrackerProps) {
     const duration = parseFloat(quickLogForm.duration);
     const entry: TimeEntry = {
       id: crypto.randomUUID(),
+      timesheetId: 'default-timesheet',
       projectId: quickLogForm.projectId || undefined,
       taskId: quickLogForm.taskId || undefined,
       activityType: quickLogForm.activityType,
@@ -185,6 +181,9 @@ export function MobileTimeTracker({ className }: MobileTimeTrackerProps) {
       duration,
       isBillable: quickLogForm.isBillable,
       location: currentLocation,
+      isManualEntry: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     setTodayEntries(prev => [entry, ...prev]);

@@ -43,12 +43,12 @@ interface Message {
 }
 
 interface UseCollaborationOptions {
-  documentId?: string;
-  channelId?: string;
+  documentId: string;
+  channelId: string;
   autoConnect?: boolean;
 }
 
-export function useCollaboration(options: UseCollaborationOptions = {}) {
+export function useCollaboration(options: UseCollaborationOptions = { documentId: '', channelId: '' }) {
   const { documentId, channelId, autoConnect = true } = options;
   const { accessToken: token } = useAuthStore();
   const socketRef = useRef<Socket | null>(null);
@@ -254,7 +254,7 @@ export function useCollaboration(options: UseCollaborationOptions = {}) {
 
     const fullOperation: Operation = {
       ...operation,
-      id: `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `op_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       userId: 'current-user', // Would get from auth store
       timestamp: new Date(),
     };

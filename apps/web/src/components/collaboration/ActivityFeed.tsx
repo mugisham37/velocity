@@ -62,12 +62,12 @@ export function ActivityFeed({
     }
   }, [data]);
 
-  const getActivityIcon = (entityType: string, action: string) => {
+  const getActivityIcon = (entityType: string) => {
     switch (entityType) {
       case 'document':
         return <DocumentTextIcon className="w-5 h-5 text-blue-500" />;
       case 'user':
-        return <UserIcon className= h-5 text-green-500" />;
+        return <UserIcon className="w-5 h-5 text-green-500" />;
       case 'system':
         return <CogIcon className="w-5 h-5 text-gray-500" />;
       default:
@@ -158,7 +158,7 @@ export function ActivityFeed({
             >
               <div className="flex space-x-3">
                 <div className="flex-shrink-0">
-                  {getActivityIcon(activity.entityType, activity.action)}
+                  {getActivityIcon(activity.entityType)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">

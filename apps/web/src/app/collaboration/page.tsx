@@ -7,7 +7,7 @@ import {
   UsersIcon,
 } from '@heroicons/react/24/outline';
 import { useState } from 'react';
-import { NotificationCenter } from '../../components/colation/NotificationCenter';
+import { NotificationCenter } from '../../components/collaboration/NotificationCenter';
 import { ActivityFeed } from '../../components/collaboration/ActivityFeed';
 import { ChatPanel } from '../../components/collaboration/ChatPanel';
 import { CollaborationProvider } from '../../components/collaboration/CollaborationProvider';
@@ -92,7 +92,6 @@ export default function CollaborationPage() {
                         </p>
                       </div>
                       <CollaborativeEditor
-                        documentId={documentId}
                         placeholder='Start typing to collaborate with your team...'
                         className='min-h-96'
                       />

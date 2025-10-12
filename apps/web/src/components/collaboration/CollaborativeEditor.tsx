@@ -4,14 +4,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useCollaborationContext } from './CollaborationProvider';
 
 interface CollaborativeEditorProps {
-  documentId: string;
   initialContent?: string;
   placeholder?: string;
   className?: string;
 }
 
 export function CollaborativeEditor({
-  documentId,
   initialContent = '',
   placeholder = 'Start typing...',
   className = '',

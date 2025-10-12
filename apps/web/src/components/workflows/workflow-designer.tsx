@@ -18,13 +18,6 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Textarea } from '../ui/textarea';
 
@@ -107,12 +100,8 @@ export default function WorkflowDesigner({
   const [workflowCategory, setWorkflowCategory] = useState(
     initialWorkflow?.category || ''
   );
-  const [workflowTags] = useState<string[]>(
-    initialWorkflow?.tags || []
-  );
-  const [workflowVersion] = useState(
-    initialWorkflow?.version || 1
-  );
+  const [workflowTags] = useState<string[]>(initialWorkflow?.tags || []);
+  const [workflowVersion] = useState(initialWorkflow?.version || 1);
   const [slaSettings, setSlaSettings] = useState(
     initialWorkflow?.slaSettings || {}
   );
@@ -191,20 +180,20 @@ export default function WorkflowDesigner({
 
   const validateWorkflow = () => {
     const errors: string[] = [];
-    
+
     if (!workflowName.trim()) {
       errors.push('Workflow name is required');
     }
-    
+
     if (nodes.length === 0) {
       errors.push('Workflow must have at least one node');
     }
-    
+
     const startNodes = nodes.filter(node => node.data.nodeType === 'start');
     if (startNodes.length === 0) {
       errors.push('Workflow must have a start node');
     }
-    
+
     const endNodes = nodes.filter(node => node.data.nodeType === 'end');
     if (endNodes.length === 0) {
       errors.push('Workflow must have an end node');
@@ -214,7 +203,7 @@ export default function WorkflowDesigner({
     if (onValidate) {
       onValidate(errors);
     }
-    
+
     return errors;
   };
 
@@ -261,7 +250,7 @@ export default function WorkflowDesigner({
           <h3 className='text-sm font-medium text-gray-900 mb-3'>
             Workflow Nodes
           </h3>
-          
+
           {Object.entries(nodeCategories).map(([category, nodeTypeList]) => (
             <div key={category} className='mb-4'>
               <h4 className='text-xs font-medium text-gray-700 uppercase tracking-wide mb-2'>

@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
-import { Project } from '@packages/shared/types/projects';
+import type { Project } from '@kiro/shared/types/projects';
 import {
   Calendar,
   Clock,

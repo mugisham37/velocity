@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, createContext, useContext } from 'react';
+import { type ReactNode, createContext, useContext } from 'react';
 import { useCollaboration } from '../../hooks/useCollaboration';
 
 interface CollaborationContextType {
@@ -26,8 +26,8 @@ const CollaborationContext = createContext<CollaborationContextType | null>(
 
 interface CollaborationProviderProps {
   children: ReactNode;
-  documentId?: string;
-  channelId?: string;
+  documentId: string;
+  channelId: string;
 }
 
 export function CollaborationProvider({

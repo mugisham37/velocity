@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 
 export default function WorkflowDetailPage() {
   const params = useParams();
-  const workflowId = params.id as string;
+  const workflowId = params['id'] as string;
 
   return (
     <div className='container mx-auto py-6'>

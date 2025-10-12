@@ -1,6 +1,6 @@
 'use client';
 
-import { gql, useQuery } from '@apollo/client';
+import { gql, useQuery, useMutation } from '@apollo/client';
 import {
     BellIcon,
     CheckIcon,
@@ -53,7 +53,7 @@ export function NotificationCenter({ className = '' }: NotificationCenterProps) 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [stats, setStats] = useState<any>(null);
 
-  const { data: historyData, loading, refetch } = useQuery(GET_NOTIFICATION_HISTORY, {
+  const { data: historyData, loading } = useQuery(GET_NOTIFICATION_HISTORY, {
     variables: { limit: 50 },
     skip: !isOpen,
   });
@@ -62,7 +62,7 @@ export function NotificationCenter({ className = '' }: NotificationCenterProps) 
     pollInterval: 60000, // Poll every minute
   });
 
-  const [markAsRead] = useMK_NOTIFICATION_AS_READ);
+  const [markAsRead] = useMutation(MARK_NOTIFICATION_AS_READ);
 
   useEffect(() => {
     if (historyData?.getNotificationHistory) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge } from "@/components/ui/ba";
+import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ import {
   WifiOff
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-t { Separator } from '@/components/ui/separator';
+import { Separator } from '@/components/ui/separator';
 
 interface POSItem {
   id: string;
@@ -176,19 +176,20 @@ export default function POSPage() {
       return;
     }
 
+    // Mock sale processing - in real app, this would call the GraphQL API
+    const saleData = {
+      posProfileId: 'default-profile',
+      customerId: customer?.id,
+      customerName: customer?.name,
+      customerPhone: customer?.phone,
+      customerEmail: customer?.email,
+      items: cart,
+      paymentMethods,
+      loyaltyPointsRedeemed: loyaltyPointsToRedeem,
+      isOffline: !isOnline,
+    };
+
     try {
-      // Mock sale processing - in real app, this would call the GraphQL API
-      const saleData = {
-        posProfileId: 'default-profile',
-        customerId: customer?.id,
-        customerName: customer?.name,
-        customerPhone: customer?.phone,
-        customerEmail: customer?.email,
-        items: cart,
-        paymentMethods,
-        loyaltyPointsRedeemed,
-        isOffline: !isOnline,
-      };
 
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));

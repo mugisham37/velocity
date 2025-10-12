@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { UPDATE_PROJECT_TASK } from '@/graphql/projects';
 import { useMutation } from '@apollo/client';
-import { ProjectTask, TaskStatusType } from '@packages/shared/types/projects';
+import type { ProjectTask, TaskStatusType } from '@kiro/shared/types/projects';
 import {
     Download,
     Edit,
@@ -77,7 +77,7 @@ export function TaskDetailModal({ task, open, onClose, onUpdate }: TaskDetailMod
       id: '2',
       author: 'Jane Smith',
       content: 'Please make sure to follow the coding standards document.',
-      ti '2024-01-15T14:20:00Z',
+      timestamp: '2024-01-15T14:20:00Z',
       attachments: ['coding-standards.pdf'],
     },
   ]);
@@ -168,24 +168,24 @@ export function TaskDetailModal({ task, open, onClose, onUpdate }: TaskDetailMod
   };
 
   const getPriorityColor = (priority: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       Low: 'bg-green-100 text-green-800',
       Medium: 'bg-yellow-100 text-yellow-800',
       High: 'bg-orange-100 text-orange-800',
       Urgent: 'bg-red-100 text-red-800',
     };
-    return colors[priority] || 'bg-gray-100 text-gray-800';
+    return colors[priority as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusColor = (status: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       Open: 'bg-gray-100 text-gray-800',
       Working: 'bg-blue-100 text-blue-800',
       'Pending Review': 'bg-yellow-100 text-yellow-800',
       Completed: 'bg-green-100 text-green-800',
       Cancelled: 'bg-red-100 text-red-800',
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
   const formatDate = (dateString?: string) => {

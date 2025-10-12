@@ -213,7 +213,21 @@
     "reactflow",
     "GANTT",
     "Gantt",
-    "partialize"
+    "partialize",
+    "pangea",
+    "dhtmlx",
+    "Timesheet",
+    "timesheet",
+    "timesheets",
+    "timetracking",
+    "checkmark",
+    "xmark",
+    "dhtmlx",
+    "pangea",
+    "timetracking",
+    "timesheet",
+    "timesheets",
+    "Timesheet"
   ],
   "ignorePaths": [
     "node_modules/**",
