@@ -76,7 +76,11 @@
     "expornum",
     "YEAIGITS",
     "mainosts",
-    "stri"
+    "stri",
+    "rmse",
+    "scikit",
+    "relu",
+    "coeff"
   ],
   "flagWords": [],
   "patterns": []

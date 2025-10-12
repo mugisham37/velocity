@@ -86,9 +86,11 @@ export class MaintenancePredictionService {
         totalRecommendations: recommendations.length,
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to generate maintenance recommendations: ${error.message}`,
-        error.stack
+        `Failed to generate maintenance recommendations: ${errorMessage}`,
+        errorStack
       );
       throw error;
     }
@@ -99,7 +101,7 @@ export class MaintenancePredictionService {
     max: number;
     currency: string;
   } {
-    const costRanges = {
+    const costRanges: Record<string, { min: number; max: number }> = {
       immediate: { min: 5000, max: 15000 },
       scheduled: { min: 2000, max: 8000 },
       investigation: { min: 500, max: 2000 },
@@ -141,9 +143,11 @@ export class MaintenancePredictionService {
         generatedAt: new Date(),
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to get maintenance insights: ${error.message}`,
-        error.stack
+        `Failed to get maintenance insights: ${errorMessage}`,
+        errorStack
       );
       throw error;
     }

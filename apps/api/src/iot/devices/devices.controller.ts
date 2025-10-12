@@ -17,7 +17,7 @@ import {
   ApiQuery,
   ApiResponse,
   ApiTags,
-} from '@nestjs/swagger';
+} from '../../swagger';
 import { CurrentCompany } from '../../auth/decorators/current-company.decorator';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';

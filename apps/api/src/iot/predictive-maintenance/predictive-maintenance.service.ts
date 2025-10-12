@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { db } from '@velocity/database';
+import { db, and, desc, eq } from '@kiro/database';
 import {
   predictiveMaintenanceModels,
   predictiveMaintenancePredictions,
@@ -7,9 +7,12 @@ import {
   type NewPredictiveMaintenancePrediction,
   type PredictiveMaintenanceModel,
   type PredictiveMaintenancePrediction,
-} from '@velocity/database/schema';
-import { and, desc, eq } from '@kiro/database';
-import { PredictMaintenanceDto } from './dto/create-model.dto';
+} from '@kiro/database';
+import { 
+  CreatePredictiveMaintenanceModelDto,
+  TrainModelDto,
+  PredictMaintenanceDto 
+} from './dto/create-model.dto';
 import { MachineLearningService } from './machine-learning.service';
 
 @Injectable()
@@ -36,14 +39,20 @@ export class PredictiveMaintenanceService {
         .values(newModel)
         .returning();
 
+      if (!model) {
+        throw new Error('Failed to create predictive maintenance model');
+      }
+
       this.logger.log(
         `Created predictive maintenance model: ${model.name} for company: ${companyId}`
       );
       return model;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to create predictive maintenance model: ${error.message}`,
-        error.stack
+        `Failed to create predictive maintenance model: ${errorMessage}`,
+        errorStack
       );
       throw error;
     }
@@ -78,10 +87,10 @@ export class PredictiveMaintenanceService {
         .update(predictiveMaintenanceModels)
         .set({
           modelPath: trainedModel.modelPath,
-          accuracy: trainedModel.metrics.accuracy?.toString(),
-          precision: trainedModel.metrics.precision?.toString(),
-          recall: trainedModel.metrics.recall?.toString(),
-          f1Score: trainedModel.metrics.f1Score?.toString(),
+          accuracy: trainedModel.metrics.accuracy?.toString() || null,
+          precision: trainedModel.metrics.precision?.toString() || null,
+          recall: trainedModel.metrics.recall?.toString() || null,
+          f1Score: trainedModel.metrics.f1Score?.toString() || null,
           isActive: true,
           lastTrainedAt: new Date(),
           nextTrainingAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
@@ -95,12 +104,18 @@ export class PredictiveMaintenanceService {
         )
         .returning();
 
+      if (!updatedModel) {
+        throw new Error('Failed to update model after training');
+      }
+
       this.logger.log(`Trained predictive maintenance model: ${model.name}`);
       return updatedModel;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to train model ${modelId}: ${error.message}`,
-        error.stack
+        `Failed to train model ${modelId}: ${errorMessage}`,
+        errorStack
       );
       throw error;
     }
@@ -124,10 +139,11 @@ export class PredictiveMaintenanceService {
         (await this.extractFeatures(predictDto.assetId, predictDto.deviceId));
 
       // Make prediction using ML service
+      const modelFeatures = Array.isArray(model.features) ? model.features : [];
       const prediction = await this.mlService.predict(
         modelId,
         features,
-        model.features
+        modelFeatures
       );
 
       // Determine prediction type based on model
@@ -142,10 +158,10 @@ export class PredictiveMaintenanceService {
       const newPrediction: NewPredictiveMaintenancePrediction = {
         modelId,
         assetId: predictDto.assetId,
-        deviceId: predictDto.deviceId,
+        deviceId: predictDto.deviceId || null,
         predictionType,
         predictedValue: prediction.prediction.toString(),
-        confidence: prediction.confidence?.toString(),
+        confidence: prediction.confidence?.toString() || null,
         features,
         companyId,
         validUntil: new Date(
@@ -158,14 +174,20 @@ export class PredictiveMaintenanceService {
         .values(newPrediction)
         .returning();
 
+      if (!savedPrediction) {
+        throw new Error('Failed to save prediction');
+      }
+
       this.logger.log(
         `Made prediction for asset ${predictDto.assetId} using model ${model.name}`
       );
       return savedPrediction;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to make prediction: ${error.message}`,
-        error.stack
+        `Failed to make prediction: ${errorMessage}`,
+        errorStack
       );
       throw error;
     }
@@ -179,9 +201,11 @@ export class PredictiveMaintenanceService {
         .where(eq(predictiveMaintenanceModels.companyId, companyId))
         .orderBy(desc(predictiveMaintenanceModels.createdAt));
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to fetch predictive maintenance models: ${error.message}`,
-        error.stack
+        `Failed to fetch predictive maintenance models: ${errorMessage}`,
+        errorStack
       );
       throw error;
     }
@@ -211,9 +235,11 @@ export class PredictiveMaintenanceService {
 
       return model;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to fetch predictive maintenance model ${id}: ${error.message}`,
-        error.stack
+        `Failed to fetch predictive maintenance model ${id}: ${errorMessage}`,
+        errorStack
       );
       throw error;
     }
@@ -237,9 +263,11 @@ export class PredictiveMaintenanceService {
         .orderBy(desc(predictiveMaintenancePredictions.predictedAt))
         .limit(limit);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to fetch predictions for asset ${assetId}: ${error.message}`,
-        error.stack
+        `Failed to fetch predictions for asset ${assetId}: ${errorMessage}`,
+        errorStack
       );
       throw error;
     }
@@ -261,7 +289,8 @@ export class PredictiveMaintenanceService {
 
     for (let i = 0; i < sampleSize; i++) {
       // Generate mock feature data
-      const featureRow = model.features.map(() => Math.random() * 100);
+      const modelFeatures = Array.isArray(model.features) ? model.features : [];
+      const featureRow = modelFeatures.map(() => Math.random() * 100);
       features.push(featureRow);
 
       // Generate mock target based on model type
@@ -276,16 +305,17 @@ export class PredictiveMaintenanceService {
       targets.push(target);
     }
 
+    const modelFeatures = Array.isArray(model.features) ? model.features : [];
     return {
       features,
       targets,
-      featureNames: model.features,
+      featureNames: modelFeatures,
     };
   }
 
   private async extractFeatures(
-    assetId: string,
-    deviceId?: string
+    _assetId: string,
+    _deviceId?: string
   ): Promise<Record<string, number>> {
     // This would extract current feature values from sensor data
     // For now, return mock features
@@ -320,9 +350,11 @@ export class PredictiveMaintenanceService {
 
       this.logger.log(`Deleted predictive maintenance model: ${model.name}`);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to delete model ${id}: ${error.message}`,
-        error.stack
+        `Failed to delete model ${id}: ${errorMessage}`,
+        errorStack
       );
       throw error;
     }

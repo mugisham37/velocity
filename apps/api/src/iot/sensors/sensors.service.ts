@@ -1,11 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { db } from '@velocity/database';
+import { db, and, eq } from '@kiro/database';
 import {
   iotSensors,
   type IoTSensor,
   type NewIoTSensor,
-} from '@velocity/database/schema';
-import { and, eq } from '@kiro/database';
+} from '@kiro/database';
 
 @Injectable()
 export class IoTSensorsService {
@@ -17,14 +16,21 @@ export class IoTSensorsService {
         .insert(iotSensors)
         .values(sensorData)
         .returning();
+      
+      if (!sensor) {
+        throw new Error('Failed to create IoT sensor');
+      }
+      
       this.logger.log(
         `Created IoT sensor: ${sensor.sensorId} for device: ${sensor.deviceId}`
       );
       return sensor;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to create IoT sensor: ${error.message}`,
-        error.stack
+        `Failed to create IoT sensor: ${errorMessage}`,
+        errorStack
       );
       throw error;
     }
@@ -45,9 +51,11 @@ export class IoTSensorsService {
           )
         );
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to fetch sensors for device ${deviceId}: ${error.message}`,
-        error.stack
+        `Failed to fetch sensors for device ${deviceId}: ${errorMessage}`,
+        errorStack
       );
       throw error;
     }

@@ -22,7 +22,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
-} from /swagger';/;
+} from '../../swagger';
 
 @ApiTags('Predictive Maintenance')
 @ApiBearerAuth()

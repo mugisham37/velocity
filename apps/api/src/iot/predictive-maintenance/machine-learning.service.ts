@@ -50,7 +50,7 @@ export class MachineLearningService {
     try {
       await fs.mkdir(this.modelsPath, { recursive: true });
     } catch (error) {
-      this.logger.error(`Failed to create models directory: ${error.message}`);
+      this.logger.error(`Failed to create models directory: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -75,7 +75,7 @@ export class MachineLearningService {
       const { trainData, testData } = this.splitData(trainingData, 0.8);
 
       // Train model based on algorithm
-      const trdel = await this.trainByAlgorithm(
+      const trainedModel = await this.trainByAlgorithm(
         algorithm,
         modelType,
         trainData,
@@ -107,9 +107,11 @@ export class MachineLearningService {
       );
       return result;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to train model ${modelId}: ${error.message}`,
-        error.stack
+        `Failed to train model ${modelId}: ${errorMessage}`,
+        errorStack
       );
       throw error;
     }
@@ -140,9 +142,11 @@ export class MachineLearningService {
 
       return prediction;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to make prediction with model ${modelId}: ${error.message}`,
-        error.stack
+        `Failed to make prediction with model ${modelId}: ${errorMessage}`,
+        errorStack
       );
       throw error;
     }
@@ -163,7 +167,7 @@ export class MachineLearningService {
       throw new Error('Training data cannot be empty');
     }
 
-    if (data.features[0].length !== data.featureNames.length) {
+    if (data.features[0] && data.features[0].length !== data.featureNames.length) {
       throw new Error('Feature array length must match featureNames length');
     }
   }
@@ -179,7 +183,9 @@ export class MachineLearningService {
     const indices = Array.from({ length: totalSize }, (_, i) => i);
     for (let i = indices.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [indices[i], indices[j]] = [indices[j], indices[i]];
+      const temp = indices[i]!;
+      indices[i] = indices[j]!;
+      indices[j] = temp;
     }
 
     const trainIndices = indices.slice(0, trainSize);
@@ -187,13 +193,13 @@ export class MachineLearningService {
 
     return {
       trainData: {
-        features: trainIndices.map(i => data.features[i]),
-        targets: trainIndices.map(i => data.targets[i]),
+        features: trainIndices.map(i => data.features[i]).filter(Boolean) as number[][],
+        targets: trainIndices.map(i => data.targets[i]).filter(val => val !== undefined) as number[],
         featureNames: data.featureNames,
       },
       testData: {
-        features: testIndices.map(i => data.features[i]),
-        targets: testIndices.map(i => data.targets[i]),
+        features: testIndices.map(i => data.features[i]).filter(Boolean) as number[][],
+        targets: testIndices.map(i => data.targets[i]).filter(val => val !== undefined) as number[],
         featureNames: data.featureNames,
       },
     };
@@ -201,7 +207,7 @@ export class MachineLearningService {
 
   private async trainByAlgorithm(
     algorithm: string,
-    modelType: string,
+    _modelType: string,
     trainData: TrainingData,
     testData: TrainingData,
     hyperparameters: Record<string, any>
@@ -226,7 +232,7 @@ export class MachineLearningService {
 
   private async trainRandomForest(
     trainData: TrainingData,
-    testData: TrainingData,
+    _testData: TrainingData,
     hyperparameters: Record<string, any>
   ): Promise<any> {
     // Mock implementation - replace with actual Random Forest training
@@ -256,15 +262,15 @@ export class MachineLearningService {
       hyperparameters,
       modelData: {
         // Mock model data
-        trees: hyperparameters.n_estimators || 100,
-        maxDepth: hyperparameters.max_depth || 10,
+        trees: hyperparameters['n_estimators'] || 100,
+        maxDepth: hyperparameters['max_depth'] || 10,
       },
     };
   }
 
   private async trainLinearRegression(
     trainData: TrainingData,
-    testData: TrainingData,
+    _testData: TrainingData,
     hyperparameters: Record<string, any>
   ): Promise<any> {
     // Mock implementation - replace with actual Linear Regression training
@@ -292,8 +298,8 @@ export class MachineLearningService {
   }
 
   private async trainNeuralNetwork(
-    trainData: TrainingData,
-    testData: TrainingData,
+    _trainData: TrainingData,
+    _testData: TrainingData,
     hyperparameters: Record<string, any>
   ): Promise<any> {
     // Mock implementation - replace with actual Neural Network training
@@ -314,16 +320,16 @@ export class MachineLearningService {
       hyperparameters,
       modelData: {
         // Mock network structure
-        layers: hyperparameters.layers || [64, 32, 16],
-        activation: hyperparameters.activation || 'relu',
-        optimizer: hyperparameters.optimizer || 'adam',
+        layers: hyperparameters['layers'] || [64, 32, 16],
+        activation: hyperparameters['activation'] || 'relu',
+        optimizer: hyperparameters['optimizer'] || 'adam',
       },
     };
   }
 
   private async trainIsolationForest(
-    trainData: TrainingData,
-    testData: TrainingData,
+    _trainData: TrainingData,
+    _testData: TrainingData,
     hyperparameters: Record<string, any>
   ): Promise<any> {
     // Mock implementation for anomaly detection
@@ -342,8 +348,8 @@ export class MachineLearningService {
       metrics,
       hyperparameters,
       modelData: {
-        contamination: hyperparameters.contamination || 0.1,
-        n_estimators: hyperparameters.n_estimators || 100,
+        contamination: hyperparameters['contamination'] || 0.1,
+        n_estimators: hyperparameters['n_estimators'] || 100,
       },
     };
   }
@@ -353,7 +359,7 @@ export class MachineLearningService {
       await fs.writeFile(modelPath, JSON.stringify(model, null, 2));
       this.logger.debug(`Model saved to ${modelPath}`);
     } catch (error) {
-      this.logger.error(`Failed to save model: ${error.message}`);
+      this.logger.error(`Failed to save model: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   }
@@ -364,7 +370,7 @@ export class MachineLearningService {
       return JSON.parse(modelData);
     } catch (error) {
       this.logger.error(
-        `Failed to load model from ${modelPath}: ${error.message}`
+        `Failed to load model from ${modelPath}: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
       throw error;
     }
@@ -424,7 +430,7 @@ export class MachineLearningService {
       await fs.unlink(modelPath);
       this.logger.log(`Model ${modelId} deleted successfully`);
     } catch (error) {
-      this.logger.error(`Failed to delete model ${modelId}: ${error.message}`);
+      this.logger.error(`Failed to delete model ${modelId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   }
@@ -435,7 +441,7 @@ export class MachineLearningService {
       return await this.loadModel(modelPath);
     } catch (error) {
       this.logger.error(
-        `Failed to get model info for ${modelId}: ${error.message}`
+        `Failed to get model info for ${modelId}: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
       throw error;
     }
