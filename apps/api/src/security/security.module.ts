@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { CommonModule } from '../common/common.module';
 import { SecurityController } from './security.controller';
 import { SecurityResolver } from './security.resolver';
@@ -11,7 +10,7 @@ import { ThreatDetectionService } from './services/threat-detection.service';
 import { VulnerabilityService } from './services/vulnerability.service';
 
 @Module({
-  imports: [CommonModule, ScheduleModule.forRoot()],
+  imports: [CommonModule],
   controllers: [SecurityController],
   providers: [
     SecurityResolver,

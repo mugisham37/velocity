@@ -24,7 +24,7 @@ import { VulnerabilityService } from './services/vulnerability.service';
 export class SecurityController {
   constructor(
     private readonly securityMonitoring: SecurityMonitoringService,
-    private readonly thrion: ThreatDetectionService,
+    private readonly threatDetection: ThreatDetectionService,
     private readonly vulnerabilityService: VulnerabilityService,
     private readonly complianceService: ComplianceService,
     private readonly dataProtectionService: DataProtectionService,
@@ -69,12 +69,12 @@ export class SecurityController {
     @Query('limit') limit?: number
   ) {
     return this.securityMonitoring.getSecurityEvents(user.companyId, {
-      type,
-      severity,
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
-      page,
-      limit,
+      ...(type && { type }),
+      ...(severity && { severity }),
+      ...(startDate && { startDate: new Date(startDate) }),
+      ...(endDate && { endDate: new Date(endDate) }),
+      ...(page && { page }),
+      ...(limit && { limit }),
     });
   }
 
@@ -107,12 +107,12 @@ export class SecurityController {
     @Query('limit') limit?: number
   ) {
     return this.vulnerabilityService.getVulnerabilities({
-      severity,
-      status,
-      category,
-      component,
-      page,
-      limit,
+      ...(severity && { severity }),
+      ...(status && { status }),
+      ...(category && { category }),
+      ...(component && { component }),
+      ...(page && { page }),
+      ...(limit && { limit }),
     });
   }
 

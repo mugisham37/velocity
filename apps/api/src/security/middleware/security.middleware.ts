@@ -1,5 +1,6 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
-import { NextFunction, Request, Response } from 'express';
+import { Injectable } from '@nestjs/common';
+import type { NestMiddleware } from '@nestjs/common';
+import type { NextFunction, Request, Response } from 'express';
 import { SecurityMonitoringService } from '../services/security-monitoring.service';
 import { ThreatDetectionService } from '../services/threat-detection.service';
 
@@ -10,9 +11,7 @@ export class SecurityMiddleware implements NestMiddleware {
     private readonly securityMonitoring: SecurityMonitoringService
   ) {}
 
-  async use(req: Request, res: Response, next: NextFunction) {
-    const startTime = Date.now();
-
+  async use(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // Extract request information
       const requestInfo = {
@@ -29,10 +28,11 @@ export class SecurityMiddleware implements NestMiddleware {
 
       // Check if IP is blocked
       if (this.securityMonitoring.isIpBlocked(requestInfo.ip)) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Access denied',
           message: 'Your IP address has been blocked due to security concerns',
         });
+        return;
       }
 
       // Analyze request for threats (async, don't block request)
@@ -69,7 +69,6 @@ export class SecurityMiddleware implements NestMiddleware {
               url: requestInfo.url,
               method: requestInfo.method,
             },
-            timestamp: new Date(),
           });
         }
       }
@@ -83,8 +82,7 @@ export class SecurityMiddleware implements NestMiddleware {
     return (
       (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
       (req.headers['x-real-ip'] as string) ||
-      req.connection.remoteAddress ||
-      req.socket.remoteAddress ||
+      (req.socket as any)?.remoteAddress ||
       'unknown'
     );
   }

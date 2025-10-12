@@ -15,7 +15,7 @@ export class SecurityResolver {
   constructor(
     private readonly securityMonitoring: SecurityMonitoringService,
     private readonly threatDetection: ThreatDetectionService,
-    privatdonly vulnerabilityService: VulnerabilityService,
+    private readonly vulnerabilityService: VulnerabilityService,
     private readonly complianceService: ComplianceService,
     private readonly dataProtectionService: DataProtectionService
   ) {}
@@ -56,12 +56,12 @@ export class SecurityResolver {
     const user = context.req.user;
 
     const events = await this.securityMonitoring.getSecurityEvents(user.companyId, {
-      type,
-      severity,
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
-      page,
-      limit,
+      ...(type && { type }),
+      ...(severity && { severity }),
+      ...(startDate && { startDate: new Date(startDate) }),
+      ...(endDate && { endDate: new Date(endDate) }),
+      ...(page && { page }),
+      ...(limit && { limit }),
     });
 
     return JSON.stringify(events);
@@ -78,12 +78,12 @@ export class SecurityResolver {
     @Args('limit', { nullable: true }) limit?: number
   ) {
     const vulnerabilities = await this.vulnerabilityService.getVulnerabilities({
-      severity,
-      status,
-      category,
-      component,
-      page,
-      limit,
+      ...(severity && { severity }),
+      ...(status && { status }),
+      ...(category && { category }),
+      ...(component && { component }),
+      ...(page && { page }),
+      ...(limit && { limit }),
     });
 
     return JSON.stringify(vulnerabilities);
