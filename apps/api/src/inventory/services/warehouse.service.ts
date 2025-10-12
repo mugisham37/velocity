@@ -10,14 +10,7 @@ import {
   type WarehouseTransfer,
   type WarehouseTransferItem,
   type WarehousePerformanceMetric,
-} from '@kiro/database';
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import {
+  // Import drizzle-orm functions from the database package to ensure consistency
   and,
   asc,
   between,
@@ -29,7 +22,14 @@ import {
   lte,
   or,
   sql,
-} from 'drizzle-orm';
+} from '@kiro/database';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+
 import {
   CreateWarehouseDto,
   CreateWarehouseLocationDto,
@@ -93,11 +93,33 @@ export class WarehouseService {
     const [newWarehouse] = await this.db.db
       .insert(warehouses)
       .values({
-        ...createWarehouseDto,
+        warehouseCode: createWarehouseDto.warehouseCode,
+        warehouseName: createWarehouseDto.warehouseName,
+        warehouseType: createWarehouseDto.warehouseType ?? null,
+        parentWarehouseId: createWarehouseDto.parentWarehouseId ?? null,
+        companyId: createWarehouseDto.companyId,
+        address: createWarehouseDto.address ?? null,
+        email: createWarehouseDto.email ?? null,
+        phone: createWarehouseDto.phone ?? null,
+        totalCapacity: createWarehouseDto.totalCapacity?.toString() ?? null,
+        capacityUom: createWarehouseDto.capacityUom ?? null,
+        allowNegativeStock: createWarehouseDto.allowNegativeStock ?? false,
+        autoReorderEnabled: createWarehouseDto.autoReorderEnabled ?? false,
+        barcodeRequired: createWarehouseDto.barcodeRequired ?? false,
+        latitude: createWarehouseDto.latitude?.toString() ?? null,
+        longitude: createWarehouseDto.longitude?.toString() ?? null,
+        operatingHours: createWarehouseDto.operatingHours ?? null,
+        isGroup: createWarehouseDto.isGroup ?? false,
+        isActive: createWarehouseDto.isActive ?? true,
+        description: createWarehouseDto.description ?? null,
         createdBy: userId,
         updatedBy: userId,
       })
       .returning();
+
+    if (!newWarehouse) {
+      throw new Error('Failed to create warehouse');
+    }
 
     return newWarehouse;
   }
@@ -142,15 +164,73 @@ export class WarehouseService {
       }
     }
 
+    const updateData: any = {
+      updatedBy: userId,
+      updatedAt: new Date(),
+    };
+
+    if (updateWarehouseDto.warehouseName !== undefined) {
+      updateData.warehouseName = updateWarehouseDto.warehouseName;
+    }
+    if (updateWarehouseDto.warehouseType !== undefined) {
+      updateData.warehouseType = updateWarehouseDto.warehouseType;
+    }
+    if (updateWarehouseDto.parentWarehouseId !== undefined) {
+      updateData.parentWarehouseId = updateWarehouseDto.parentWarehouseId;
+    }
+    if (updateWarehouseDto.address !== undefined) {
+      updateData.address = updateWarehouseDto.address;
+    }
+    if (updateWarehouseDto.email !== undefined) {
+      updateData.email = updateWarehouseDto.email;
+    }
+    if (updateWarehouseDto.phone !== undefined) {
+      updateData.phone = updateWarehouseDto.phone;
+    }
+    if (updateWarehouseDto.totalCapacity !== undefined) {
+      updateData.totalCapacity =
+        updateWarehouseDto.totalCapacity?.toString() ?? null;
+    }
+    if (updateWarehouseDto.capacityUom !== undefined) {
+      updateData.capacityUom = updateWarehouseDto.capacityUom;
+    }
+    if (updateWarehouseDto.allowNegativeStock !== undefined) {
+      updateData.allowNegativeStock = updateWarehouseDto.allowNegativeStock;
+    }
+    if (updateWarehouseDto.autoReorderEnabled !== undefined) {
+      updateData.autoReorderEnabled = updateWarehouseDto.autoReorderEnabled;
+    }
+    if (updateWarehouseDto.barcodeRequired !== undefined) {
+      updateData.barcodeRequired = updateWarehouseDto.barcodeRequired;
+    }
+    if (updateWarehouseDto.latitude !== undefined) {
+      updateData.latitude = updateWarehouseDto.latitude?.toString() ?? null;
+    }
+    if (updateWarehouseDto.longitude !== undefined) {
+      updateData.longitude = updateWarehouseDto.longitude?.toString() ?? null;
+    }
+    if (updateWarehouseDto.operatingHours !== undefined) {
+      updateData.operatingHours = updateWarehouseDto.operatingHours;
+    }
+    if (updateWarehouseDto.isGroup !== undefined) {
+      updateData.isGroup = updateWarehouseDto.isGroup;
+    }
+    if (updateWarehouseDto.isActive !== undefined) {
+      updateData.isActive = updateWarehouseDto.isActive;
+    }
+    if (updateWarehouseDto.description !== undefined) {
+      updateData.description = updateWarehouseDto.description;
+    }
+
     const [updatedWarehouse] = await this.db.db
       .update(warehouses)
-      .set({
-        ...updateWarehouseDto,
-        updatedBy: userId,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(warehouses.id, id))
       .returning();
+
+    if (!updatedWarehouse) {
+      throw new Error('Failed to update warehouse');
+    }
 
     return updatedWarehouse;
   }
@@ -227,7 +307,7 @@ export class WarehouseService {
           ilike(warehouses.warehouseCode, `%${filters.search}%`),
           ilike(warehouses.warehouseName, `%${filters.search}%`),
           ilike(warehouses.description, `%${filters.search}%`)
-        )
+        )!
       );
     }
 
@@ -252,14 +332,26 @@ export class WarehouseService {
     const whereClause = and(...whereConditions);
 
     // Get total count
-    const [{ count: totalCount }] = await this.db.db
+    const countResult = await this.db.db
       .select({ count: count() })
       .from(warehouses)
       .where(whereClause);
 
+    const totalCount = Number(countResult[0]?.count || 0);
+
     // Get warehouses with pagination and sorting
-    const sortColumn = warehouses[sortBy as keyof typeof warehouses] || warehouses.warehouseName;
-    const orderBy = sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
+    const validSortColumns = [
+      'warehouseCode',
+      'warehouseName',
+      'warehouseType',
+      'createdAt',
+      'updatedAt',
+    ];
+    const sortColumn = validSortColumns.includes(sortBy)
+      ? warehouses[sortBy as keyof typeof warehouses]
+      : warehouses.warehouseName;
+    const orderBy =
+      sortOrder === 'desc' ? desc(sortColumn as any) : asc(sortColumn as any);
 
     const warehousesList = await this.db.db
       .select()
@@ -271,7 +363,7 @@ export class WarehouseService {
 
     // Get locations for each warehouse
     const warehousesWithLocations = await Promise.all(
-      warehousesList.map(async (warehouse) => {
+      warehousesList.map(async warehouse => {
         const locations = await this.db.db
           .select()
           .from(warehouseLocations)
@@ -398,10 +490,20 @@ export class WarehouseService {
       .insert(warehouseLocations)
       .values({
         ...createLocationDto,
+        capacity: createLocationDto.capacity?.toString() ?? null,
+        length: createLocationDto.length?.toString() ?? null,
+        width: createLocationDto.width?.toString() ?? null,
+        height: createLocationDto.height?.toString() ?? null,
+        minTemperature: createLocationDto.minTemperature?.toString() ?? null,
+        maxTemperature: createLocationDto.maxTemperature?.toString() ?? null,
         createdBy: userId,
         updatedBy: userId,
       })
       .returning();
+
+    if (!newLocation) {
+      throw new Error('Failed to create warehouse location');
+    }
 
     return newLocation;
   }
@@ -450,11 +552,21 @@ export class WarehouseService {
       .update(warehouseLocations)
       .set({
         ...updateLocationDto,
+        capacity: updateLocationDto.capacity?.toString() ?? null,
+        length: updateLocationDto.length?.toString() ?? null,
+        width: updateLocationDto.width?.toString() ?? null,
+        height: updateLocationDto.height?.toString() ?? null,
+        minTemperature: updateLocationDto.minTemperature?.toString() ?? null,
+        maxTemperature: updateLocationDto.maxTemperature?.toString() ?? null,
         updatedBy: userId,
         updatedAt: new Date(),
       })
       .where(eq(warehouseLocations.id, id))
       .returning();
+
+    if (!updatedLocation) {
+      throw new Error('Failed to update warehouse location');
+    }
 
     return updatedLocation;
   }
@@ -484,7 +596,7 @@ export class WarehouseService {
           ilike(warehouseLocations.locationCode, `%${filters.search}%`),
           ilike(warehouseLocations.locationName, `%${filters.search}%`),
           ilike(warehouseLocations.description, `%${filters.search}%`)
-        )
+        )!
       );
     }
 
@@ -533,14 +645,26 @@ export class WarehouseService {
       whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
     // Get total count
-    const [{ count: totalCount }] = await this.db.db
+    const countResult = await this.db.db
       .select({ count: count() })
       .from(warehouseLocations)
       .where(whereClause);
 
+    const totalCount = Number(countResult[0]?.count || 0);
+
     // Get locations with pagination and sorting
-    const sortColumn = warehouseLocations[sortBy as keyof typeof warehouseLocations] || warehouseLocations.locationName;
-    const orderBy = sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
+    const validSortColumns = [
+      'locationCode',
+      'locationName',
+      'locationType',
+      'createdAt',
+      'updatedAt',
+    ];
+    const sortColumn = validSortColumns.includes(sortBy)
+      ? warehouseLocations[sortBy as keyof typeof warehouseLocations]
+      : warehouseLocations.locationName;
+    const orderBy =
+      sortOrder === 'desc' ? desc(sortColumn as any) : asc(sortColumn as any);
 
     const locationsList = await this.db.db
       .select()
@@ -619,7 +743,10 @@ export class WarehouseService {
       .from(warehouseTransfers)
       .where(
         and(
-          eq(warehouseTransfers.transferNumber, createTransferDto.transferNumber),
+          eq(
+            warehouseTransfers.transferNumber,
+            createTransferDto.transferNumber
+          ),
           eq(warehouseTransfers.companyId, createTransferDto.companyId)
         )
       )
@@ -674,17 +801,28 @@ export class WarehouseService {
       .insert(warehouseTransfers)
       .values({
         ...transferData,
+        transferDate: new Date(transferData.transferDate),
+        expectedDeliveryDate: transferData.expectedDeliveryDate
+          ? new Date(transferData.expectedDeliveryDate)
+          : null,
+        shippingCost: transferData.shippingCost?.toString() ?? null,
         createdBy: userId,
         updatedBy: userId,
       })
       .returning();
+
+    if (!newTransfer) {
+      throw new Error('Failed to create warehouse transfer');
+    }
 
     // Create transfer items
     if (items && items.length > 0) {
       const transferItemsData = items.map(item => ({
         ...item,
         transferId: newTransfer.id,
-        totalCost: (item.unitCost || 0) * item.requestedQty,
+        requestedQty: item.requestedQty.toString(),
+        unitCost: item.unitCost?.toString() ?? null,
+        totalCost: ((item.unitCost || 0) * item.requestedQty).toString(),
       }));
 
       await this.db.db.insert(warehouseTransferItems).values(transferItemsData);
@@ -713,11 +851,22 @@ export class WarehouseService {
       .update(warehouseTransfers)
       .set({
         ...updateTransferDto,
+        expectedDeliveryDate: updateTransferDto.expectedDeliveryDate
+          ? new Date(updateTransferDto.expectedDeliveryDate)
+          : null,
+        actualDeliveryDate: updateTransferDto.actualDeliveryDate
+          ? new Date(updateTransferDto.actualDeliveryDate)
+          : null,
+        shippingCost: updateTransferDto.shippingCost?.toString() ?? null,
         updatedBy: userId,
         updatedAt: new Date(),
       })
       .where(eq(warehouseTransfers.id, id))
       .returning();
+
+    if (!updatedTransfer) {
+      throw new Error('Failed to update warehouse transfer');
+    }
 
     return updatedTransfer;
   }
@@ -778,7 +927,7 @@ export class WarehouseService {
           ilike(warehouseTransfers.transferNumber, `%${filters.search}%`),
           ilike(warehouseTransfers.trackingNumber, `%${filters.search}%`),
           ilike(warehouseTransfers.notes, `%${filters.search}%`)
-        )
+        )!
       );
     }
 
@@ -819,14 +968,26 @@ export class WarehouseService {
     const whereClause = and(...whereConditions);
 
     // Get total count
-    const [{ count: totalCount }] = await this.db.db
+    const countResult = await this.db.db
       .select({ count: count() })
       .from(warehouseTransfers)
       .where(whereClause);
 
+    const totalCount = Number(countResult[0]?.count || 0);
+
     // Get transfers with pagination and sorting
-    const sortColumn = warehouseTransfers[sortBy as keyof typeof warehouseTransfers] || warehouseTransfers.transferDate;
-    const orderBy = sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
+    const validSortColumns = [
+      'transferNumber',
+      'transferDate',
+      'status',
+      'createdAt',
+      'updatedAt',
+    ];
+    const sortColumn = validSortColumns.includes(sortBy)
+      ? warehouseTransfers[sortBy as keyof typeof warehouseTransfers]
+      : warehouseTransfers.transferDate;
+    const orderBy =
+      sortOrder === 'desc' ? desc(sortColumn as any) : asc(sortColumn as any);
 
     const transfersList = await this.db.db
       .select()
@@ -838,7 +999,7 @@ export class WarehouseService {
 
     // Get transfer items for each transfer
     const transfersWithItems = await Promise.all(
-      transfersList.map(async (transfer) => {
+      transfersList.map(async transfer => {
         const transferItems = await this.db.db
           .select()
           .from(warehouseTransferItems)
@@ -883,10 +1044,16 @@ export class WarehouseService {
       .update(warehouseTransferItems)
       .set({
         ...updateItemDto,
+        shippedQty: updateItemDto.shippedQty?.toString() ?? null,
+        receivedQty: updateItemDto.receivedQty?.toString() ?? null,
         updatedAt: new Date(),
       })
       .where(eq(warehouseTransferItems.id, existingItem.id))
       .returning();
+
+    if (!updatedItem) {
+      throw new Error('Failed to update transfer item');
+    }
 
     return updatedItem;
   }
@@ -942,7 +1109,7 @@ export class WarehouseService {
           or(
             ilike(warehouses.warehouseCode, `%${searchTerm}%`),
             ilike(warehouses.warehouseName, `%${searchTerm}%`)
-          )
+          )!
         )
       )
       .limit(limit)
@@ -960,7 +1127,7 @@ export class WarehouseService {
         ilike(warehouseLocations.locationCode, `%${searchTerm}%`),
         ilike(warehouseLocations.locationName, `%${searchTerm}%`),
         ilike(warehouseLocations.barcode, `%${searchTerm}%`)
-      ),
+      )!,
     ];
 
     if (warehouseId) {
@@ -994,9 +1161,7 @@ export class WarehouseService {
       .limit(limit);
   }
 
-  async calculateCapacityUtilization(
-    warehouseId: string
-  ): Promise<{
+  async calculateCapacityUtilization(warehouseId: string): Promise<{
     utilizationPercentage: number;
     usedCapacity: number;
     totalCapacity: number;

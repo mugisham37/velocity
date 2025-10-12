@@ -169,6 +169,21 @@ export type NewWarehouse = InferInsertModel<typeof warehouses>;
 export type WarehouseLocation = InferSelectModel<typeof warehouseLocations>;
 export type NewWarehouseLocation = InferInsertModel<typeof warehouseLocations>;
 
+// Import warehouse transfer tables
+import {
+  warehouseTransfers,
+  warehouseTransferItems,
+  warehousePerformanceMetrics,
+} from './warehouses';
+
+// Warehouse Transfer types
+export type WarehouseTransfer = InferSelectModel<typeof warehouseTransfers>;
+export type NewWarehouseTransfer = InferInsertModel<typeof warehouseTransfers>;
+export type WarehouseTransferItem = InferSelectModel<typeof warehouseTransferItems>;
+export type NewWarehouseTransferItem = InferInsertModel<typeof warehouseTransferItems>;
+export type WarehousePerformanceMetric = InferSelectModel<typeof warehousePerformanceMetrics>;
+export type NewWarehousePerformanceMetric = InferInsertModel<typeof warehousePerformanceMetrics>;
+
 // Accounts Receivable types
 export type Invoice = InferSelectModel<typeof invoices>;
 export type NewInvoice = InferInsertModel<typeof invoices>;

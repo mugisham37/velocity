@@ -1083,7 +1083,7 @@ export class StockTransactionService {
   async getAvailableStock(
     itemId: string,
     warehouseId: string,
-    locationId?: string
+    _locationId?: string
   ): Promise<{ actualQty: string; reservedQty: string; availableQty: number }> {
     const existingLevel = await this.db.db
       .select()
@@ -1115,7 +1115,7 @@ export class StockTransactionService {
   private async getCurrentStockLevel(
     itemId: string,
     warehouseId: string,
-    locationId?: string,
+    _locationId?: string,
     companyId?: string
   ): Promise<StockLevel> {
     const existingLevel = await this.db.db

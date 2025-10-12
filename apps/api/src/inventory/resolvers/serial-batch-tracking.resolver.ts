@@ -186,10 +186,8 @@ export class SerialBatchTrackingResolver {
   // Batch Location Mutations
   @Mutation('createBatchLocation')
   async createBatchLocation(
-    @Args('input') input: CreateBatchLocationDto,
-    @Context() context: any
+    @Args('input') input: CreateBatchLocationDto
   ): Promise<BatchLocation> {
-    const { user } = context.req;
     this.logger.log(`Creating batch location for batch: ${input.batchId}`);
 
     return this.serialBatchTrackingService.createBatchLocation(input);
