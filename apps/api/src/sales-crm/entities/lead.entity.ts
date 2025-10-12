@@ -1,19 +1,18 @@
 import { Field, Float, ID, Int, ObjectType } from '@nestjs/graphql';
-import { GraphQLJSON } from 'graphql-type-json';
 
 @ObjectType()
 export class Lead {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  leadCode: string;
+  leadCode!: string;
 
   @Field()
-  firstName: string;
+  firstName!: string;
 
   @Field()
-  lastName: string;
+  lastName!: string;
 
   @Field({ nullable: true })
   email?: string;
@@ -33,17 +32,17 @@ export class Lead {
   @Field({ nullable: true })
   website?: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
-  address?: any;
+  @Field({ nullable: true })
+  address?: string;
 
   @Field()
-  source: string;
+  source!: string;
 
   @Field()
-  status: string;
+  status!: string;
 
   @Field(() => Int)
-  score: number;
+  score!: number;
 
   @Field({ nullable: true })
   qualificationNotes?: string;
@@ -69,11 +68,11 @@ export class Lead {
   @Field({ nullable: true })
   notes?: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
-  customFields?: Record<string, any>;
+  @Field({ nullable: true })
+  customFields?: string;
 
   @Field()
-  isConverted: boolean;
+  isConverted!: boolean;
 
   @Field(() => ID, { nullable: true })
   convertedCustomerId?: string;
@@ -82,34 +81,34 @@ export class Lead {
   convertedOpportunityId?: string;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 @ObjectType()
 export class LeadActivity {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field(() => ID)
-  leadId: string;
+  leadId!: string;
 
   @Field()
-  activityType: string;
+  activityType!: string;
 
   @Field()
-  subject: string;
+  subject!: string;
 
   @Field({ nullable: true })
   description?: string;
 
   @Field()
-  activityDate: Date;
+  activityDate!: Date;
 
   @Field(() => Int, { nullable: true })
   duration?: number;
@@ -124,106 +123,106 @@ export class LeadActivity {
   nextActionDate?: Date;
 
   @Field(() => ID)
-  createdBy: string;
+  createdBy!: string;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 }
 
 @ObjectType()
 export class LeadScoringRule {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   description?: string;
 
-  @Field(() => GraphQLJSON)
-  criteria: Record<string, any>;
+  @Field()
+  criteria!: string;
 
   @Field(() => Int)
-  points: number;
+  points!: number;
 
   @Field()
-  isActive: boolean;
+  isActive!: boolean;
 
   @Field(() => ID)
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 @ObjectType()
 export class LeadAnalytics {
   @Field(() => Int)
-  totalLeads: number;
+  totalLeads!: number;
 
   @Field(() => Int)
-  newLeads: number;
+  newLeads!: number;
 
   @Field(() => Int)
-  qualifiedLeads: number;
+  qualifiedLeads!: number;
 
   @Field(() => Int)
-  convertedLeads: number;
+  convertedLeads!: number;
 
   @Field(() => Int)
-  lostLeads: number;
+  lostLeads!: number;
 
   @Field(() => Float)
-  averageScore: number;
+  averageScore!: number;
 
   @Field(() => Float)
-  totalEstimatedValue: number;
+  totalEstimatedValue!: number;
 
   @Field(() => Float)
-  conversionRate: number;
+  conversionRate!: number;
 
   @Field(() => [LeadSourceAnalytics])
-  leadsBySource: LeadSourceAnalytics[];
+  leadsBySource!: LeadSourceAnalytics[];
 
   @Field(() => [LeadStatusAnalytics])
-  leadsByStatus: LeadStatusAnalytics[];
+  leadsByStatus!: LeadStatusAnalytics[];
 }
 
 @ObjectType()
 export class LeadSourceAnalytics {
   @Field()
-  source: string;
+  source!: string;
 
   @Field(() => Int)
-  count: number;
+  count!: number;
 
   @Field(() => Int)
-  converted: number;
+  converted!: number;
 }
 
 @ObjectType()
 export class LeadStatusAnalytics {
   @Field()
-  status: string;
+  status!: string;
 
   @Field(() => Int)
-  count: number;
+  count!: number;
 }
 
 @ObjectType()
 export class LeadsConnection {
   @Field(() => [Lead])
-  leads: Lead[];
+  leads!: Lead[];
 
   @Field(() => Int)
-  total: number;
+  total!: number;
 }
 
 @ObjectType()

@@ -682,3 +682,18 @@ export class OrderItemFulfillmentType {
   @Field(() => Float)
   fulfillmentPercentage!: number;
 }
+@InputType()
+export class PaginationInput {
+  @Field(() => Int, { nullable: true, defaultValue: 1 })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  page?: number;
+
+  @Field(() => Int, { nullable: true, defaultValue: 50 })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  limit?: number;
+}

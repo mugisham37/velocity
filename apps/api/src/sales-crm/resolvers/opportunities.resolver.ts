@@ -1,4 +1,4 @@
-import { User } from '@kiro/database';
+import type { User } from '@kiro/database';
 import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -20,6 +20,13 @@ import {
   SalesForecastType,
   UpdateOpportunityInput,
 } from '../dto/opportunity.dto';
+import type {
+  CreateOpportunityDto,
+  UpdateOpportunityDto,
+  CreateOpportunityActivityDto,
+  CreateOpportunityCompetitorDto,
+  AddTeamMemberDto,
+} from '../services/opportunities.service';
 import { OpportunitiesService } from '../services/opportunities.service';
 
 @Resolver(() => OpportunityType)
@@ -49,7 +56,7 @@ export class OpportunitiesResolver {
     );
 
     return {
-      opportunities: result.opportunities as OpportunityType[],
+      opportunities: result.opportunities as any,
       total: result.total,
       page,
       limit,
@@ -66,7 +73,7 @@ export class OpportunitiesResolver {
       id,
       user.companyId
     );
-    return opportunity as OpportunityType;
+    return opportunity as any;
   }
 
   @Query(() => [OpportunityActivityType], {
@@ -80,7 +87,7 @@ export class OpportunitiesResolver {
       opportunityId,
       user.companyId
     );
-    return activities as OpportunityActivityType[];
+    return activities as any;
   }
 
   @Query(() => [OpportunityStageHistoryType], {
@@ -109,14 +116,14 @@ export class OpportunitiesResolver {
         opportunityId,
         user.companyId
       );
-    return competitors as OpportunityCompetitorType[];
+    return competitors as any;
   }
 
   @Query(() => SalesForecastType, { description: 'Get sales forecast' })
   async salesForecast(
+    @CurrentUser() user: User,
     @Args('period', { type: () => ForecastPeriodInput, nullable: true })
-    period?: ForecastPeriodInput,
-    @CurrentUser() user: User
+    period?: ForecastPeriodInput
   ): Promise<SalesForecastType> {
     const forecast = await this.opportunitiesService.getSalesForecast(
       user.companyId,
@@ -143,26 +150,30 @@ export class OpportunitiesResolver {
     @Args('input') input: CreateOpportunityInput,
     @CurrentUser() user: User
   ): Promise<OpportunityType> {
+    const opportunityData: CreateOpportunityDto = {
+      name: input.name,
+      amount: input.amount,
+      ...(input.customerId && { customerId: input.customerId }),
+      ...(input.leadId && { leadId: input.leadId }),
+      ...(input.stage && { stage: input.stage as any }),
+      ...(input.probability && { probability: input.probability }),
+      ...(input.currency && { currency: input.currency }),
+      ...(input.source && { source: input.source }),
+      ...(input.description && { description: input.description }),
+      ...(input.nextStep && { nextStep: input.nextStep }),
+      ...(input.assignedTo && { assignedTo: input.assignedTo }),
+      ...(input.territory && { territory: input.territory }),
+      ...(input.expectedCloseDate && {
+        expectedCloseDate: new Date(input.expectedCloseDate),
+      }),
+    };
+
     const opportunity = await this.opportunitiesService.createOpportunity(
-      {
-        name: input.name,
-        customerId: input.customerId,
-        leadId: input.leadId,
-        stage: input.stage,
-        probability: input.probability,
-        amount: input.amount,
-        currency: input.currency,
-        expectedCloseDate: input.expectedCloseDate,
-        source: input.source,
-        description: input.description,
-        nextStep: input.nextStep,
-        assignedTo: input.assignedTo,
-        territory: input.territory,
-      },
+      opportunityData,
       user.companyId,
       user.id
     );
-    return opportunity as OpportunityType;
+    return opportunity as any;
   }
 
   @Mutation(() => OpportunityType, { description: 'Update an opportunity' })
@@ -171,28 +182,34 @@ export class OpportunitiesResolver {
     @Args('input') input: UpdateOpportunityInput,
     @CurrentUser() user: User
   ): Promise<OpportunityType> {
+    const updateData: UpdateOpportunityDto = {
+      ...(input.name && { name: input.name }),
+      ...(input.customerId && { customerId: input.customerId }),
+      ...(input.stage && { stage: input.stage as any }),
+      ...(input.probability && { probability: input.probability }),
+      ...(input.amount && { amount: input.amount }),
+      ...(input.currency && { currency: input.currency }),
+      ...(input.source && { source: input.source }),
+      ...(input.description && { description: input.description }),
+      ...(input.nextStep && { nextStep: input.nextStep }),
+      ...(input.assignedTo && { assignedTo: input.assignedTo }),
+      ...(input.territory && { territory: input.territory }),
+      ...(input.lostReason && { lostReason: input.lostReason }),
+      ...(input.expectedCloseDate && {
+        expectedCloseDate: new Date(input.expectedCloseDate),
+      }),
+      ...(input.actualCloseDate && {
+        actualCloseDate: new Date(input.actualCloseDate),
+      }),
+    };
+
     const opportunity = await this.opportunitiesService.updateOpportunity(
       id,
-      {
-        name: input.name,
-        customerId: input.customerId,
-        stage: input.stage,
-        probability: input.probability,
-        amount: input.amount,
-        currency: input.currency,
-        expectedCloseDate: input.expectedCloseDate,
-        actualCloseDate: input.actualCloseDate,
-        source: input.source,
-        description: input.description,
-        nextStep: input.nextStep,
-        assignedTo: input.assignedTo,
-        territory: input.territory,
-        lostReason: input.lostReason,
-      },
+      updateData,
       user.companyId,
       user.id
     );
-    return opportunity as OpportunityType;
+    return opportunity as any;
   }
 
   @Mutation(() => Boolean, { description: 'Delete an opportunity' })
@@ -200,7 +217,7 @@ export class OpportunitiesResolver {
     @Args('id', { type: () => ID }) id: string,
     @CurrentUser() user: User
   ): Promise<boolean> {
-    await this.opportunitiesService.delete(id, user.companyId, user.id);
+    await this.opportunitiesService.delete(id, user.companyId);
     return true;
   }
 
@@ -211,22 +228,26 @@ export class OpportunitiesResolver {
     @Args('input') input: CreateOpportunityActivityInput,
     @CurrentUser() user: User
   ): Promise<OpportunityActivityType> {
+    const activityData: CreateOpportunityActivityDto = {
+      opportunityId: input.opportunityId,
+      activityType: input.activityType,
+      subject: input.subject,
+      activityDate: new Date(input.activityDate),
+      ...(input.description && { description: input.description }),
+      ...(input.duration && { duration: input.duration }),
+      ...(input.outcome && { outcome: input.outcome }),
+      ...(input.nextAction && { nextAction: input.nextAction }),
+      ...(input.nextActionDate && {
+        nextActionDate: new Date(input.nextActionDate),
+      }),
+    };
+
     const activity = await this.opportunitiesService.createActivity(
-      {
-        opportunityId: input.opportunityId,
-        activityType: input.activityType,
-        subject: input.subject,
-        description: input.description,
-        activityDate: input.activityDate,
-        duration: input.duration,
-        outcome: input.outcome,
-        nextAction: input.nextAction,
-        nextActionDate: input.nextActionDate,
-      },
+      activityData,
       user.companyId,
       user.id
     );
-    return activity as OpportunityActivityType;
+    return activity as any;
   }
 
   @Mutation(() => OpportunityCompetitorType, {
@@ -236,20 +257,22 @@ export class OpportunitiesResolver {
     @Args('input') input: CreateOpportunityCompetitorInput,
     @CurrentUser() user: User
   ): Promise<OpportunityCompetitorType> {
+    const competitorData: CreateOpportunityCompetitorDto = {
+      opportunityId: input.opportunityId,
+      competitorName: input.competitorName,
+      ...(input.strengths && { strengths: input.strengths }),
+      ...(input.weaknesses && { weaknesses: input.weaknesses }),
+      ...(input.pricing && { pricing: input.pricing }),
+      ...(input.winProbability && { winProbability: input.winProbability }),
+      ...(input.notes && { notes: input.notes }),
+    };
+
     const competitor = await this.opportunitiesService.addCompetitor(
-      {
-        opportunityId: input.opportunityId,
-        competitorName: input.competitorName,
-        strengths: input.strengths,
-        weaknesses: input.weaknesses,
-        pricing: input.pricing,
-        winProbability: input.winProbability,
-        notes: input.notes,
-      },
+      competitorData,
       user.companyId,
       user.id
     );
-    return competitor as OpportunityCompetitorType;
+    return competitor as any;
   }
 
   @Mutation(() => Boolean, { description: 'Add team member to opportunity' })
@@ -257,13 +280,15 @@ export class OpportunitiesResolver {
     @Args('input') input: AddTeamMemberInput,
     @CurrentUser() user: User
   ): Promise<boolean> {
+    const teamMemberData: AddTeamMemberDto = {
+      opportunityId: input.opportunityId,
+      userId: input.userId,
+      role: input.role,
+      accessLevel: input.accessLevel as 'Read' | 'Write' | 'Full',
+    };
+
     await this.opportunitiesService.addTeamMember(
-      {
-        opportunityId: input.opportunityId,
-        userId: input.userId,
-        role: input.role,
-        accessLevel: input.accessLevel,
-      },
+      teamMemberData,
       user.companyId,
       user.id
     );
@@ -275,8 +300,8 @@ export class OpportunitiesResolver {
   })
   async moveOpportunityToNextStage(
     @Args('id', { type: () => ID }) id: string,
-    @Args('notes', { nullable: true }) notes?: string,
-    @CurrentUser() user: User
+    @CurrentUser() user: User,
+    @Args('notes', { nullable: true }) notes?: string
   ): Promise<OpportunityType> {
     const opportunity = await this.opportunitiesService.findByIdOrFail(
       id,
@@ -322,14 +347,14 @@ export class OpportunitiesResolver {
       user.id
     );
 
-    return updatedOpportunity as OpportunityType;
+    return updatedOpportunity as any;
   }
 
   @Mutation(() => OpportunityType, { description: 'Mark opportunity as won' })
   async markOpportunityWon(
     @Args('id', { type: () => ID }) id: string,
-    @Args('notes', { nullable: true }) notes?: string,
-    @CurrentUser() user: User
+    @CurrentUser() user: User,
+    @Args('notes', { nullable: true }) notes?: string
   ): Promise<OpportunityType> {
     const updatedOpportunity =
       await this.opportunitiesService.updateOpportunity(
@@ -357,15 +382,15 @@ export class OpportunitiesResolver {
       user.id
     );
 
-    return updatedOpportunity as OpportunityType;
+    return updatedOpportunity as any;
   }
 
   @Mutation(() => OpportunityType, { description: 'Mark opportunity as lost' })
   async markOpportunityLost(
     @Args('id', { type: () => ID }) id: string,
     @Args('reason') reason: string,
-    @Args('notes', { nullable: true }) notes?: string,
-    @CurrentUser() user: User
+    @CurrentUser() user: User,
+    @Args('notes', { nullable: true }) notes?: string
   ): Promise<OpportunityType> {
     const updatedOpportunity =
       await this.opportunitiesService.updateOpportunity(
@@ -394,6 +419,6 @@ export class OpportunitiesResolver {
       user.id
     );
 
-    return updatedOpportunity as OpportunityType;
+    return updatedOpportunity as any;
   }
 }

@@ -3,127 +3,127 @@ import { Field, Float, ID, Int, ObjectType } from '@nestjs/graphql';
 @ObjectType()
 export class POSProfile {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   description?: string;
 
   @Field(() => ID)
-  warehouseId: string;
+  warehouseId!: string;
 
   @Field(() => ID)
-  cashAccount: string;
+  cashAccount!: string;
 
   @Field(() => ID)
-  incomeAccount: string;
+  incomeAccount!: string;
 
   @Field(() => ID)
-  expenseAccount: string;
+  expenseAccount!: string;
 
   @Field({ nullable: true })
   costCenter?: string;
 
   @Field()
-  currency: string;
+  currency!: string;
 
   @Field({ nullable: true })
   priceList?: string;
 
   @Field()
-  allowDiscount: boolean;
+  allowDiscount!: boolean;
 
   @Field(() => Float)
-  maxDiscount: number;
+  maxDiscount!: number;
 
   @Field()
-  allowCreditSale: boolean;
+  allowCreditSale!: boolean;
 
   @Field()
-  allowReturn: boolean;
+  allowReturn!: boolean;
 
   @Field()
-  printReceipt: boolean;
+  printReceipt!: boolean;
 
   @Field()
-  emailReceipt: boolean;
+  emailReceipt!: boolean;
 
   @Field()
-  offlineMode: boolean;
+  offlineMode!: boolean;
 
   @Field({ nullable: true })
   loyaltyProgram?: string;
 
   @Field()
-  isActive: boolean;
+  isActive!: boolean;
 
   @Field()
-  companyId: string;
+  companyId!: string;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 @ObjectType()
 export class POSInvoiceItem {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field(() => ID)
-  posInvoiceId: string;
+  posInvoiceId!: string;
 
   @Field()
-  itemCode: string;
+  itemCode!: string;
 
   @Field()
-  itemName: string;
+  itemName!: string;
 
   @Field({ nullable: true })
   barcode?: string;
 
   @Field(() => Float)
-  quantity: number;
+  quantity!: number;
 
   @Field(() => Float)
-  unitPrice: number;
+  unitPrice!: number;
 
   @Field(() => Float)
-  discountPercent: number;
+  discountPercent!: number;
 
   @Field(() => Float)
-  discountAmount: number;
+  discountAmount!: number;
 
   @Field(() => Float)
-  taxPercent: number;
+  taxPercent!: number;
 
   @Field(() => Float)
-  taxAmount: number;
+  taxAmount!: number;
 
   @Field(() => Float)
-  lineTotal: number;
+  lineTotal!: number;
 
   @Field(() => [String], { nullable: true })
   serialNumbers?: string[];
 
   @Field()
-  companyId: string;
+  companyId!: string;
 }
 
 @ObjectType()
 export class POSInvoice {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  invoiceCode: string;
+  invoiceCode!: string;
 
   @Field(() => ID)
-  posProfileId: string;
+  posProfileId!: string;
 
   @Field(() => POSProfile, { nullable: true })
   posProfile?: POSProfile;
@@ -141,56 +141,56 @@ export class POSInvoice {
   customerEmail?: string;
 
   @Field()
-  invoiceDate: Date;
+  invoiceDate!: Date;
 
   @Field()
-  currency: string;
+  currency!: string;
 
   @Field(() => Float)
-  subtotal: number;
+  subtotal!: number;
 
   @Field(() => Float)
-  totalTax: number;
+  totalTax!: number;
 
   @Field(() => Float)
-  totalDiscount: number;
+  totalDiscount!: number;
 
   @Field(() => Float)
-  grandTotal: number;
+  grandTotal!: number;
 
   @Field(() => Float)
-  paidAmount: number;
+  paidAmount!: number;
 
   @Field(() => Float)
-  changeAmount: number;
+  changeAmount!: number;
 
   @Field(() => [Object])
-  paymentMethods: any[];
+  paymentMethods!: any[];
 
   @Field(() => Int)
-  loyaltyPointsEarned: number;
+  loyaltyPointsEarned!: number;
 
   @Field(() => Int)
-  loyaltyPointsRedeemed: number;
+  loyaltyPointsRedeemed!: number;
 
   @Field({ nullable: true })
   notes?: string;
 
   @Field()
-  isSynced: boolean;
+  isSynced!: boolean;
 
   @Field({ nullable: true })
   syncedAt?: Date;
 
   @Field(() => ID)
-  cashierId: string;
+  cashierId!: string;
 
   @Field()
-  companyId: string;
+  companyId!: string;
 
   @Field(() => [POSInvoiceItem])
-  items: POSInvoiceItem[];
+  items!: POSInvoiceItem[];
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 }

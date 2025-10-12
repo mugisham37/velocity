@@ -80,7 +80,10 @@
     "rmse",
     "scikit",
     "relu",
-    "coeff"
+    "coeff",
+    "GraphQLJSON",
+    "timetracking",
+    "succ"
   ],
   "flagWords": [],
   "patterns": []

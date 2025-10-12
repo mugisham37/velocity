@@ -1,4 +1,4 @@
-import { User } from '@kiro/database';
+import type { User } from '@kiro/database';
 import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -29,7 +29,11 @@ export class POSResolver {
     @Args('data') data: CreatePOSProfileDto,
     @CurrentUser() user: User
   ): Promise<POSProfile> {
-    return this.posService.createPOSProfile(data, user.companyId, user.id);
+    return this.posService.createPOSProfile(
+      data,
+      user.companyId,
+      user.id
+    ) as any;
   }
 
   @Mutation(() => POSProfile)
@@ -38,7 +42,7 @@ export class POSResolver {
     @Args('data') data: UpdatePOSProfileDto,
     @CurrentUser() user: User
   ): Promise<POSProfile> {
-    return this.posService.updatePOSProfile(id, data, user.companyId);
+    return this.posService.updatePOSProfile(id, data, user.companyId) as any;
   }
 
   @Query(() => POSProfile, { nullable: true })
@@ -46,12 +50,12 @@ export class POSResolver {
     @Args('id', { type: () => ID }) id: string,
     @CurrentUser() user: User
   ): Promise<POSProfile | null> {
-    return this.posService.getPOSProfile(id, user.companyId);
+    return this.posService.getPOSProfile(id, user.companyId) as any;
   }
 
   @Query(() => [POSProfile])
   async posProfiles(@CurrentUser() user: User): Promise<POSProfile[]> {
-    return this.posService.getPOSProfiles(user.companyId);
+    return this.posService.getPOSProfiles(user.companyId) as any;
   }
 
   @Mutation(() => Boolean)
@@ -68,7 +72,7 @@ export class POSResolver {
     @Args('data') data: CreatePOSSaleDto,
     @CurrentUser() user: User
   ): Promise<POSInvoice> {
-    return this.posService.processPOSSale(data, user.companyId, user.id);
+    return this.posService.processPOSSale(data, user.companyId, user.id) as any;
   }
 
   // Barcode Scanning

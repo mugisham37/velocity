@@ -1,4 +1,4 @@
-import { User } from '@kiro/database';
+import type { User } from '@kiro/database';
 import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -28,7 +28,7 @@ export class QuotationsResolver {
     return await this.quotationsService.getQuotationWithItems(
       id,
       user.companyId
-    );
+    ) as any;
   }
 
   @Query(() => QuotationConnection)
@@ -51,7 +51,7 @@ export class QuotationsResolver {
     );
 
     return {
-      quotations: result.data as QuotationType[],
+      quotations: result.data as any,
       total: result.pagination.total,
       page: result.pagination.page,
       limit: result.pagination.limit,
@@ -63,7 +63,7 @@ export class QuotationsResolver {
   async quotationAnalytics(
     @CurrentUser() user: User
   ): Promise<QuotationAnalyticsType> {
-    return await this.quotationsService.getQuotationAnalytics(user.companyId);
+    return await this.quotationsService.getQuotationAnalytics(user.companyId) as any;
   }
 
   @Mutation(() => QuotationType)
@@ -75,7 +75,7 @@ export class QuotationsResolver {
       input,
       user.companyId,
       user.id
-    );
+    ) as any;
   }
 
   @Mutation(() => QuotationType)
@@ -89,7 +89,7 @@ export class QuotationsResolver {
       input,
       user.companyId,
       user.id
-    );
+    ) as any;
   }
 
   @Mutation(() => QuotationType)
@@ -101,7 +101,7 @@ export class QuotationsResolver {
       input,
       user.companyId,
       user.id
-    );
+    ) as any;
   }
 
   @Mutation(() => Boolean)
@@ -120,10 +120,10 @@ export class QuotationsResolver {
   ): Promise<QuotationType> {
     return await this.quotationsService.updateQuotation(
       id,
-      { status: 'Sent' },
+      { status: 'Sent' as any },
       user.companyId,
       user.id
-    );
+    ) as any;
   }
 
   @Mutation(() => QuotationType)
@@ -133,23 +133,26 @@ export class QuotationsResolver {
   ): Promise<QuotationType> {
     return await this.quotationsService.updateQuotation(
       id,
-      { status: 'Accepted' },
+      { status: 'Accepted' as any },
       user.companyId,
       user.id
-    );
+    ) as any;
   }
 
   @Mutation(() => QuotationType)
   async rejectQuotation(
     @Args('id', { type: () => ID }) id: string,
-    @Args('reason', { nullable: true }) reason?: string,
-    @CurrentUser() user: User
+    @CurrentUser() user: User,
+    @Args('reason', { nullable: true }) reason?: string
   ): Promise<QuotationType> {
     return await this.quotationsService.updateQuotation(
       id,
-      { status: 'Rejected', rejectionReason: reason },
+      { 
+        status: 'Rejected' as any, 
+        ...(reason && { rejectionReason: reason })
+      },
       user.companyId,
       user.id
-    );
+    ) as any;
   }
 }

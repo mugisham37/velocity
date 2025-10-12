@@ -1,4 +1,4 @@
-import { User } from '@kiro/database';
+import type { User } from '@kiro/database';
 import { UseGuards } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -10,6 +10,14 @@ import {
   LeadFilterInput,
   UpdateLeadInput,
 } from '../dto/lead.dto';
+import type {
+  CreateLeadDto,
+  UpdateLeadDto,
+  CreateLeadActivityDto,
+  LeadConversionDto,
+  LeadFilterDto,
+} from '../services/leads.service';
+import type { CreateLeadScoringRuleDto } from '../services/lead-scoring.service';
 import {
   Lead,
   LeadActivity,
@@ -38,18 +46,32 @@ export class LeadsResolver {
     @Args('input') input: CreateLeadInput,
     @CurrentUser() user: User
   ): Promise<Lead> {
-    const leadData = {
-      ...input,
-      expectedCloseDate: input.expectedCloseDate
-        ? new Date(input.expectedCloseDate)
-        : undefined,
+    const leadData: CreateLeadDto = {
+      firstName: input.firstName,
+      lastName: input.lastName,
+      source: input.source,
+      ...(input.email && { email: input.email }),
+      ...(input.phone && { phone: input.phone }),
+      ...(input.company && { company: input.company }),
+      ...(input.jobTitle && { jobTitle: input.jobTitle }),
+      ...(input.industry && { industry: input.industry }),
+      ...(input.website && { website: input.website }),
+      ...(input.address && { address: input.address }),
+      ...(input.territory && { territory: input.territory }),
+      ...(input.estimatedValue && { estimatedValue: input.estimatedValue }),
+      ...(input.notes && { notes: input.notes }),
+      ...(input.customFields && { customFields: input.customFields }),
+      ...(input.expectedCloseDate && {
+        expectedCloseDate: new Date(input.expectedCloseDate),
+      }),
     };
 
-    return this.leadsService.createLead(
+    const result = await this.leadsService.createLead(
       leadData,
       user.companyId,
       user.id
-    ) as Promise<Lead>;
+    );
+    return result as any;
   }
 
   @Mutation(() => Lead)
@@ -58,22 +80,37 @@ export class LeadsResolver {
     @Args('input') input: UpdateLeadInput,
     @CurrentUser() user: User
   ): Promise<Lead> {
-    const leadData = {
-      ...input,
-      expectedCloseDate: input.expectedCloseDate
-        ? new Date(input.expectedCloseDate)
-        : undefined,
-      nextFollowUpDate: input.nextFollowUpDate
-        ? new Date(input.nextFollowUpDate)
-        : undefined,
+    const leadData: UpdateLeadDto = {
+      ...(input.firstName && { firstName: input.firstName }),
+      ...(input.lastName && { lastName: input.lastName }),
+      ...(input.email && { email: input.email }),
+      ...(input.phone && { phone: input.phone }),
+      ...(input.company && { company: input.company }),
+      ...(input.jobTitle && { jobTitle: input.jobTitle }),
+      ...(input.industry && { industry: input.industry }),
+      ...(input.website && { website: input.website }),
+      ...(input.address && { address: input.address }),
+      ...(input.source && { source: input.source }),
+      ...(input.status && { status: input.status }),
+      ...(input.territory && { territory: input.territory }),
+      ...(input.estimatedValue && { estimatedValue: input.estimatedValue }),
+      ...(input.notes && { notes: input.notes }),
+      ...(input.customFields && { customFields: input.customFields }),
+      ...(input.expectedCloseDate && {
+        expectedCloseDate: new Date(input.expectedCloseDate),
+      }),
+      ...(input.nextFollowUpDate && {
+        nextFollowUpDate: new Date(input.nextFollowUpDate),
+      }),
     };
 
-    return this.leadsService.updateLead(
+    const result = await this.leadsService.updateLead(
       id,
       leadData,
       user.companyId,
       user.id
-    ) as Promise<Lead>;
+    );
+    return result as any;
   }
 
   @Mutation(() => Boolean)
@@ -103,35 +140,44 @@ export class LeadsResolver {
     @Args('offset', { type: () => Int, defaultValue: 0 }) offset: number,
     @CurrentUser() user: User
   ): Promise<LeadsConnection> {
-    const filterData = {
-      ...filter,
-      createdAfter: filter?.createdAfter
-        ? new Date(filter.createdAfter)
-        : undefined,
-      createdBefore: filter?.createdBefore
-        ? new Date(filter.createdBefore)
-        : undefined,
-      nextFollowUpAfter: filter?.nextFollowUpAfter
-        ? new Date(filter.nextFollowUpAfter)
-        : undefined,
-      nextFollowUpBefore: filter?.nextFollowUpBefore
-        ? new Date(filter.nextFollowUpBefore)
-        : undefined,
+    const filterData: LeadFilterDto = {
+      ...(filter?.status && { status: filter.status }),
+      ...(filter?.source && { source: filter.source }),
+      ...(filter?.assignedTo && { assignedTo: filter.assignedTo }),
+      ...(filter?.territory && { territory: filter.territory }),
+      ...(filter?.industry && { industry: filter.industry }),
+      ...(filter?.minScore && { minScore: filter.minScore }),
+      ...(filter?.maxScore && { maxScore: filter.maxScore }),
+      ...(filter?.search && { search: filter.search }),
+      ...(filter?.createdAfter && {
+        createdAfter: new Date(filter.createdAfter),
+      }),
+      ...(filter?.createdBefore && {
+        createdBefore: new Date(filter.createdBefore),
+      }),
+      ...(filter?.nextFollowUpAfter && {
+        nextFollowUpAfter: new Date(filter.nextFollowUpAfter),
+      }),
+      ...(filter?.nextFollowUpBefore && {
+        nextFollowUpBefore: new Date(filter.nextFollowUpBefore),
+      }),
     };
 
-    return this.leadsService.getLeads(
+    const result = await this.leadsService.getLeads(
       filterData,
       user.companyId,
       limit,
       offset
-    ) as Promise<LeadsConnection>;
+    );
+    return result as any;
   }
 
   @Query(() => [Lead])
   async leadsRequiringFollowUp(@CurrentUser() user: User): Promise<Lead[]> {
-    return this.leadsService.getLeadsRequiringFollowUp(
+    const result = await this.leadsService.getLeadsRequiringFollowUp(
       user.companyId
-    ) as Promise<Lead[]>;
+    );
+    return result as any;
   }
 
   @Mutation(() => LeadActivity)
@@ -139,12 +185,18 @@ export class LeadsResolver {
     @Args('input') input: CreateLeadActivityInput,
     @CurrentUser() user: User
   ): Promise<LeadActivity> {
-    const activityData = {
-      ...input,
+    const activityData: CreateLeadActivityDto = {
+      leadId: input.leadId,
+      activityType: input.activityType,
+      subject: input.subject,
       activityDate: new Date(input.activityDate),
-      nextActionDate: input.nextActionDate
-        ? new Date(input.nextActionDate)
-        : undefined,
+      ...(input.description && { description: input.description }),
+      ...(input.duration && { duration: input.duration }),
+      ...(input.outcome && { outcome: input.outcome }),
+      ...(input.nextAction && { nextAction: input.nextAction }),
+      ...(input.nextActionDate && {
+        nextActionDate: new Date(input.nextActionDate),
+      }),
     };
 
     return this.leadsService.createActivity(
@@ -171,16 +223,22 @@ export class LeadsResolver {
     @Args('input') input: LeadConversionInput,
     @CurrentUser() user: User
   ): Promise<LeadConversionResult> {
-    const conversionData = {
-      ...input,
-      opportunityData: input.opportunityData
-        ? {
-            ...input.opportunityData,
-            expectedCloseDate: input.opportunityData.expectedCloseDate
-              ? new Date(input.opportunityData.expectedCloseDate)
-              : undefined,
-          }
-        : undefined,
+    const conversionData: LeadConversionDto = {
+      createCustomer: input.createCustomer,
+      createOpportunity: input.createOpportunity,
+      ...(input.customerData && { customerData: input.customerData }),
+      ...(input.opportunityData && {
+        opportunityData: {
+          name: input.opportunityData.name,
+          amount: input.opportunityData.amount,
+          ...(input.opportunityData.stage && { stage: input.opportunityData.stage }),
+          ...(input.opportunityData.probability && { probability: input.opportunityData.probability }),
+          ...(input.opportunityData.description && { description: input.opportunityData.description }),
+          ...(input.opportunityData.expectedCloseDate && {
+            expectedCloseDate: new Date(input.opportunityData.expectedCloseDate),
+          }),
+        },
+      }),
     };
 
     return this.leadsService.convertLead(
@@ -216,11 +274,11 @@ export class LeadsResolver {
     @Args('description', { nullable: true }) description?: string,
     @CurrentUser() user?: User
   ): Promise<LeadScoringRule> {
-    const ruleData = {
+    const ruleData: CreateLeadScoringRuleDto = {
       name,
-      description,
       criteria: JSON.parse(criteria),
       points,
+      ...(description && { description }),
     };
 
     return this.leadScoringService.createScoringRule(
