@@ -60,3 +60,4 @@ export interface AuditFields {
 }
 // Export module-specific types
 export * from './hr';
+export * from './projects';

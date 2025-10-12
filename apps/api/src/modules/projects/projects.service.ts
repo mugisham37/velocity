@@ -1,68 +1,65 @@
+import { DatabaseService } from '@kiro/database';
 import {
-    db,
-    projectBudgetCategories,
-    projectBudgets,
-    projectCosts,
-    projectInvoiceLineItems,
-    projectInvoices,
-    projectMilestones,
-    projectProfitability,
-    projectRevenue,
-    projectTasks,
-    projectTeamMembers,
-    projectTemplates,
-    projects,
-    taskDependencies,
-} from '@kiro/database';
+  projects,
+  projectTasks,
+  taskDependencies,
+  projectTeamMembers,
+  projectMilestones,
+  projectTemplates,
+  projectBudgets,
+  projectBudgetCategories,
+  projectCosts,
+  projectRevenue,
+  projectInvoices,
+  projectInvoiceLineItems,
+} from '@kiro/database/schema/projects';
 import {
-    BadRequestException,
-    Injectable,
-    NotFoundException,
+  BadRequestException,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
-import {
-    CreateProject,
-    CreateProjectBudget,
-    CreateProjectBudgetCategory,
-    CreateProjectCost,
-    CreateProjectInvoice,
-    CreateProjectMilestone,
-    CreateProjectRevenue,
-    CreateProjectTask,
-    CreateProjectTeamMember,
-    CreateProjectTemplate,
-    CreateTaskDependency,
-    CriticalPathAnalysis,
-    GanttData,
-    Project,
-    ProjectBudget,
-    ProjectBudgetCategory,
-    ProjectCost,
-    ProjectFinancialSummary,
-    ProjectInvoice,
-    ProjectProfitability,
-    ProjectRevenue,
-    ProjectTask,
-    UpdateProject,
-    UpdateProjectBudget,
-    UpdateProjectCost,
-    UpdateProjectMilestone,
-    UpdateProjectRevenue,
-    UpdateProjectTask
-} from '@packages/shared/types/projects';
+import type {
+  CreateProject,
+  CreateProjectBudget,
+  CreateProjectBudgetCategory,
+  CreateProjectCost,
+  CreateProjectInvoice,
+  CreateProjectMilestone,
+  CreateProjectRevenue,
+  CreateProjectTask,
+  CreateProjectTeamMember,
+  CreateProjectTemplate,
+  CreateTaskDependency,
+  CriticalPathAnalysis,
+  GanttData,
+  Project,
+  ProjectBudget,
+  ProjectBudgetCategory,
+  ProjectCost,
+  ProjectFinancialSummary,
+  ProjectInvoice,
+  ProjectProfitability,
+  ProjectRevenue,
+  ProjectTask,
+  UpdateProject,
+  UpdateProjectBudget,
+  UpdateProjectCost,
+  UpdateProjectMilestone,
+  UpdateProjectRevenue,
+  UpdateProjectTask
+} from '@kiro/shared';
 import { and, asc, desc, eq, gte, lte, sql } from '@kiro/database';
-import { report } from 'process';
-import { async } from 'rxjs';
-import { query } from 'winston';
 
 @Injectable()
 export class ProjectsService {
+  constructor(private readonly db: DatabaseService) {}
 
   // Project Management
   async createProject(
     companyId: string,
     data: CreateProject
   ): Promise<Project> {
-    const [project] = await db
+    const [project] = await this.db.db
       .insert(projects)
       .values({
         ...data,
@@ -74,7 +71,7 @@ export class ProjectsService {
 
     // If created from template, copy template structure
     if (data.templateId) {
-      await this.applyProjectTemplate(project.id, data.templateId);
+      await this.applyProjectTemplate(project!.id, data.templateId);
     }
 
     return project as Project;
@@ -85,7 +82,7 @@ export class ProjectsService {
     companyId: string,
     data: UpdateProject
   ): Promise<Project> {
-    const [project] = await db
+    const [project] = await this.db.db
       .update(projects)
       .set({
         ...data,
@@ -102,7 +99,7 @@ export class ProjectsService {
   }
 
   async getProject(id: string, companyId: string): Promise<Project> {
-    const [project] = await db
+    const [project] = await this.db.db
       .select()
       .from(projects)
       .where(and(eq(projects.id, id), eq(projects.companyId, companyId)));
@@ -115,7 +112,7 @@ export class ProjectsService {
   }
 
   async getProjects(companyId: string, filters?: any): Promise<Project[]> {
-    let query = db
+    let query = this.db.db
       .select()
       .from(projects)
       .where(eq(projects.companyId, companyId));
@@ -135,7 +132,7 @@ export class ProjectsService {
   }
 
   async deleteProject(id: string, companyId: string): Promise<void> {
-    const result = await db
+    const result = await this.db.db
       .delete(projects)
       .where(and(eq(projects.id, id), eq(projects.companyId, companyId)));
 
@@ -147,7 +144,7 @@ export class ProjectsService {
   // Work Breakdown Structure (WBS)
   async createTask(data: CreateProjectTask): Promise<ProjectTask> {
     // Validate project exists
-    const project = await db
+    const project = await this.db.db
       .select()
       .from(projects)
       .where(eq(projects.id, data.projectId))
@@ -159,15 +156,15 @@ export class ProjectsService {
 
     // Generate task code if not provided
     if (!data.taskCode) {
-      const taskCount = await db
+      const taskCount = await this.db.db
         .select({ count: sql<number>`count(*)` })
         .from(projectTasks)
         .where(eq(projectTasks.projectId, data.projectId));
 
-      data.taskCode = `TASK-${String(taskCount[0].count + 1).padStart(4, '0')}`;
+      data.taskCode = `TASK-${String(taskCount[0]!.count + 1).padStart(4, '0')}`;
     }
 
-    const [task] = await db
+    const [task] = await this.db.db
       .insert(projectTasks)
       .values({
         ...data,
@@ -181,7 +178,7 @@ export class ProjectsService {
   }
 
   async updateTask(id: string, data: UpdateProjectTask): Promise<ProjectTask> {
-    const [task] = await db
+    const [task] = await this.db.db
       .update(projectTasks)
       .set({
         ...data,
@@ -201,7 +198,7 @@ export class ProjectsService {
   }
 
   async getTask(id: string): Promise<ProjectTask> {
-    const [task] = await db
+    const [task] = await this.db.db
       .select()
       .from(projectTasks)
       .where(eq(projectTasks.id, id));
@@ -214,7 +211,7 @@ export class ProjectsService {
   }
 
   async getProjectTasks(projectId: string): Promise<ProjectTask[]> {
-    const tasks = await db
+    const tasks = await this.db.db
       .select()
       .from(projectTasks)
       .where(eq(projectTasks.projectId, projectId))
@@ -225,7 +222,7 @@ export class ProjectsService {
 
   async deleteTask(id: string): Promise<void> {
     // Check for dependencies
-    const dependencies = await db
+    const dependencies = await this.db.db
       .select()
       .from(taskDependencies)
       .where(
@@ -236,7 +233,7 @@ export class ProjectsService {
       throw new BadRequestException('Cannot delete task with dependencies');
     }
 
-    const result = await db
+    const result = await this.db.db
       .delete(projectTasks)
       .where(eq(projectTasks.id, id));
 
@@ -265,14 +262,14 @@ export class ProjectsService {
       );
     }
 
-    await db.insert(taskDependencies).values(data);
+    await this.db.db.insert(taskDependencies).values(data);
   }
 
   async deleteTaskDependency(
     predecessorId: string,
     successorId: string
   ): Promise<void> {
-    const result = await db
+    const result = await this.db.db
       .delete(taskDependencies)
       .where(
         and(
@@ -299,19 +296,19 @@ export class ProjectsService {
       start_date:
         task.startDate ||
         task.expectedStartDate ||
-        new Date().toISOString().split('T')[0],
+        new Date().toISOString().split('T')[0]!,
       end_date:
         task.endDate ||
         task.expectedEndDate ||
-        new Date().toISOString().split('T')[0],
+        new Date().toISOString().split('T')[0]!,
       duration: task.duration || 1,
       progress: task.percentComplete / 100,
       parent: task.parentTaskId || undefined,
-      type: task.isMilestone
+      type: (task.isMilestone
         ? 'milestone'
         : task.parentTaskId
           ? 'task'
-          : 'project',
+          : 'project') as 'project' | 'task' | 'milestone',
       open: true,
     }));
 
@@ -440,16 +437,16 @@ export class ProjectsService {
         duration: task.duration || 1,
         earlyStart: new Date(Date.now() + es * 24 * 60 * 60 * 1000)
           .toISOString()
-          .split('T')[0],
+          .split('T')[0]!,
         earlyFinish: new Date(Date.now() + ef * 24 * 60 * 60 * 1000)
           .toISOString()
-          .split('T')[0],
+          .split('T')[0]!,
         lateStart: new Date(Date.now() + ls * 24 * 60 * 60 * 1000)
           .toISOString()
-          .split('T')[0],
+          .split('T')[0]!,
         lateFinish: new Date(Date.now() + lf * 24 * 60 * 60 * 1000)
           .toISOString()
-          .split('T')[0],
+          .split('T')[0]!,
         totalFloat,
         isCritical: totalFloat === 0,
       };
@@ -468,14 +465,14 @@ export class ProjectsService {
     companyId: string,
     data: CreateProjectTemplate
   ): Promise<void> {
-    await db.insert(projectTemplates).values({
+    await this.db.db.insert(projectTemplates).values({
       ...data,
       companyId,
     });
   }
 
   async getProjectTemplates(companyId: string): Promise<any[]> {
-    const templates = await db
+    const templates = await this.db.db
       .select()
       .from(projectTemplates)
       .where(
@@ -490,7 +487,7 @@ export class ProjectsService {
     projectId: string,
     templateId: string
   ): Promise<void> {
-    const [template] = await db
+    const [template] = await this.db.db
       .select()
       .from(projectTemplates)
       .where(eq(projectTemplates.id, templateId));
@@ -558,11 +555,11 @@ export class ProjectsService {
 
   // Team Management
   async addTeamMember(data: CreateProjectTeamMember): Promise<void> {
-    await db.insert(projectTeamMembers).values(data);
+    await this.db.db.insert(projectTeamMembers).values(data);
   }
 
   async removeTeamMember(projectId: string, userId: string): Promise<void> {
-    const result = await db
+    const result = await this.db.db
       .delete(projectTeamMembers)
       .where(
         and(
@@ -577,7 +574,7 @@ export class ProjectsService {
   }
 
   async getTeamMembers(projectId: string): Promise<any[]> {
-    const members = await db
+    const members = await this.db.db
       .select()
       .from(projectTeamMembers)
       .where(eq(projectTeamMembers.projectId, projectId));
@@ -587,7 +584,7 @@ export class ProjectsService {
 
   // Milestones
   async createMilestone(data: CreateProjectMilestone): Promise<void> {
-    await db.insert(projectMilestones).values({
+    await this.db.db.insert(projectMilestones).values({
       ...data,
       status: 'Pending',
       isCompleted: false,
@@ -598,7 +595,7 @@ export class ProjectsService {
     id: string,
     data: UpdateProjectMilestone
   ): Promise<void> {
-    const [milestone] = await db
+    const [milestone] = await this.db.db
       .update(projectMilestones)
       .set({
         ...data,
@@ -613,7 +610,7 @@ export class ProjectsService {
   }
 
   async getProjectMilestones(projectId: string): Promise<any[]> {
-    const milestones = await db
+    const milestones = await this.db.db
       .select()
       .from(projectMilestones)
       .where(eq(projectMilestones.projectId, projectId))
@@ -624,7 +621,7 @@ export class ProjectsService {
 
   // Helper methods
   private async getTaskDependencies(projectId: string): Promise<any[]> {
-    const dependencies = await db
+    const dependencies = await this.db.db
       .select()
       .from(taskDependencies)
       .innerJoin(
@@ -652,7 +649,7 @@ export class ProjectsService {
       recursionStack.add(taskId);
 
       // Get all successors of current task
-      const successors = await db
+      const successors = await this.db.db
         .select()
         .from(taskDependencies)
         .where(eq(taskDependencies.predecessorTaskId, taskId));
@@ -668,9 +665,9 @@ export class ProjectsService {
     };
 
     // Temporarily add the new dependency and check for cycles
-    await db.insert(taskDependencies).values({
-      predecessorTaskId,
-      successorTaskId,
+    await this.db.db.insert(taskDependencies).values({
+      predecessorTaskId: predecessorId,
+      successorTaskId: successorId,
       dependencyType: 'FS',
       lagDays: 0,
     });
@@ -678,7 +675,7 @@ export class ProjectsService {
     const hasCycleResult = await hasCycle(predecessorId);
 
     // Remove the temporary dependency
-    await db
+    await this.db.db
       .delete(taskDependencies)
       .where(
         and(
@@ -691,13 +688,13 @@ export class ProjectsService {
   }
 
   private mapDependencyTypeToGantt(type: string): '0' | '1' | '2' | '3' {
-    const mapping = {
+    const mapping: Record<string, '0' | '1' | '2' | '3'> = {
       FS: '0', // Finish-to-Start
       SS: '1', // Start-to-Start
       FF: '2', // Finish-to-Finish
       SF: '3', // Start-to-Finish
     };
-    return (mapping[type] as '0' | '1' | '2' | '3') || '0';
+    return mapping[type] || '0';
   }
 
   private async updateProjectProgress(projectId: string): Promise<void> {
@@ -719,7 +716,7 @@ export class ProjectsService {
     const projectProgress =
       totalWeight > 0 ? (completedWeight / totalWeight) * 100 : 0;
 
-    await db
+    await this.db.db
       .update(projects)
       .set({
         percentComplete: Math.round(projectProgress * 100) / 100,
@@ -727,225 +724,162 @@ export class ProjectsService {
       })
       .where(eq(projects.id, projectId));
   }
-}
-  // Task Assignment and Workload Balancing
-  async assignTask(taskId: string, assigneeId: string): Promise<ProjectTask> {
-    // Check assignee workload
-    const assigneeWorkload = await this.getAssigneeWorkload(assigneeId);
 
-    if (assigneeWorkload.totalHours > 40) {
-      throw new BadRequestException('Assignee is overloaded. Consider redistributing tasks.');
-    }
+  // Financial/Accounting Methods
+  async getProjectBudgets(projectId: string, companyId: string): Promise<ProjectBudget[]> {
+    // Validate project access
+    await this.getProject(projectId, companyId);
 
-    const [task] = await db
-      .update(projectTasks)
-      .set({
-        assignedToId: assigneeId,
-        updatedAt: new Date(),
-      })
-      .where(eq(projectTasks.id, taskId))
-      .returning();
+    const budgets = await this.db.db
+      .select()
+      .from(projectBudgets)
+      .where(eq(projectBudgets.projectId, projectId))
+      .orderBy(desc(projectBudgets.createdAt));
 
-    if (!task) {
-      throw new NotFoundException('Task not found');
-    }
-
-    return task as ProjectTask;
+    return budgets as ProjectBudget[];
   }
 
-  async getAssigneeWorkload(assigneeId: string): Promise<any> {
-    const tasks = await db
+  async getBudgetCategories(budgetId: string, companyId: string): Promise<ProjectBudgetCategory[]> {
+    // Validate budget exists and user has access
+    const budget = await this.db.db
       .select()
-      .from(projectTasks)
+      .from(projectBudgets)
+      .innerJoin(projects, eq(projectBudgets.projectId, projects.id))
       .where(
         and(
-          eq(projectTasks.assignedToId, assigneeId),
-          sql`${projectTasks.status} NOT IN ('Completed', 'Cancelled')`
+          eq(projectBudgets.id, budgetId),
+          eq(projects.companyId, companyId)
         )
-      );
+      )
+      .limit(1);
 
-    const totalHours = tasks.reduce((sum, task) => sum + (task.estimatedHours || 0), 0);
-    const activeTasks = tasks.length;
-
-    return {
-      assigneeId,
-      totalHours,
-      activeTasks,
-      tasks: tasks.map(task => ({
-        id: task.id,
-        taskName: task.taskName,
-        estimatedHours: task.estimatedHours,
-        status: task.status,
-        priority: task.priority,
-      })),
-    };
-  }
-
-  async getTeamWorkloadBalance(projectId: string): Promise<any[]> {
-    const teamMembers = await this.getTeamMembers(projectId);
-
-    const workloads = await Promise.all(
-      teamMembers.map(async (member) => {
-        const workload = await this.getAssigneeWorkload(member.userId);
-        return {
-          ...member,
-          workload,
-        };
-      })
-    );
-
-    return workloads;
-  }
-
-  // Task Status Workflow Management
-  async updateTaskStatus(taskId: string, newStatus: string): Promise<ProjectTask> {
-    const task = await this.getTask(taskId);
-
-    // Validate status transition
-    const validTransitions = this.getValidStatusTransitions(task.status);
-    if (!validTransitions.includes(newStatus)) {
-      throw new BadRequestException(`Invalid status transition from ${task.status} to ${newStatus}`);
+    if (!budget.length) {
+      throw new NotFoundException('Budget not found');
     }
 
-    // Auto-update progress based on status
-    let percentComplete = task.percentComplete;
-    if (newStatus === 'Completed') {
-      percentComplete = 100;
-    } else if (newStatus === 'Working' && percentComplete === 0) {
-      percentComplete = 10; // Started
+    const categories = await this.db.db
+      .select()
+      .from(projectBudgetCategories)
+      .where(eq(projectBudgetCategories.budgetId, budgetId))
+      .orderBy(asc(projectBudgetCategories.categoryName));
+
+    return categories as ProjectBudgetCategory[];
+  }
+
+  async getProjectCosts(projectId: string, companyId: string, filter?: any): Promise<ProjectCost[]> {
+    // Validate project access
+    await this.getProject(projectId, companyId);
+
+    let query = this.db.db
+      .select()
+      .from(projectCosts)
+      .where(eq(projectCosts.projectId, projectId));
+
+    if (filter?.status) {
+      query = query.where(eq(projectCosts.status, filter.status));
     }
 
-    const [updatedTask] = await db
-      .update(projectTasks)
-      .set({
-        status: newStatus,
-        percentComplete,
-        actualStartDate: newStatus === 'Working' && !task.actualStartDate
-          ? new Date().toISOString().split('T')[0]
-          : task.actualStartDate,
-        actualEndDate: newStatus === 'Completed'
-          ? new Date().toISOString().split('T')[0]
-          : null,
-        updatedAt: new Date(),
+    if (filter?.costType) {
+      query = query.where(eq(projectCosts.costType, filter.costType));
+    }
+
+    const costs = await query.orderBy(desc(projectCosts.costDate));
+    return costs as ProjectCost[];
+  }
+
+  async getProjectRevenue(projectId: string, companyId: string): Promise<ProjectRevenue[]> {
+    // Validate project access
+    await this.getProject(projectId, companyId);
+
+    const revenue = await this.db.db
+      .select()
+      .from(projectRevenue)
+      .where(eq(projectRevenue.projectId, projectId))
+      .orderBy(desc(projectRevenue.revenueDate));
+
+    return revenue as ProjectRevenue[];
+  }
+
+  async getProjectInvoices(projectId: string, companyId: string): Promise<ProjectInvoice[]> {
+    // Validate project access
+    await this.getProject(projectId, companyId);
+
+    const invoices = await this.db.db
+      .select()
+      .from(projectInvoices)
+      .where(eq(projectInvoices.projectId, projectId))
+      .orderBy(desc(projectInvoices.invoiceDate));
+
+    return invoices as ProjectInvoice[];
+  }
+
+  async calculateProjectProfitability(projectId: string, companyId: string): Promise<ProjectProfitability> {
+    // Validate project access
+    const project = await this.getProject(projectId, companyId);
+
+    // Get total revenue
+    const revenueData = await this.db.db
+      .select({
+        totalRevenue: sql<number>`COALESCE(SUM(${projectRevenue.amount}), 0)`,
       })
-      .where(eq(projectTasks.id, taskId))
-      .returning();
+      .from(projectRevenue)
+      .where(eq(projectRevenue.projectId, projectId));
 
-    // Update project progress
-    await this.updateProjectProgress(task.projectId);
+    // Get total costs
+    const costData = await this.db.db
+      .select({
+        totalCosts: sql<number>`COALESCE(SUM(${projectCosts.totalCost}), 0)`,
+      })
+      .from(projectCosts)
+      .where(eq(projectCosts.projectId, projectId));
 
-    return updatedTask as ProjectTask;
-  }
-
-  private getValidStatusTransitions(currentStatus: string): string[] {
-    const transitions = {
-      'Open': ['Working', 'Cancelled'],
-      'Working': ['Pending Review', 'Completed', 'Open', 'Cancelled'],
-      'Pending Review': ['Completed', 'Working', 'Cancelled'],
-      'Overdue': ['Working', 'Completed', 'Cancelled'],
-      'Completed': ['Working'], // Allow reopening
-      'Cancelled': ['Open'],
-    };
-
-    return transitions[currentStatus] || [];
-  }
-
-  // Task Reporting and Analytics
-  async getTaskAnalytics(projectId: string): Promise<any> {
-    const tasks = await this.getProjectTasks(projectId);
-
-    const analytics = {
-      totalTasks: tasks.length,
-      completedTasks: tasks.filter(t => t.status === 'Completed').length,
-      inProgressTasks: tasks.filter(t => t.status === 'Working').length,
-      overdueTasks: tasks.filter(t => {
-        const dueDate = t.endDate || t.expectedEndDate;
-        return dueDate && new Date(dueDate) < new Date() && t.status !== 'Completed';
-      }).length,
-
-      // Progress metrics
-      averageProgress: tasks.length > 0
-        ? tasks.reduce((sum, t) => sum + t.percentComplete, 0) / tasks.length
-        : 0,
-
-      // Time metrics
-      totalEstimatedHours: tasks.reduce((sum, t) => sum + (t.estimatedHours || 0), 0),
-      totalActualHours: tasks.reduce((sum, t) => sum + t.actualHours, 0),
-
-      // Priority distribution
-      priorityDistribution: {
-        Low: tasks.filter(t => t.priority === 'Low').length,
-        Medium: tasks.filter(t => t.priority === 'Medium').length,
-        High: tasks.filter(t => t.priority === 'High').length,
-        Urgent: tasks.filter(t => t.priority === 'Urgent').length,
-      },
-
-      // Status distribution
-      statusDistribution: {
-        Open: tasks.filter(t => t.status === 'Open').length,
-        Working: tasks.filter(t => t.status === 'Working').length,
-        'Pending Review': tasks.filter(t => t.status === 'Pending Review').length,
-        Completed: tasks.filter(t => t.status === 'Completed').length,
-        Cancelled: tasks.filter(t => t.status === 'Cancelled').length,
-      },
-    };
-
-    return analytics;
-  }
-
-  async getTaskProgressReport(projectId: string): Promise<any> {
-    const tasks = await this.getProjectTasks(projectId);
-
-    const report = tasks.map(task => {
-      const dueDate = task.endDate || task.expectedEndDate;
-      const isOverdue = dueDate && new Date(dueDate) < new Date() && task.status !== 'Completed';
-      const daysUntilDue = dueDate
-        ? Math.ceil((new Date(dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-        : null;
-
-      return {
-        id: task.id,
-        taskCode: task.taskCode,
-        taskName: task.taskName,
-        assignedTo: task.assignedToId,
-        status: task.status,
-        priority: task.priority,
-        percentComplete: task.percentComplete,
-        estimatedHours: task.estimatedHours,
-        actualHours: task.actualHours,
-        dueDate,
-        isOverdue,
-        daysUntilDue,
-        efficiency: task.estimatedHours && task.actualHours
-          ? (task.estimatedHours / task.actualHours) * 100
-          : null,
-      };
-    });
+    const totalRevenue = revenueData[0]?.totalRevenue || 0;
+    const totalCosts = costData[0]?.totalCosts || 0;
+    const grossProfit = totalRevenue - totalCosts;
+    const profitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
     return {
-      tasks: report,
-      summary: {
-        onTrack: report.filter(t => !t.isOverdue && t.status !== 'Completed').length,
-        overdue: report.filter(t => t.isOverdue).length,
-        completed: report.filter(t => t.status === 'Completed').length,
-        averageEfficiency: report
-          .filter(t => t.efficiency !== null)
-          .reduce((sum, t, _, arr) => sum + (t.efficiency || 0) / arr.length, 0),
-      },
-    };
+      projectId,
+      projectName: project.projectName,
+      totalRevenue,
+      totalCosts,
+      grossProfit,
+      profitMargin,
+      calculatedAt: new Date().toISOString(),
+    } as ProjectProfitability;
   }
-  // Project Accounting Methods
 
-  // Budget Management
-  async createProjectBudget(
-    companyId: string,
-    userId: string,
-    data: CreateProjectBudget
-  ): Promise<ProjectBudget> {
+  async getProjectFinancialSummary(projectId: string, companyId: string): Promise<ProjectFinancialSummary> {
+    const profitability = await this.calculateProjectProfitability(projectId, companyId);
+    
+    // Get budget information
+    const budgets = await this.getProjectBudgets(projectId, companyId);
+    const totalBudget = budgets.reduce((sum, budget) => sum + (budget.totalAmount || 0), 0);
+    
+    // Get invoice information
+    const invoices = await this.getProjectInvoices(projectId, companyId);
+    const totalInvoiced = invoices.reduce((sum, invoice) => sum + (invoice.totalAmount || 0), 0);
+    const totalPaid = invoices.reduce((sum, invoice) => sum + (invoice.paidAmount || 0), 0);
+
+    return {
+      projectId,
+      totalBudget,
+      totalRevenue: profitability.totalRevenue,
+      totalCosts: profitability.totalCosts,
+      totalInvoiced,
+      totalPaid,
+      grossProfit: profitability.grossProfit,
+      profitMargin: profitability.profitMargin,
+      budgetVariance: totalBudget - profitability.totalCosts,
+      outstandingAmount: totalInvoiced - totalPaid,
+    } as ProjectFinancialSummary;
+  }
+
+  async createProjectBudget(companyId: string, userId: string, data: CreateProjectBudget): Promise<ProjectBudget> {
     // Validate project exists and user has access
-    const project = await this.getProject(data.projectId, companyId);
+    await this.getProject(data.projectId, companyId);
 
-    const [budget] = await db
+    const [budget] = await this.db.db
       .insert(projectBudgets)
       .values({
         ...data,
@@ -956,12 +890,8 @@ export class ProjectsService {
     return budget as ProjectBudget;
   }
 
-  async updateProjectBudget(
-    id: string,
-    companyId: string,
-    data: UpdateProjectBudget
-  ): Promise<ProjectBudget> {
-    const [budget] = await db
+  async updateProjectBudget(id: string, companyId: string, data: UpdateProjectBudget): Promise<ProjectBudget> {
+    const [budget] = await this.db.db
       .update(projectBudgets)
       .set({
         ...data,
@@ -984,24 +914,8 @@ export class ProjectsService {
     return budget as ProjectBudget;
   }
 
-  async getProjectBudgets(projectId: string, companyId: string): Promise<ProjectBudget[]> {
-    // Validate project access
-    await this.getProject(projectId, companyId);
-
-    const budgets = await db
-      .select()
-      .from(projectBudgets)
-      .where(eq(projectBudgets.projectId, projectId))
-      .orderBy(desc(projectBudgets.create
-  return budgets as ProjectBudget[];
-  }
-
-  async approveProjectBudget(
-    budgetId: string,
-    approverId: string,
-    companyId: string
-  ): Promise<ProjectBudget> {
-    const [budget] = await db
+  async approveProjectBudget(budgetId: string, approverId: string, companyId: string): Promise<ProjectBudget> {
+    const [budget] = await this.db.db
       .update(projectBudgets)
       .set({
         status: 'Approved',
@@ -1026,13 +940,9 @@ export class ProjectsService {
     return budget as ProjectBudget;
   }
 
-  // Budget Categories
-  async createBudgetCategory(
-    data: CreateProjectBudgetCategory,
-    companyId: string
-  ): Promise<ProjectBudgetCategory> {
+  async createBudgetCategory(data: CreateProjectBudgetCategory, companyId: string): Promise<ProjectBudgetCategory> {
     // Validate budget exists and user has access
-    const budget = await db
+    const budget = await this.db.db
       .select()
       .from(projectBudgets)
       .innerJoin(projects, eq(projectBudgets.projectId, projects.id))
@@ -1045,10 +955,10 @@ export class ProjectsService {
       .limit(1);
 
     if (!budget.length) {
-      throw new NotFoundException('Project budget not found');
+      throw new NotFoundException('Budget not found');
     }
 
-    const [category] = await db
+    const [category] = await this.db.db
       .insert(projectBudgetCategories)
       .values(data)
       .returning();
@@ -1056,44 +966,14 @@ export class ProjectsService {
     return category as ProjectBudgetCategory;
   }
 
-  async getBudgetCategories(budgetId: string, companyId: string): Promise<ProjectBudgetCategory[]> {
-    const categories = await db
-      .select()
-      .from(projectBudgetCategories)
-      .innerJoin(projectBudgets, eq(projectBudgetCategories.budgetId, projectBudgets.id))
-      .innerJoin(projects, eq(projectBudgets.projectId, projects.id))
-      .where(
-        and(
-          eq(projectBudgetCategories.budgetId, budgetId),
-          eq(projects.companyId, companyId),
-          eq(projectBudgetCategories.isActive, true)
-        )
-      )
-      .orderBy(asc(projectBudgetCategories.categoryName));
-
-    return categories.map(c => c.project_budget_categories) as ProjectBudgetCategory[];
-  }
-
-  // Cost Management
-  async createProjectCost(
-    data: CreateProjectCost,
-    userId: string,
-    companyId: string
-  ): Promise<ProjectCost> {
+  async createProjectCost(data: CreateProjectCost, userId: string, companyId: string): Promise<ProjectCost> {
     // Validate project access
     await this.getProject(data.projectId, companyId);
 
-    // Calculate billable amount if billing rate is provided
-    let billableAmount = data.billableAmount;
-    if (data.isBillable && data.billingRate && !billableAmount) {
-      billableAmount = data.quantity * data.billingRate;
-    }
-
-    const [cost] = await db
+    const [cost] = await this.db.db
       .insert(projectCosts)
       .values({
         ...data,
-        billableAmount,
         createdBy: userId,
       })
       .returning();
@@ -1101,12 +981,8 @@ export class ProjectsService {
     return cost as ProjectCost;
   }
 
-  async updateProjectCost(
-    id: string,
-    data: UpdateProjectCost,
-    companyId: string
-  ): Promise<ProjectCost> {
-    const [cost] = await db
+  async updateProjectCost(id: string, data: UpdateProjectCost, companyId: string): Promise<ProjectCost> {
+    const [cost] = await this.db.db
       .update(projectCosts)
       .set({
         ...data,
@@ -1129,51 +1005,8 @@ export class ProjectsService {
     return cost as ProjectCost;
   }
 
-  async getProjectCosts(
-    projectId: string,
-    companyId: string,
-    filters?: {
-      costType?: string;
-      status?: string;
-      startDate?: string;
-      endDate?: string;
-    }
-  ): Promise<ProjectCost[]> {
-    // Validate project access
-    await this.getProject(projectId, companyId);
-
-    let query = db
-      .select()
-      .from(projectCosts)
-      .where(eq(projectCosts.projectId, projectId));
-
-    if (filters?.costType) {
-      query = query.where(eq(projectCosts.costType, filters.costType));
-    }
-
-    if (filters?.status) {
-      query = query.where(eq(projectCosts.status, filters.status));
-    }
-
-    if (filters?.startDate && filters?.endDate) {
-      query = query.where(
-        and(
-          gte(projectCosts.costDate, filters.startDate),
-          lte(projectCosts.costDate, filters.endDate)
-        )
-      );
-    }
-
-    const costs = await query.orderBy(desc(projectCosts.costDate));
-    return costs as ProjectCost[];
-  }
-
-  async approveProjectCost(
-    costId: string,
-    approverId: string,
-    companyId: string
-  ): Promise<ProjectCost> {
-    const [cost] = await db
+  async approveProjectCost(costId: string, approverId: string, companyId: string): Promise<ProjectCost> {
+    const [cost] = await this.db.db
       .update(projectCosts)
       .set({
         status: 'Approved',
@@ -1198,16 +1031,11 @@ export class ProjectsService {
     return cost as ProjectCost;
   }
 
-  // Revenue Management
-  async createProjectRevenue(
-    data: CreateProjectRevenue,
-    userId: string,
-    companyId: string
-  ): Promise<ProjectRevenue> {
+  async createProjectRevenue(data: CreateProjectRevenue, userId: string, companyId: string): Promise<ProjectRevenue> {
     // Validate project access
     await this.getProject(data.projectId, companyId);
 
-    const [revenue] = await db
+    const [revenue] = await this.db.db
       .insert(projectRevenue)
       .values({
         ...data,
@@ -1218,12 +1046,8 @@ export class ProjectsService {
     return revenue as ProjectRevenue;
   }
 
-  async updateProjectRevenue(
-    id: string,
-    data: UpdateProjectRevenue,
-    companyId: string
-  ): Promise<ProjectRevenue> {
-    const [revenue] = await db
+  async updateProjectRevenue(id: string, data: UpdateProjectRevenue, companyId: string): Promise<ProjectRevenue> {
+    const [revenue] = await this.db.db
       .update(projectRevenue)
       .set({
         ...data,
@@ -1246,103 +1070,40 @@ export class ProjectsService {
     return revenue as ProjectRevenue;
   }
 
-  async getProjectRevenue(projectId: string, companyId: string): Promise<ProjectRevenue[]> {
-    // Validate project access
-    await this.getProject(projectId, companyId);
-
-    const revenues = await db
-      .select()
-      .from(projectRevenue)
-      .where(eq(projectRevenue.projectId, projectId))
-      .orderBy(desc(projectRevenue.revenueDate));
-
-    return revenues as ProjectRevenue[];
-  }
-
-  // Invoice Management
-  async createProjectInvoice(
-    data: CreateProjectInvoice,
-    userId: string,
-    companyId: string
-  ): Promise<ProjectInvoice> {
+  async createProjectInvoice(data: CreateProjectInvoice, userId: string, companyId: string): Promise<ProjectInvoice> {
     // Validate project access
     await this.getProject(data.projectId, companyId);
 
-    // Calculate totals from line items
-    const subtotal = data.lineItems.reduce(
-      (sum, item) => sum + (item.quantity * item.unitPrice),
-      0
-    );
-    const taxAmount = data.lineItems.reduce(
-      (sum, item) => sum + (item.quantity * item.unitPrice * item.taxRate),
-      0
-    );
-    const totalAmount = subtotal + taxAmount;
-
-    const [invoice] = await db
+    const [invoice] = await this.db.db
       .insert(projectInvoices)
       .values({
         ...data,
-        subtotal,
-        taxAmount,
-        totalAmount,
         createdBy: userId,
       })
       .returning();
 
-    // Create line items
-    if (data.lineItems.length > 0) {
+    // Create line items if provided
+    if (data.lineItems && data.lineItems.length > 0) {
       const lineItemsData = data.lineItems.map(item => ({
         ...item,
-        invoiceId: invoice.id,
-        lineTotal: item.quantity * item.unitPrice,
-        taxAmount: item.quantity * item.unitPrice * item.taxRate,
+        invoiceId: invoice!.id,
       }));
 
-      await db
-        .insert(projectInvoiceLineItems)
-        .values(lineItemsData);
+      await this.db.db.insert(projectInvoiceLineItems).values(lineItemsData);
     }
 
     return invoice as ProjectInvoice;
   }
 
-  async getProjectInvoices(projectId: string, companyId: string): Promise<ProjectInvoice[]> {
-    // Validate project access
-    await this.getProject(projectId, companyId);
-
-    const invoices = await db
-      .select()
-      .from(projectInvoices)
-      .where(eq(projectInvoices.projectId, projectId))
-      .orderBy(desc(projectInvoices.invoiceDate));
-
-    return invoices as ProjectInvoice[];
-  }
-
-  async updateInvoiceStatus(
-    invoiceId: string,
-    status: string,
-    companyId: string,
-    paidAmount?: number
-  ): Promise<ProjectInvoice> {
-    const updateData: any = {
-      status,
-      updatedAt: new Date(),
-    };
-
-    if (status === 'Sent' && !updateData.sentAt) {
-      updateData.sentAt = new Date();
-    }
-
-    if (status === 'Paid' && paidAmount !== undefined) {
-      updateData.paidAmount = paidAmount;
-      updateData.paidAt = new Date();
-    }
-
-    const [invoice] = await db
+  async updateInvoiceStatus(invoiceId: string, status: string, companyId: string, paidAmount?: number): Promise<ProjectInvoice> {
+    const [invoice] = await this.db.db
       .update(projectInvoices)
-      .set(updateData)
+      .set({
+        status,
+        paidAmount: paidAmount !== undefined ? paidAmount : sql`${projectInvoices.paidAmount}`,
+        paidDate: status === 'Paid' ? new Date().toISOString().split('T')[0] : sql`${projectInvoices.paidDate}`,
+        updatedAt: new Date(),
+      })
       .where(
         and(
           eq(projectInvoices.id, invoiceId),
@@ -1360,157 +1121,6 @@ export class ProjectsService {
     return invoice as ProjectInvoice;
   }
 
-  // Profitability Analysis
-  async calculateProjectProfitability(
-    projectId: string,
-    companyId: string
-  ): Promise<ProjectProfitability> {
-    // Validate project access
-    await this.getProject(projectId, companyId);
-
-    // Get all costs for the project
-    const costs = await this.getProjectCosts(projectId, companyId, {
-      status: 'Approved'
-    });
-
-    // Get all revenue for the project
-    const revenues = await this.getProjectRevenue(projectId, companyId);
-
-    // Calculate totals
-    const totalCosts = costs.reduce((sum, cost) => sum + cost.totalCost, 0);
-    const totalRevenue = revenues.reduce((sum, rev) => sum + rev.recognizedAmount, 0);
-    const grossProfit = totalRevenue - totalCosts;
-    const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
-
-    // Calculate costs by category
-    const laborCosts = costs
-      .filter(c => c.costType === 'Labor')
-      .reduce((sum, c) => sum + c.totalCost, 0);
-    const materialCosts = costs
-      .filter(c => c.costType === 'Material')
-      .reduce((sum, c) => sum + c.totalCost, 0);
-    const overheadCosts = costs
-      .filter(c => c.costType === 'Overhead')
-      .reduce((sum, c) => sum + c.totalCost, 0);
-
-    // Get budget for variance calculation
-    const budgets = await this.getProjectBudgets(projectId, companyId);
-    const approvedBudget = budgets.find(b => b.status === 'Approved');
-    const budgetVariance = approvedBudget
-      ? totalCosts - approvedBudget.totalBudget
-      : 0;
-
-    // Calculate earned value metrics (simplified)
-    const project = await this.getProject(projectId, companyId);
-    const plannedValue = approvedBudget ? approvedBudget.totalBudget : totalCosts;
-    const earnedValue = plannedValue * (project.percentComplete / 100);
-    const actualCost = totalCosts;
-
-    const costPerformanceIndex = earnedValue > 0 ? earnedValue / actualCost : 1;
-    const schedulePerformanceIndex = plannedValue > 0 ? earnedValue / plannedValue : 1;
-
-    const estimateAtCompletion = costPerformanceIndex > 0
-      ? plannedValue / costPerformanceIndex
-      : actualCost;
-    const estimateToComplete = estimateAtCompletion - actualCost;
-
-    const profitabilityData = {
-      projectId,
-      analysisDate: new Date().toISOString().split('T')[0],
-      totalRevenue,
-      totalCosts,
-      grossProfit,
-      grossMargin,
-      laborCosts,
-      materialCosts,
-      overheadCosts,
-      budgetVariance,
-      scheduleVariance: project.percentComplete - 100, // Simplified
-      earnedValue,
-      actualCost,
-      plannedValue,
-      costPerformanceIndex,
-      schedulePerformanceIndex,
-      estimateAtCompletion,
-      estimateToComplete,
-    };
-
-    // Save the analysis
-    const [profitability] = await db
-      .insert(projectProfitability)
-      .values(profitabilityData)
-      .returning();
-
-    return profitability as ProjectProfitability;
-  }
-
-  async getProjectFinancialSummary(
-    projectId: string,
-    companyId: string
-  ): Promise<ProjectFinancialSummary> {
-    const project = await this.getProject(projectId, companyId);
-    const costs = await this.getProjectCosts(projectId, companyId);
-    const revenues = await this.getProjectRevenue(projectId, companyId);
-    const invoices = await this.getProjectInvoices(projectId, companyId);
-    const budgets = await this.getProjectBudgets(projectId, companyId);
-
-    const totalBudget = budgets
-      .filter(b => b.status === 'Approved')
-      .reduce((sum, b) => sum + b.totalBudget, 0);
-
-    const totalCosts = costs.reduce((sum, c) => sum + c.totalCost, 0);
-    const totalRevenue = revenues.reduce((sum, r) => sum + r.recognizedAmount, 0);
-    const grossProfit = totalRevenue - totalCosts;
-    const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
-    const budgetVariance = totalBudget - totalCosts;
-
-    const costsByCategory = {
-      labor: costs.filter(c => c.costType === 'Labor').reduce((sum, c) => sum + c.totalCost, 0),
-      material: costs.filter(c => c.costType === 'Material').reduce((sum, c) => sum + c.totalCost, 0),
-      overhead: costs.filter(c => c.costType === 'Overhead').reduce((sum, c) => sum + c.totalCost, 0),
-      travel: costs.filter(c => c.costType === 'Travel').reduce((sum, c) => sum + c.totalCost, 0),
-      other: costs.filter(c => c.costType === 'Other').reduce((sum, c) => sum + c.totalCost, 0),
-    };
-
-    const totalInvoiced = invoices.reduce((sum, i) => sum + i.totalAmount, 0);
-    const totalPaid = invoices.reduce((sum, i) => sum + i.paidAmount, 0);
-    const outstanding = totalInvoiced - totalPaid;
-    const overdue = invoices
-      .filter(i => i.status === 'Overdue')
-      .reduce((sum, i) => sum + (i.totalAmount - i.paidAmount), 0);
-
-    // Calculate earned value metrics
-    const plannedValue = totalBudget || totalCosts;
-    const earnedValue = plannedValue * (project.percentComplete / 100);
-    const costPerformanceIndex = earnedValue > 0 ? earnedValue / totalCosts : 1;
-    const estimateAtCompletion = costPerformanceIndex > 0 ? plannedValue / costPerformanceIndex : totalCosts;
-
-    return {
-      projectId,
-      projectName: project.projectName,
-      totalBudget,
-      totalCosts,
-      totalRevenue,
-      grossProfit,
-      grossMargin,
-      budgetVariance,
-      costsByCategory,
-      invoicesSummary: {
-        totalInvoiced,
-        totalPaid,
-        outstanding,
-        overdue,
-      },
-      profitabilityMetrics: {
-        costPerformanceIndex,
-        schedulePerformanceIndex: plannedValue > 0 ? earnedValue / plannedValue : 1,
-        earnedValue,
-        estimateAtCompletion,
-      },
-    };
-  }
-
-  // Time and Material Billing
   async generateTimeAndMaterialInvoice(
     projectId: string,
     billingPeriodStart: string,
@@ -1518,41 +1128,51 @@ export class ProjectsService {
     userId: string,
     companyId: string
   ): Promise<ProjectInvoice> {
-    // Get approved costs for the billing period
-    const costs = await this.getProjectCosts(projectId, companyId, {
-      status: 'Approved',
-      startDate: billingPeriodStart,
-      endDate: billingPeriodEnd,
-    });
+    // Validate project access
+    await this.getProject(projectId, companyId);
 
-    const billableCosts = costs.filter(c => c.isBillable && !c.invoiceId);
+    // Get billable costs for the period
+    const billableCosts = await this.db.db
+      .select()
+      .from(projectCosts)
+      .where(
+        and(
+          eq(projectCosts.projectId, projectId),
+          eq(projectCosts.isBillable, true),
+          gte(projectCosts.costDate, billingPeriodStart),
+          lte(projectCosts.costDate, billingPeriodEnd),
+          sql`${projectCosts.invoiceId} IS NULL`
+        )
+      );
 
     if (billableCosts.length === 0) {
       throw new BadRequestException('No billable costs found for the specified period');
     }
 
     // Generate invoice number
-    const invoiceCount = await db
+    const invoiceCount = await this.db.db
       .select({ count: sql<number>`count(*)` })
       .from(projectInvoices)
       .where(eq(projectInvoices.projectId, projectId));
 
-    const invoiceNumber = `INV-${projectId.slice(-6)}-${String(invoiceCount[0].count + 1).padStart(4, '0')}`;
+    const invoiceNumber = `INV-${projectId.slice(-6)}-${String(invoiceCount[0]!.count + 1).padStart(4, '0')}`;
 
     // Create line items from costs
     const lineItems = billableCosts.map(cost => ({
+      taskId: cost.taskId,
       costId: cost.id,
       description: cost.description,
       quantity: cost.quantity,
       unitPrice: cost.billingRate || cost.unitCost,
-      taxRate: 0, // Default tax rate, can be configured
+      taxRate: 0, // Default tax rate
     }));
 
+    // Create invoice
     const invoiceData: CreateProjectInvoice = {
       projectId,
       invoiceNumber,
-      invoiceDate: new Date().toISOString().split('T')[0],
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+      invoiceDate: new Date().toISOString().split('T')[0]!,
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!, // 30 days from now
       billingPeriodStart,
       billingPeriodEnd,
       lineItems,
@@ -1560,12 +1180,12 @@ export class ProjectsService {
 
     const invoice = await this.createProjectInvoice(invoiceData, userId, companyId);
 
-    // Update costs to mark them as invoiced
-    await db
+    // Update costs to reference this invoice
+    await this.db.db
       .update(projectCosts)
       .set({
-        status: 'Invoiced',
         invoiceId: invoice.id,
+        status: 'Invoiced',
         updatedAt: new Date(),
       })
       .where(

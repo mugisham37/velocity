@@ -1,19 +1,28 @@
-import { db } from '@kiro/database';
 import {
-  CapacityPlan,
-  CapacityPlanResult,
-  MRPResult,
-  MRPRun,
-  NewCapacityPlan,
-  NewCapacityPlanResult,
-  NewMRPResult,
-  NewMRPRun,
-  NewProductionForecast,
-  NewProductionPlan,
-  NewProductionPlanItem,
-  ProductionForecast,
-  ProductionPlan,
-  ProductionPlanItem,
+  db,
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  like,
+  lte,
+  or,
+  sql,
+  type CapacityPlan,
+  type CapacityPlanResult,
+  type MRPResult,
+  type MRPRun,
+  type NewCapacityPlan,
+  type NewCapacityPlanResult,
+  type NewMRPResult,
+  type NewMRPRun,
+  type NewProductionForecast,
+  type NewProductionPlan,
+  type NewProductionPlanItem,
+  type ProductionForecast,
+  type ProductionPlan,
+  type ProductionPlanItem,
   bomItems,
   capacityPlanResults,
   capacityPlans,
@@ -23,14 +32,14 @@ import {
   productionPlanItems,
   productionPlans,
   workstations,
-} from '@kiro/database/schema';
+} from '@kiro/database';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, gte, like, lte, or, sql } from '@kiro/database';
+
 import {
   ActionRequired,
   CapacityPlanFilterDto,
@@ -92,7 +101,7 @@ export class ProductionPlanningService {
         companyId: createDto.companyId,
         fromDate: new Date(createDto.fromDate),
         toDate: new Date(createDto.toDate),
-        description: createDto.description,
+        description: createDto.description || null,
         getItemsFromOpenSalesOrders:
           createDto.getItemsFromOpenSalesOrders || false,
         downloadMaterialsRequired: createDto.downloadMaterialsRequired || false,
@@ -108,6 +117,10 @@ export class ProductionPlanningService {
         .values(planData)
         .returning();
 
+      if (!newPlan) {
+        throw new Error('Failed to create production plan');
+      }
+
       // Create production plan items if provided
       if (createDto.items && createDto.items.length > 0) {
         const itemsData: NewProductionPlanItem[] = createDto.items.map(
@@ -116,20 +129,20 @@ export class ProductionPlanningService {
             itemId: item.itemId,
             itemCode: item.itemCode,
             itemName: item.itemName,
-            bomId: item.bomId,
-            bomNo: item.bomNo,
-            plannedQty: item.plannedQty,
+            bomId: item.bomId || null,
+            bomNo: item.bomNo || null,
+            plannedQty: item.plannedQty.toString(),
             uom: item.uom,
-            warehouseId: item.warehouseId,
+            warehouseId: item.warehouseId || null,
             plannedStartDate: item.plannedStartDate
               ? new Date(item.plannedStartDate)
               : null,
             plannedEndDate: item.plannedEndDate
               ? new Date(item.plannedEndDate)
               : null,
-            description: item.description,
-            salesOrderId: item.salesOrderId,
-            salesOrderItem: item.salesOrderItem,
+            description: item.description || null,
+            salesOrderId: item.salesOrderId || null,
+            salesOrderItem: item.salesOrderItem || null,
             idx: index,
           })
         );
@@ -144,9 +157,9 @@ export class ProductionPlanningService {
   async updateProductionPlan(
     id: string,
     updateDto: UpdateProductionPlanDto,
-    userId: string
+    _userId: string
   ): Promise<ProductionPlan> {
-    const existingPlan = await this.findProductionPlanById(id);
+    await this.findProductionPlanById(id);
 
     // Validate date range if both dates are provided
     if (updateDto.fromDate && updateDto.toDate) {
@@ -210,26 +223,30 @@ export class ProductionPlanningService {
               itemId: item.itemId,
               itemCode: item.itemCode,
               itemName: item.itemName,
-              bomId: item.bomId,
-              bomNo: item.bomNo,
-              plannedQty: item.plannedQty,
+              bomId: item.bomId || null,
+              bomNo: item.bomNo || null,
+              plannedQty: item.plannedQty.toString(),
               uom: item.uom,
-              warehouseId: item.warehouseId,
+              warehouseId: item.warehouseId || null,
               plannedStartDate: item.plannedStartDate
                 ? new Date(item.plannedStartDate)
                 : null,
               plannedEndDate: item.plannedEndDate
                 ? new Date(item.plannedEndDate)
                 : null,
-              description: item.description,
-              salesOrderId: item.salesOrderId,
-              salesOrderItem: item.salesOrderItem,
+              description: item.description || null,
+              salesOrderId: item.salesOrderId || null,
+              salesOrderItem: item.salesOrderItem || null,
               idx: index,
             })
           );
 
           await tx.insert(productionPlanItems).values(itemsData);
         }
+      }
+
+      if (!updatedPlan) {
+        throw new Error('Failed to update production plan');
       }
 
       return updatedPlan;
@@ -287,7 +304,7 @@ export class ProductionPlanningService {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
     }
 
     return await query.orderBy(desc(productionPlans.createdAt));
@@ -330,6 +347,19 @@ export class ProductionPlanningService {
     const summary = summaryQuery[0];
     const items = itemsQuery[0];
 
+    if (!summary || !items) {
+      return {
+        totalPlans: 0,
+        draftPlans: 0,
+        submittedPlans: 0,
+        completedPlans: 0,
+        totalItems: 0,
+        totalPlannedQuantity: 0,
+        totalProducedQuantity: 0,
+        completionPercentage: 0,
+      };
+    }
+
     const completionPercentage =
       items.totalPlannedQuantity > 0
         ? (items.totalProducedQuantity / items.totalPlannedQuantity) * 100
@@ -367,14 +397,19 @@ export class ProductionPlanningService {
       ignoreExistingOrderedQty: createDto.ignoreExistingOrderedQty || false,
       considerMinOrderQty: createDto.considerMinOrderQty || false,
       considerSafetyStock: createDto.considerSafetyStock ?? true,
-      warehouseId: createDto.warehouseId,
-      itemGroupId: createDto.itemGroupId,
-      buyerId: createDto.buyerId,
-      projectId: createDto.projectId,
+      warehouseId: createDto.warehouseId || null,
+      itemGroupId: createDto.itemGroupId || null,
+      buyerId: createDto.buyerId || null,
+      projectId: createDto.projectId || null,
       createdBy: userId,
     };
 
     const [newRun] = await db.insert(mrpRuns).values(runData).returning();
+
+    if (!newRun) {
+      throw new Error('Failed to create MRP run');
+    }
+
     return newRun;
   }
 
@@ -414,12 +449,14 @@ export class ProductionPlanningService {
           .where(eq(mrpRuns.id, runId));
       } catch (error) {
         // Update run status to Failed
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         await tx
           .update(mrpRuns)
           .set({
             status: MRPRunStatus.FAILED,
             runEndTime: new Date(),
-            errorLog: error.message,
+            errorLog: errorMessage,
           })
           .where(eq(mrpRuns.id, runId));
 
@@ -499,14 +536,14 @@ export class ProductionPlanningService {
           itemName: bomItem.itemName,
           warehouseId: run.warehouseId,
           requiredDate: planItem.plannedStartDate,
-          grossRequirement,
-          scheduledReceipts,
-          projectedAvailableBalance,
-          netRequirement,
-          plannedOrderQuantity: netRequirement,
+          grossRequirement: grossRequirement.toString(),
+          scheduledReceipts: scheduledReceipts.toString(),
+          projectedAvailableBalance: projectedAvailableBalance.toString(),
+          netRequirement: netRequirement.toString(),
+          plannedOrderQuantity: netRequirement.toString(),
           uom: bomItem.uom,
           leadTimeDays: 0, // Would come from item master
-          safetyStock,
+          safetyStock: safetyStock.toString(),
           actionRequired,
           sourceDocument: 'Production Plan',
           sourceDocumentId: planItem.productionPlanId,
@@ -561,7 +598,7 @@ export class ProductionPlanningService {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
     }
 
     return await query.orderBy(desc(mrpRuns.createdAt));
@@ -577,25 +614,38 @@ export class ProductionPlanningService {
     }
 
     if (filter.warehouseId) {
-      conditions.push(eq(mrpResults.warehouseId, filter.warehouseId));
+      const warehouseCondition = eq(mrpResults.warehouseId, filter.warehouseId);
+      if (warehouseCondition) {
+        conditions.push(warehouseCondition);
+      }
     }
 
     if (filter.actionRequired) {
-      conditions.push(eq(mrpResults.actionRequired, filter.actionRequired));
+      const actionCondition = eq(mrpResults.actionRequired, filter.actionRequired);
+      if (actionCondition) {
+        conditions.push(actionCondition);
+      }
     }
 
     if (filter.search) {
-      conditions.push(
-        or(
-          like(mrpResults.itemCode, `%${filter.search}%`),
-          like(mrpResults.itemName, `%${filter.search}%`)
-        )
+      const searchCondition = or(
+        like(mrpResults.itemCode, `%${filter.search}%`),
+        like(mrpResults.itemName, `%${filter.search}%`)
       );
+      if (searchCondition) {
+        conditions.push(searchCondition);
+      }
     }
 
-    return await query
-      .where(and(...conditions))
-      .orderBy(asc(mrpResults.requiredDate), asc(mrpResults.itemCode));
+    const validConditions = conditions.filter(Boolean);
+    if (validConditions.length > 0) {
+      query = query.where(validConditions.length === 1 ? validConditions[0] : and(...validConditions));
+    }
+
+    return await query.orderBy(
+      asc(mrpResults.requiredDate),
+      asc(mrpResults.itemCode)
+    );
   }
 
   async getMRPSummary(runId: string): Promise<MRPSummary> {
@@ -611,6 +661,18 @@ export class ProductionPlanningService {
       .where(eq(mrpResults.mrpRunId, runId));
 
     const summary = summaryQuery[0];
+
+    if (!summary) {
+      return {
+        totalRuns: 0,
+        completedRuns: 0,
+        totalItems: 0,
+        itemsRequiringPurchase: 0,
+        itemsRequiringManufacture: 0,
+        itemsRequiringTransfer: 0,
+        totalRequiredValue: 0,
+      };
+    }
 
     return {
       totalRuns: 1,
@@ -638,7 +700,7 @@ export class ProductionPlanningService {
       companyId: createDto.companyId,
       fromDate: new Date(createDto.fromDate),
       toDate: new Date(createDto.toDate),
-      workstationId: createDto.workstationId,
+      workstationId: createDto.workstationId || null,
       includeWorkOrders: createDto.includeWorkOrders ?? true,
       includeProductionPlans: createDto.includeProductionPlans ?? true,
       includeMaintenanceSchedule: createDto.includeMaintenanceSchedule || false,
@@ -650,6 +712,11 @@ export class ProductionPlanningService {
       .insert(capacityPlans)
       .values(planData)
       .returning();
+
+    if (!newPlan) {
+      throw new Error('Failed to create capacity plan');
+    }
+
     return newPlan;
   }
 
@@ -691,12 +758,14 @@ export class ProductionPlanningService {
           .where(eq(capacityPlans.id, planId));
       } catch (error) {
         // Update plan status to Failed
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         await tx
           .update(capacityPlans)
           .set({
             status: CapacityPlanStatus.FAILED,
             runEndTime: new Date(),
-            errorLog: error.message,
+            errorLog: errorMessage,
           })
           .where(eq(capacityPlans.id, planId));
 
@@ -763,11 +832,11 @@ export class ProductionPlanningService {
       workstationId: workstation.id,
       workstationName: workstation.workstationName,
       planningDate: plan.fromDate,
-      availableCapacity,
-      plannedCapacity,
-      capacityUtilization: utilizationPercentage,
-      overloadHours,
-      underloadHours,
+      availableCapacity: availableCapacity.toString(),
+      plannedCapacity: plannedCapacity.toString(),
+      capacityUtilization: utilizationPercentage.toString(),
+      overloadHours: overloadHours.toString(),
+      underloadHours: underloadHours.toString(),
       capacityUom: plan.capacityUom,
     };
 
@@ -824,7 +893,7 @@ export class ProductionPlanningService {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
     }
 
     return await query.orderBy(desc(capacityPlans.createdAt));
@@ -873,7 +942,7 @@ export class ProductionPlanningService {
           : 0,
       overloadHours: result.overloadHours,
       underloadHours: result.underloadHours,
-      capacityUom: result.capacityUom,
+      capacityUom: result.capacityUom || 'Hours',
     }));
   }
 
@@ -889,15 +958,15 @@ export class ProductionPlanningService {
       itemCode: createDto.itemCode,
       itemName: createDto.itemName,
       forecastDate: new Date(createDto.forecastDate),
-      forecastQuantity: createDto.forecastQuantity,
+      forecastQuantity: createDto.forecastQuantity.toString(),
       uom: createDto.uom,
-      warehouseId: createDto.warehouseId,
-      salesOrderId: createDto.salesOrderId,
+      warehouseId: createDto.warehouseId || null,
+      salesOrderId: createDto.salesOrderId || null,
       forecastType: createDto.forecastType || 'Manual',
-      confidenceLevel: createDto.confidenceLevel || 0,
-      seasonalFactor: createDto.seasonalFactor || 1,
-      trendFactor: createDto.trendFactor || 1,
-      notes: createDto.notes,
+      confidenceLevel: (createDto.confidenceLevel || 0).toString(),
+      seasonalFactor: (createDto.seasonalFactor || 1).toString(),
+      trendFactor: (createDto.trendFactor || 1).toString(),
+      notes: createDto.notes || null,
       createdBy: userId,
     };
 
@@ -905,6 +974,11 @@ export class ProductionPlanningService {
       .insert(productionForecasts)
       .values(forecastData)
       .returning();
+
+    if (!newForecast) {
+      throw new Error('Failed to create production forecast');
+    }
+
     return newForecast;
   }
 
@@ -921,26 +995,24 @@ export class ProductionPlanningService {
     if (updateDto.forecastDate)
       updateData.forecastDate = new Date(updateDto.forecastDate);
     if (updateDto.forecastQuantity !== undefined)
-      updateData.forecastQuantity = updateDto.forecastQuantity;
+      updateData.forecastQuantity = updateDto.forecastQuantity.toString();
     if (updateDto.forecastType)
       updateData.forecastType = updateDto.forecastType;
     if (updateDto.confidenceLevel !== undefined)
-      updateData.confidenceLevel = updateDto.confidenceLevel;
+      updateData.confidenceLevel = updateDto.confidenceLevel.toString();
     if (updateDto.seasonalFactor !== undefined)
-      updateData.seasonalFactor = updateDto.seasonalFactor;
+      updateData.seasonalFactor = updateDto.seasonalFactor.toString();
     if (updateDto.trendFactor !== undefined)
-      updateData.trendFactor = updateDto.trendFactor;
+      updateData.trendFactor = updateDto.trendFactor.toString();
     if (updateDto.actualQuantity !== undefined) {
-      updateData.actualQuantity = updateDto.actualQuantity;
+      updateData.actualQuantity = updateDto.actualQuantity.toString();
       // Calculate variance
-      const variance =
-        updateDto.actualQuantity - existingForecast.forecastQuantity;
+      const forecastQty = parseFloat(existingForecast.forecastQuantity);
+      const variance = updateDto.actualQuantity - forecastQty;
       const variancePercentage =
-        existingForecast.forecastQuantity > 0
-          ? (variance / existingForecast.forecastQuantity) * 100
-          : 0;
-      updateData.variance = variance;
-      updateData.variancePercentage = variancePercentage;
+        forecastQty > 0 ? (variance / forecastQty) * 100 : 0;
+      updateData.variance = variance.toString();
+      updateData.variancePercentage = variancePercentage.toString();
     }
     if (updateDto.notes !== undefined) updateData.notes = updateDto.notes;
     if (updateDto.isActive !== undefined)
@@ -951,6 +1023,10 @@ export class ProductionPlanningService {
       .set(updateData)
       .where(eq(productionForecasts.id, id))
       .returning();
+
+    if (!updatedForecast) {
+      throw new Error('Failed to update production forecast');
+    }
 
     return updatedForecast;
   }
@@ -1023,7 +1099,7 @@ export class ProductionPlanningService {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
     }
 
     return await query.orderBy(desc(productionForecasts.forecastDate));
@@ -1122,9 +1198,10 @@ export class ProductionPlanningService {
         item.production_plan_items.plannedEndDate?.toISOString() ||
         generateDto.toDate,
       progress:
-        item.production_plan_items.producedQty > 0
-          ? (item.production_plan_items.producedQty /
-              item.production_plan_items.plannedQty) *
+        item.production_plan_items.producedQty &&
+        parseFloat(item.production_plan_items.producedQty) > 0
+          ? (parseFloat(item.production_plan_items.producedQty) /
+              parseFloat(item.production_plan_items.plannedQty)) *
             100
           : 0,
       parentId: item.production_plans.id,

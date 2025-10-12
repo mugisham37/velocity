@@ -1,4 +1,4 @@
-import {
+import type {
   CreateDepartmentDto,
   CreateDesignationDto,
   CreateEmployeeDocumentDto,
@@ -12,12 +12,12 @@ import {
   UpdateEmployeeDocumentDto,
   UpdateEmployeeDto,
   UpdateOnboardingTaskStatusDto,
-} from '@kiro/shared/types/hr';
+} from '@kiro/shared';
 import { UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 import { HRService } from './hr.service';
 
 @Resolver()
@@ -50,7 +50,7 @@ export class HRResolver {
   // Department Queries
   @Query()
   @Roles('hr_manager', 'hr_user', 'manager', 'employee', 'admin')
-  async departments(@Contetext: any) {
+  async departments(@Context() context: any) {
     return this.hrService.getDepartments(context.req.user.companyId);
   }
 

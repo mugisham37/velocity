@@ -1,12 +1,12 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
-import {
+import type {
   BOM,
   BOMAlternativeItem,
   BOMItem,
   BOMOperation,
   BOMScrapItem,
-} from '@velocity/database/schema';
+} from '@kiro/database';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
   BOMCostBreakdown,

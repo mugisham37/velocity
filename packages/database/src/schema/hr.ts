@@ -13,7 +13,7 @@ import {
 import { companies } from './companies';
 
 // Employee Management Tables
-export const employees: any = pgTable('employees', {
+export const employees = pgTable('employees', {
   id: uuid('id').primaryKey().defaultRandom(),
   employeeId: varchar('employee_id', { length: 50 }).notNull().unique(),
   firstName: varchar('first_name', { length: 100 }).notNull(),
@@ -56,7 +56,7 @@ export const employees: any = pgTable('employees', {
   updatedBy: uuid('updated_by'),
 });
 
-export const departments: any = pgTable('departments', {
+export const departments = pgTable('departments', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 255 }).notNull(),
   code: varchar('code', { length: 50 }).notNull(),

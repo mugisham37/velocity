@@ -1,7 +1,7 @@
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
-import {
+import type {
     CreateProject,
     CreateProjectMilestone,
     CreateProjectTask,
@@ -14,7 +14,25 @@ import {
     UpdateProject,
     UpdateProjectMilestone,
     UpdateProjectTask,
-} from '@packages/shared/types/projects';
+    CreateProjectTeamMember,
+    ProjectBudget,
+    ProjectBudgetCategory,
+    ProjectCost,
+    ProjectRevenue,
+    ProjectInvoice,
+    ProjectProfitability,
+    ProjectFinancialSummary,
+    CreateProjectBudget,
+    UpdateProjectBudget,
+    CreateProjectBudgetCategory,
+    UpdateProjectBudgetCategory,
+    CreateProjectCost,
+    UpdateProjectCost,
+    CreateProjectRevenue,
+    UpdateProjectRevenue,
+    CreateProjectInvoice,
+    UpdateProjectInvoice,
+} from '@kiro/shared';
 import { ProjectsService } from './projects.service';
 
 @Resolver('Project')
@@ -212,7 +230,6 @@ export class ProjectsResolver {
     await this.projectsService.applyProjectTemplate(projectId, templateId);
     return true;
   }
-}
   // Project Accounting Queries
 
   @Query('projectBudgets')
@@ -225,7 +242,7 @@ export class ProjectsResolver {
   }
 
   @Query('projectBudget')
-  async getProjectBudget(@Args('id') id: string): Promise<ProjectBudget> {
+  async getProjectBudget(@Args('id') _id: string): Promise<ProjectBudget> {
     // Implementation would need to be added to service
     throw new Error('Not implemented');
   }
@@ -250,7 +267,7 @@ export class ProjectsResolver {
   }
 
   @Query('projectCost')
-  async getProjectCost(@Args('id') id: string): Promise<ProjectCost> {
+  async getProjectCost(@Args('id') _id: string): Promise<ProjectCost> {
     // Implementation would need to be added to service
     throw new Error('Not implemented');
   }
@@ -265,7 +282,7 @@ export class ProjectsResolver {
   }
 
   @Query('projectRevenueItem')
-  async getProjectRevenueItem(@Args('id') id: string): Promise<ProjectRevenue> {
+  async getProjectRevenueItem(@Args('id') _id: string): Promise<ProjectRevenue> {
     // Implementation would need to be added to service
     throw new Error('Not implemented');
   }
@@ -280,7 +297,7 @@ export class ProjectsResolver {
   }
 
   @Query('projectInvoice')
-  async getProjectInvoice(@Args('id') id: string): Promise<ProjectInvoice> {
+  async getProjectInvoice(@Args('id') _id: string): Promise<ProjectInvoice> {
     // Implementation would need to be added to service
     throw new Error('Not implemented');
   }
@@ -335,8 +352,8 @@ export class ProjectsResolver {
 
   @Mutation('deleteProjectBudget')
   async deleteProjectBudget(
-    @Args('id') id: string,
-    @Context() context: any
+    @Args('id') _id: string,
+    @Context() _context: any
   ): Promise<boolean> {
     // Implementation would need to be added to service
     throw new Error('Not implemented');
@@ -353,9 +370,9 @@ export class ProjectsResolver {
 
   @Mutation('updateBudgetCategory')
   async updateBudgetCategory(
-    @Args('id') id: string,
-    @Args('input') input: UpdateProjectBudgetCategory,
-    @Context() context: any
+    @Args('id') _id: string,
+    @Args('input') _input: UpdateProjectBudgetCategory,
+    @Context() _context: any
   ): Promise<ProjectBudgetCategory> {
     // Implementation would need to be added to service
     throw new Error('Not implemented');
@@ -363,8 +380,8 @@ export class ProjectsResolver {
 
   @Mutation('deleteBudgetCategory')
   async deleteBudgetCategory(
-    @Args('id') id: string,
-    @Context() context: any
+    @Args('id') _id: string,
+    @Context() _context: any
   ): Promise<boolean> {
     // Implementation would need to be added to service
     throw new Error('Not implemented');
@@ -400,8 +417,8 @@ export class ProjectsResolver {
 
   @Mutation('deleteProjectCost')
   async deleteProjectCost(
-    @Args('id') id: string,
-    @Context() context: any
+    @Args('id') _id: string,
+    @Context() _context: any
   ): Promise<boolean> {
     // Implementation would need to be added to service
     throw new Error('Not implemented');
@@ -428,8 +445,8 @@ export class ProjectsResolver {
 
   @Mutation('deleteProjectRevenue')
   async deleteProjectRevenue(
-    @Args('id') id: string,
-    @Context() context: any
+    @Args('id') _id: string,
+    @Context() _context: any
   ): Promise<boolean> {
     // Implementation would need to be added to service
     throw new Error('Not implemented');
@@ -446,9 +463,9 @@ export class ProjectsResolver {
 
   @Mutation('updateProjectInvoice')
   async updateProjectInvoice(
-    @Args('id') id: string,
-    @Args('input') input: UpdateProjectInvoice,
-    @Context() context: any
+    @Args('id') _id: string,
+    @Args('input') _input: UpdateProjectInvoice,
+    @Context() _context: any
   ): Promise<ProjectInvoice> {
     // Implementation would need to be added to service
     throw new Error('Not implemented');
@@ -467,8 +484,8 @@ export class ProjectsResolver {
 
   @Mutation('deleteProjectInvoice')
   async deleteProjectInvoice(
-    @Args('id') id: string,
-    @Context() context: any
+    @Args('id') _id: string,
+    @Context() _context: any
   ): Promise<boolean> {
     // Implementation would need to be added to service
     throw new Error('Not implemented');
@@ -499,3 +516,4 @@ export class ProjectsResolver {
     const { user } = context.req;
     return this.projectsService.calculateProjectProfitability(projectId, user.companyId);
   }
+}

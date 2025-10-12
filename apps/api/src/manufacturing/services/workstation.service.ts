@@ -3,9 +3,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { db } from '@velocity/database';
-import { NewWorkstation, Workstation, workstations } from '@velocity/datchema';
-import { and, desc, eq, like, or } from '@kiro/database';
+import {
+  db,
+  and,
+  desc,
+  eq,
+  like,
+  or,
+  type NewWorkstation,
+  type Workstation,
+  workstations,
+} from '@kiro/database';
 import {
   CreateWorkstationDto,
   UpdateWorkstationDto,
@@ -42,25 +50,35 @@ export class WorkstationService {
 
     const workstationData: NewWorkstation = {
       workstationName: createWorkstationDto.workstationName,
-      workstationType: createWorkstationDto.workstationType,
+      workstationType: createWorkstationDto.workstationType || null,
       companyId: createWorkstationDto.companyId,
-      warehouseId: createWorkstationDto.warehouseId,
-      description: createWorkstationDto.description,
-      hourRate: createWorkstationDto.hourRate || 0,
-      hourRateElectricity: createWorkstationDto.hourRateElectricity || 0,
-      hourRateConsumable: createWorkstationDto.hourRateConsumable || 0,
-      hourRateRent: createWorkstationDto.hourRateRent || 0,
-      hourRateLabour: createWorkstationDto.hourRateLabour || 0,
-      productionCapacity: createWorkstationDto.productionCapacity || 1,
-      workingHoursStart: createWorkstationDto.workingHoursStart,
-      workingHoursEnd: createWorkstationDto.workingHoursEnd,
-      holidayList: createWorkstationDto.holidayList,
+      warehouseId: createWorkstationDto.warehouseId || null,
+      description: createWorkstationDto.description || null,
+      hourRate: (createWorkstationDto.hourRate || 0).toString(),
+      hourRateElectricity: (
+        createWorkstationDto.hourRateElectricity || 0
+      ).toString(),
+      hourRateConsumable: (
+        createWorkstationDto.hourRateConsumable || 0
+      ).toString(),
+      hourRateRent: (createWorkstationDto.hourRateRent || 0).toString(),
+      hourRateLabour: (createWorkstationDto.hourRateLabour || 0).toString(),
+      productionCapacity: (
+        createWorkstationDto.productionCapacity || 1
+      ).toString(),
+      workingHoursStart: createWorkstationDto.workingHoursStart || null,
+      workingHoursEnd: createWorkstationDto.workingHoursEnd || null,
+      holidayList: createWorkstationDto.holidayList || null,
     };
 
     const [newWorkstation] = await db
       .insert(workstations)
       .values(workstationData)
       .returning();
+
+    if (!newWorkstation) {
+      throw new Error('Failed to create workstation');
+    }
 
     return newWorkstation;
   }
@@ -98,35 +116,65 @@ export class WorkstationService {
       }
     }
 
-    const updateData: Partial<NewWorkstation> = {
-      workstationName: updateWorkstationDto.workstationName,
-      workstationType: updateWorkstationDto.workstationType,
-      warehouseId: updateWorkstationDto.warehouseId,
-      description: updateWorkstationDto.description,
-      hourRate: updateWorkstationDto.hourRate,
-      hourRateElectricity: updateWorkstationDto.hourRateElectricity,
-      hourRateConsumable: updateWorkstationDto.hourRateConsumable,
-      hourRateRent: updateWorkstationDto.hourRateRent,
-      hourRateLabour: updateWorkstationDto.hourRateLabour,
-      productionCapacity: updateWorkstationDto.productionCapacity,
-      workingHoursStart: updateWorkstationDto.workingHoursStart,
-      workingHoursEnd: updateWorkstationDto.workingHoursEnd,
-      holidayList: updateWorkstationDto.holidayList,
-      isActive: updateWorkstationDto.isActive,
-    };
+    const updateData: Partial<NewWorkstation> = {};
 
-    // Remove undefined values
-    Object.keys(updateData).forEach(key => {
-      if (updateData[key] === undefined) {
-        delete updateData[key];
-      }
-    });
+    if (updateWorkstationDto.workstationName !== undefined) {
+      updateData.workstationName = updateWorkstationDto.workstationName;
+    }
+    if (updateWorkstationDto.workstationType !== undefined) {
+      updateData.workstationType = updateWorkstationDto.workstationType || null;
+    }
+    if (updateWorkstationDto.warehouseId !== undefined) {
+      updateData.warehouseId = updateWorkstationDto.warehouseId || null;
+    }
+    if (updateWorkstationDto.description !== undefined) {
+      updateData.description = updateWorkstationDto.description || null;
+    }
+    if (updateWorkstationDto.hourRate !== undefined) {
+      updateData.hourRate = updateWorkstationDto.hourRate.toString();
+    }
+    if (updateWorkstationDto.hourRateElectricity !== undefined) {
+      updateData.hourRateElectricity =
+        updateWorkstationDto.hourRateElectricity.toString();
+    }
+    if (updateWorkstationDto.hourRateConsumable !== undefined) {
+      updateData.hourRateConsumable =
+        updateWorkstationDto.hourRateConsumable.toString();
+    }
+    if (updateWorkstationDto.hourRateRent !== undefined) {
+      updateData.hourRateRent = updateWorkstationDto.hourRateRent.toString();
+    }
+    if (updateWorkstationDto.hourRateLabour !== undefined) {
+      updateData.hourRateLabour =
+        updateWorkstationDto.hourRateLabour.toString();
+    }
+    if (updateWorkstationDto.productionCapacity !== undefined) {
+      updateData.productionCapacity =
+        updateWorkstationDto.productionCapacity.toString();
+    }
+    if (updateWorkstationDto.workingHoursStart !== undefined) {
+      updateData.workingHoursStart =
+        updateWorkstationDto.workingHoursStart || null;
+    }
+    if (updateWorkstationDto.workingHoursEnd !== undefined) {
+      updateData.workingHoursEnd = updateWorkstationDto.workingHoursEnd || null;
+    }
+    if (updateWorkstationDto.holidayList !== undefined) {
+      updateData.holidayList = updateWorkstationDto.holidayList || null;
+    }
+    if (updateWorkstationDto.isActive !== undefined) {
+      updateData.isActive = updateWorkstationDto.isActive;
+    }
 
     const [updatedWorkstation] = await db
       .update(workstations)
       .set(updateData)
       .where(eq(workstations.id, id))
       .returning();
+
+    if (!updatedWorkstation) {
+      throw new Error('Failed to update workstation');
+    }
 
     return updatedWorkstation;
   }
@@ -198,8 +246,10 @@ export class WorkstationService {
 
     // For now, we'll return basic capacity info
     // In a real implementation, this would consider current workload, scheduled operations, etc.
-    const totalCapacity =
-      (workstation.productionCapacity || 1) * dailyWorkingHours;
+    const productionCapacity = parseFloat(
+      workstation.productionCapacity || '1'
+    );
+    const totalCapacity = productionCapacity * dailyWorkingHours;
     const availableCapacity = totalCapacity; // Would be calculated based on current workload
     const utilizationPercentage =
       ((totalCapacity - availableCapacity) / totalCapacity) * 100;
@@ -219,11 +269,11 @@ export class WorkstationService {
   ): Promise<WorkstationCostBreakdown> {
     const workstation = await this.findWorkstationById(id);
 
-    const hourRate = workstation.hourRate || 0;
-    const electricityCost = workstation.hourRateElectricity || 0;
-    const consumableCost = workstation.hourRateConsumable || 0;
-    const rentCost = workstation.hourRateRent || 0;
-    const labourCost = workstation.hourRateLabour || 0;
+    const hourRate = parseFloat(workstation.hourRate || '0');
+    const electricityCost = parseFloat(workstation.hourRateElectricity || '0');
+    const consumableCost = parseFloat(workstation.hourRateConsumable || '0');
+    const rentCost = parseFloat(workstation.hourRateRent || '0');
+    const labourCost = parseFloat(workstation.hourRateLabour || '0');
 
     const totalHourlyRate =
       hourRate + electricityCost + consumableCost + rentCost + labourCost;
@@ -240,7 +290,7 @@ export class WorkstationService {
   }
 
   async deleteWorkstation(id: string): Promise<void> {
-    const workstation = await this.findWorkstationById(id);
+    await this.findWorkstationById(id);
 
     // In a real implementation, you might want to check if the workstation is being used
     // in any active BOMs or work orders before allowing deletion
@@ -279,7 +329,7 @@ export class WorkstationService {
   }
 
   private parseTime(timeString: string): number {
-    const [hours, minutes] = timeString.split(':').map(Number);
+    const [hours = 0, minutes = 0] = timeString.split(':').map(Number);
     return hours + minutes / 60;
   }
 }

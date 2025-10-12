@@ -44,7 +44,7 @@ export class ProductionPlanningResolver {
   // Production Plan Queries
   @Query('productionPlan')
   async getProductionPlan(@Args('id') id: string) {
-    rets.productionPlanningService.findProductionPlanById(id);
+    return this.productionPlanningService.findProductionPlanById(id);
   }
 
   @Query('productionPlans')
@@ -321,37 +321,37 @@ export class ProductionPlanningResolver {
 
   // Subscriptions
   @Subscription('productionPlanUpdated')
-  productionPlanUpdated(@Args('planId') planId: string) {
+  productionPlanUpdated(@Args('planId') _planId: string) {
     return pubSub.asyncIterator('productionPlanUpdated');
   }
 
   @Subscription('productionPlanItemUpdated')
-  productionPlanItemUpdated(@Args('planId') planId: string) {
+  productionPlanItemUpdated(@Args('planId') _planId: string) {
     return pubSub.asyncIterator('productionPlanItemUpdated');
   }
 
   @Subscription('mrpRunStatusChanged')
-  mrpRunStatusChanged(@Args('runId') runId: string) {
+  mrpRunStatusChanged(@Args('runId') _runId: string) {
     return pubSub.asyncIterator('mrpRunStatusChanged');
   }
 
   @Subscription('mrpResultsUpdated')
-  mrpResultsUpdated(@Args('runId') runId: string) {
+  mrpResultsUpdated(@Args('runId') _runId: string) {
     return pubSub.asyncIterator('mrpResultsUpdated');
   }
 
   @Subscription('capacityPlanStatusChanged')
-  capacityPlanStatusChanged(@Args('planId') planId: string) {
+  capacityPlanStatusChanged(@Args('planId') _planId: string) {
     return pubSub.asyncIterator('capacityPlanStatusChanged');
   }
 
   @Subscription('capacityUtilizationUpdated')
-  capacityUtilizationUpdated(@Args('planId') planId: string) {
+  capacityUtilizationUpdated(@Args('planId') _planId: string) {
     return pubSub.asyncIterator('capacityUtilizationUpdated');
   }
 
   @Subscription('forecastAccuracyUpdated')
-  forecastAccuracyUpdated(@Args('companyId') companyId: string) {
+  forecastAccuracyUpdated(@Args('companyId') _companyId: string) {
     return pubSub.asyncIterator('forecastAccuracyUpdated');
   }
 }

@@ -3,18 +3,26 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { db } from '@velocity/database';
-import {
-  BOM,
-  BOMAlternativeItem,
-  BOMItem,
-  BOMOperation,
-  BOMScrapItem,
-  NewBOM,
-  NewBOMItem,
-  NewBOMOperation,
-  NewBOMScrapItem,
-  NewBOMUpdateLog,
+import { 
+  db,
+  and, 
+  asc, 
+  desc, 
+  eq, 
+  like, 
+  or, 
+  sql,
+  type Database,
+  type BOM,
+  type BOMAlternativeItem,
+  type BOMItem,
+  type BOMOperation,
+  type BOMScrapItem,
+  type NewBOM,
+  type NewBOMItem,
+  type NewBOMOperation,
+  type NewBOMScrapItem,
+  type NewBOMUpdateLog,
   bomAlternativeItems,
   bomItems,
   bomOperations,
@@ -22,8 +30,7 @@ import {
   bomUpdateLog,
   boms,
   items,
-} from '@velocity/database/schema';
-import { and, asc, desc, eq, like, or, sql } from '@kiro/database';
+} from '@kiro/database';
 import {
   BOMCostBreakdown,
   BOMCostCalculationDto,
@@ -77,8 +84,8 @@ export class BOMService {
         itemId: createBomDto.itemId,
         companyId: createBomDto.companyId,
         version: createBomDto.version || '1.0',
-        description: createBomDto.description,
-        quantity: createBomDto.quantity || 1,
+        description: createBomDto.description || null,
+        quantity: (createBomDto.quantity || 1).toString(),
         uom: createBomDto.uom,
         bomType: createBomDto.bomType || 'Manufacturing',
         withOperations: createBomDto.withOperations || false,
@@ -91,13 +98,17 @@ export class BOMService {
           createBomDto.setRateOfSubAssemblyItemBasedOnBom ?? true,
         currency: createBomDto.currency || 'USD',
         inspectionRequired: createBomDto.inspectionRequired || false,
-        qualityInspectionTemplate: createBomDto.qualityInspectionTemplate,
-        projectId: createBomDto.projectId,
-        routingId: createBomDto.routingId,
+        qualityInspectionTemplate: createBomDto.qualityInspectionTemplate || null,
+        projectId: createBomDto.projectId || null,
+        routingId: createBomDto.routingId || null,
         createdBy: userId,
       };
 
       const [newBom] = await tx.insert(boms).values(bomData).returning();
+
+      if (!newBom) {
+        throw new Error('Failed to create BOM');
+      }
 
       // Create BOM items if provided
       if (createBomDto.items && createBomDto.items.length > 0) {
@@ -107,16 +118,16 @@ export class BOMService {
             itemId: item.itemId,
             itemCode: item.itemCode,
             itemName: item.itemName,
-            description: item.description,
-            qty: item.qty,
+            description: item.description || null,
+            qty: item.qty.toString(),
             uom: item.uom,
-            rate: item.rate || 0,
-            conversionFactor: item.conversionFactor || 1,
-            bomNo: item.bomNo,
+            rate: (item.rate || 0).toString(),
+            conversionFactor: (item.conversionFactor || 1).toString(),
+            bomNo: item.bomNo || null,
             allowAlternativeItem: item.allowAlternativeItem || false,
             includeItemInManufacturing: item.includeItemInManufacturing ?? true,
             sourcedBySupplier: item.sourcedBySupplier || false,
-            operationId: item.operationId,
+            operationId: item.operationId || null,
             idx: index,
           })
         );
@@ -131,15 +142,15 @@ export class BOMService {
             bomId: newBom.id,
             operationNo: operation.operationNo,
             operationName: operation.operationName,
-            description: operation.description,
-            workstationId: operation.workstationId,
-            workstationType: operation.workstationType,
-            timeInMins: operation.timeInMins || 0,
-            hourRate: operation.hourRate || 0,
+            description: operation.description || null,
+            workstationId: operation.workstationId || null,
+            workstationType: operation.workstationType || null,
+            timeInMins: (operation.timeInMins || 0).toString(),
+            hourRate: (operation.hourRate || 0).toString(),
             batchSize: operation.batchSize || 1,
-            fixedTimeInMins: operation.fixedTimeInMins || 0,
-            setUpTime: operation.setUpTime || 0,
-            tearDownTime: operation.tearDownTime || 0,
+            fixedTimeInMins: (operation.fixedTimeInMins || 0).toString(),
+            setUpTime: (operation.setUpTime || 0).toString(),
+            tearDownTime: (operation.tearDownTime || 0).toString(),
             sequenceId: operation.sequenceId || index,
             idx: index,
           }));
@@ -155,9 +166,9 @@ export class BOMService {
             itemId: scrapItem.itemId,
             itemCode: scrapItem.itemCode,
             itemName: scrapItem.itemName,
-            stockQty: scrapItem.stockQty || 0,
-            rate: scrapItem.rate || 0,
-            stockUom: scrapItem.stockUom,
+            stockQty: (scrapItem.stockQty || 0).toString(),
+            rate: (scrapItem.rate || 0).toString(),
+            stockUom: scrapItem.stockUom || null,
             idx: index,
           }));
 
@@ -194,34 +205,56 @@ export class BOMService {
       const previousData = { ...existingBom };
 
       // Update the main BOM record
-      const updateData: Partial<NewBOM> = {
-        description: updateBomDto.description,
-        quantity: updateBomDto.quantity,
-        uom: updateBomDto.uom,
-        isActive: updateBomDto.isActive,
-        isDefault: updateBomDto.isDefault,
-        withOperations: updateBomDto.withOperations,
-        transferMaterialAgainst: updateBomDto.transferMaterialAgainst,
-        allowAlternativeItem: updateBomDto.allowAlternativeItem,
-        allowSameItemMultipleTimes: updateBomDto.allowSameItemMultipleTimes,
-        setRateOfSubAssemblyItemBasedOnBom:
-          updateBomDto.setRateOfSubAssemblyItemBasedOnBom,
-        inspectionRequired: updateBomDto.inspectionRequired,
-        qualityInspectionTemplate: updateBomDto.qualityInspectionTemplate,
-      };
+      const updateData: Partial<NewBOM> = {};
+      
+      if (updateBomDto.description !== undefined) {
+        updateData.description = updateBomDto.description || null;
+      }
+      if (updateBomDto.quantity !== undefined) {
+        updateData.quantity = updateBomDto.quantity.toString();
+      }
+      if (updateBomDto.uom !== undefined) {
+        updateData.uom = updateBomDto.uom;
+      }
+      if (updateBomDto.isActive !== undefined) {
+        updateData.isActive = updateBomDto.isActive;
+      }
+      if (updateBomDto.isDefault !== undefined) {
+        updateData.isDefault = updateBomDto.isDefault;
+      }
+      if (updateBomDto.withOperations !== undefined) {
+        updateData.withOperations = updateBomDto.withOperations;
+      }
+      if (updateBomDto.transferMaterialAgainst !== undefined) {
+        updateData.transferMaterialAgainst = updateBomDto.transferMaterialAgainst;
+      }
+      if (updateBomDto.allowAlternativeItem !== undefined) {
+        updateData.allowAlternativeItem = updateBomDto.allowAlternativeItem;
+      }
+      if (updateBomDto.allowSameItemMultipleTimes !== undefined) {
+        updateData.allowSameItemMultipleTimes = updateBomDto.allowSameItemMultipleTimes;
+      }
+      if (updateBomDto.setRateOfSubAssemblyItemBasedOnBom !== undefined) {
+        updateData.setRateOfSubAssemblyItemBasedOnBom = updateBomDto.setRateOfSubAssemblyItemBasedOnBom;
+      }
+      if (updateBomDto.inspectionRequired !== undefined) {
+        updateData.inspectionRequired = updateBomDto.inspectionRequired;
+      }
+      if (updateBomDto.qualityInspectionTemplate !== undefined) {
+        updateData.qualityInspectionTemplate = updateBomDto.qualityInspectionTemplate || null;
+      }
 
-      // Remove undefined values
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key] === undefined) {
-          delete updateData[key];
-        }
-      });
+
 
       const [updatedBom] = await tx
         .update(boms)
         .set(updateData)
         .where(eq(boms.id, id))
         .returning();
+
+      if (!updatedBom) {
+        throw new Error('Failed to update BOM');
+      }
 
       // Update BOM items if provided
       if (updateBomDto.items) {
@@ -236,17 +269,17 @@ export class BOMService {
               itemId: item.itemId,
               itemCode: item.itemCode,
               itemName: item.itemName,
-              description: item.description,
-              qty: item.qty,
+              description: item.description || null,
+              qty: item.qty.toString(),
               uom: item.uom,
-              rate: item.rate || 0,
-              conversionFactor: item.conversionFactor || 1,
-              bomNo: item.bomNo,
+              rate: (item.rate || 0).toString(),
+              conversionFactor: (item.conversionFactor || 1).toString(),
+              bomNo: item.bomNo || null,
               allowAlternativeItem: item.allowAlternativeItem || false,
               includeItemInManufacturing:
                 item.includeItemInManufacturing ?? true,
               sourcedBySupplier: item.sourcedBySupplier || false,
-              operationId: item.operationId,
+              operationId: item.operationId || null,
               idx: index,
             })
           );
@@ -267,15 +300,15 @@ export class BOMService {
               bomId: id,
               operationNo: operation.operationNo,
               operationName: operation.operationName,
-              description: operation.description,
-              workstationId: operation.workstationId,
-              workstationType: operation.workstationType,
-              timeInMins: operation.timeInMins || 0,
-              hourRate: operation.hourRate || 0,
+              description: operation.description || null,
+              workstationId: operation.workstationId || null,
+              workstationType: operation.workstationType || null,
+              timeInMins: (operation.timeInMins || 0).toString(),
+              hourRate: (operation.hourRate || 0).toString(),
               batchSize: operation.batchSize || 1,
-              fixedTimeInMins: operation.fixedTimeInMins || 0,
-              setUpTime: operation.setUpTime || 0,
-              tearDownTime: operation.tearDownTime || 0,
+              fixedTimeInMins: (operation.fixedTimeInMins || 0).toString(),
+              setUpTime: (operation.setUpTime || 0).toString(),
+              tearDownTime: (operation.tearDownTime || 0).toString(),
               sequenceId: operation.sequenceId || index,
               idx: index,
             }));
@@ -297,9 +330,9 @@ export class BOMService {
               itemId: scrapItem.itemId,
               itemCode: scrapItem.itemCode,
               itemName: scrapItem.itemName,
-              stockQty: scrapItem.stockQty || 0,
-              rate: scrapItem.rate || 0,
-              stockUom: scrapItem.stockUom,
+              stockQty: (scrapItem.stockQty || 0).toString(),
+              rate: (scrapItem.rate || 0).toString(),
+              stockUom: scrapItem.stockUom || null,
               idx: index,
             }));
 
@@ -425,17 +458,19 @@ export class BOMService {
       }
 
       // Create new BOM version
+      const { id, createdAt, updatedAt, ...bomDataWithoutMeta } = originalBom;
       const newBomData: NewBOM = {
-        ...originalBom,
-        id: undefined, // Let database generate new ID
+        ...bomDataWithoutMeta,
         version: createVersionDto.newVersion,
         isDefault: createVersionDto.makeDefault || false,
         createdBy: userId,
-        createdAt: undefined, // Let database set current timestamp
-        updatedAt: undefined,
       };
 
       const [newBom] = await tx.insert(boms).values(newBomData).returning();
+
+      if (!newBom) {
+        throw new Error('Failed to create BOM version');
+      }
 
       // Copy BOM items
       const originalItems = await tx
@@ -444,13 +479,13 @@ export class BOMService {
         .where(eq(bomItems.bomId, createVersionDto.bomId));
 
       if (originalItems.length > 0) {
-        const newItemsData: NewBOMItem[] = originalItems.map(item => ({
-          ...item,
-          id: undefined,
-          bomId: newBom.id,
-          createdAt: undefined,
-          updatedAt: undefined,
-        }));
+        const newItemsData: NewBOMItem[] = originalItems.map((item: BOMItem) => {
+          const { id, createdAt, updatedAt, ...itemData } = item;
+          return {
+            ...itemData,
+            bomId: newBom.id,
+          };
+        });
 
         await tx.insert(bomItems).values(newItemsData);
       }
@@ -463,13 +498,13 @@ export class BOMService {
 
       if (originalOperations.length > 0) {
         const newOperationsData: NewBOMOperation[] = originalOperations.map(
-          operation => ({
-            ...operation,
-            id: undefined,
-            bomId: newBom.id,
-            createdAt: undefined,
-            updatedAt: undefined,
-          })
+          (operation: BOMOperation) => {
+            const { id, createdAt, updatedAt, ...operationData } = operation;
+            return {
+              ...operationData,
+              bomId: newBom.id,
+            };
+          }
         );
 
         await tx.insert(bomOperations).values(newOperationsData);
@@ -483,13 +518,13 @@ export class BOMService {
 
       if (originalScrapItems.length > 0) {
         const newScrapItemsData: NewBOMScrapItem[] = originalScrapItems.map(
-          scrapItem => ({
-            ...scrapItem,
-            id: undefined,
-            bomId: newBom.id,
-            createdAt: undefined,
-            updatedAt: undefined,
-          })
+          (scrapItem: BOMScrapItem) => {
+            const { id, createdAt, updatedAt, ...scrapItemData } = scrapItem;
+            return {
+              ...scrapItemData,
+              bomId: newBom.id,
+            };
+          }
         );
 
         await tx.insert(bomScrapItems).values(newScrapItemsData);
@@ -519,7 +554,7 @@ export class BOMService {
     calculationDto: BOMCostCalculationDto
   ): Promise<BOMCostBreakdown> {
     const bom = await this.findBOMById(calculationDto.bomId);
-    const quantity = calculationDto.quantity || bom.quantity;
+    const quantity = calculationDto.quantity || parseFloat(bom.quantity);
 
     // Get BOM items
     const bomItemsList = await db
@@ -531,7 +566,7 @@ export class BOMService {
     // Calculate material cost
     let materialCost = 0;
     for (const item of bomItemsList) {
-      const itemCost = (item.rate || 0) * (item.qty || 0) * quantity;
+      const itemCost = (parseFloat(item.rate || '0')) * (parseFloat(item.qty || '0')) * quantity;
       materialCost += itemCost;
     }
 
@@ -545,10 +580,9 @@ export class BOMService {
         .orderBy(asc(bomOperations.sequenceId));
 
       for (const operation of operations) {
-        const opCost =
-          ((operation.timeInMins || 0) / 60) *
-          (operation.hourRate || 0) *
-          quantity;
+        const timeInMins = parseFloat(operation.timeInMins || '0');
+        const hourRate = parseFloat(operation.hourRate || '0');
+        const opCost = (timeInMins / 60) * hourRate * quantity;
         operatingCost += opCost;
       }
     }
@@ -563,7 +597,7 @@ export class BOMService {
 
       for (const scrapItem of scrapItems) {
         const scrapItemCost =
-          (scrapItem.rate || 0) * (scrapItem.stockQty || 0) * quantity;
+          (parseFloat(scrapItem.rate || '0')) * (parseFloat(scrapItem.stockQty || '0')) * quantity;
         scrapCost += scrapItemCost;
       }
     }
@@ -595,8 +629,8 @@ export class BOMService {
     // Calculate cost breakdown
     const costBreakdown = await this.calculateBOMCost({
       bomId: explosionDto.bomId,
-      includeOperations: explosionDto.includeOperations,
-      includeScrap: explosionDto.includeScrap,
+      includeOperations: explosionDto.includeOperations ?? false,
+      includeScrap: explosionDto.includeScrap ?? false,
       quantity: explosionDto.quantity,
     });
 
@@ -628,8 +662,8 @@ export class BOMService {
       .orderBy(asc(bomItems.idx));
 
     for (const item of bomItemsList) {
-      const requiredQty = (item.qty || 0) * quantity;
-      const amount = (item.rate || 0) * requiredQty;
+      const requiredQty = (parseFloat(item.qty || '0')) * quantity;
+      const amount = (parseFloat(item.rate || '0')) * requiredQty;
 
       explosionItems.push({
         itemId: item.itemId,
@@ -637,11 +671,11 @@ export class BOMService {
         itemName: item.itemName,
         requiredQty,
         uom: item.uom,
-        rate: item.rate || 0,
+        rate: parseFloat(item.rate || '0'),
         amount,
         level,
         parentBomId: bomId,
-        bomNo: item.bomNo,
+        bomNo: item.bomNo || '',
       });
 
       // If this item has its own BOM and we want to include sub-assemblies
@@ -658,7 +692,7 @@ export class BOMService {
           )
           .limit(1);
 
-        if (subBom.length > 0) {
+        if (subBom.length > 0 && subBom[0]) {
           await this.explodeBOMRecursive(
             subBom[0].id,
             requiredQty,
@@ -674,7 +708,7 @@ export class BOMService {
 
   private async calculateAndUpdateBOMCosts(
     bomId: string,
-    tx: any
+    tx: Parameters<Parameters<Database['transaction']>[0]>[0]
   ): Promise<void> {
     // Calculate material cost
     const materialCostResult = await tx
@@ -702,9 +736,9 @@ export class BOMService {
     await tx
       .update(boms)
       .set({
-        rawMaterialCost: materialCost,
-        operatingCost: operatingCost,
-        totalCost: totalCost,
+        rawMaterialCost: materialCost.toString(),
+        operatingCost: operatingCost.toString(),
+        totalCost: totalCost.toString(),
       })
       .where(eq(boms.id, bomId));
   }

@@ -12,7 +12,7 @@ import {
   UpdateEmployeeDocumentSchema,
   UpdateEmployeeSchema,
   UpdateOnboardingTaskStatusSchema,
-} from '@kiro/shared/types/hr';
+} from '@kiro/shared';
 import {
   Body,
   Controller,
@@ -27,9 +27,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 import { HRService } from './hr.service';
 
 @Controller('hr')
@@ -69,7 +69,7 @@ export class HRController {
   }
 
   @Put('employees/:id')
-  @Roles('hr_madmin')
+  @Roles('hr_manager', 'admin')
   async updateEmployee(
     @Param('id', ParseUUIDPipe) id: string,
     @Body(new ZodValidationPipe(UpdateEmployeeSchema)) updateEmployeeDto: any,
