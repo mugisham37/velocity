@@ -25,7 +25,7 @@ import {
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
-import type { TimeEntry } from '@kiro/shared/types/timetracking';
+import type { TimeEntry } from '@/shared/types/timetracking';
 
 interface Timer {
   id: string;

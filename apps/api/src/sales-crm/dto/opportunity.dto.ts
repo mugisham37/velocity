@@ -736,3 +736,4 @@ export class ForecastPeriodInput {
   @Type(() => Date)
   end!: Date;
 }
+

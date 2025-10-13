@@ -73,3 +73,4 @@ export class DeviceQueryDto {
   @IsEnum(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc' = 'desc';
 }
+

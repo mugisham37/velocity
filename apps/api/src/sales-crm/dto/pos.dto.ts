@@ -650,3 +650,4 @@ export class ReceiptData {
   @Field({ nullable: true })
   loyaltyMessage?: string;
 }
+

@@ -727,3 +727,4 @@ export class CustomerStatementData {
   @Field(() => [StatementTransaction])
   transactions!: StatementTransaction[];
 }
+

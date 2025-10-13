@@ -1,4 +1,4 @@
-import { DatabaseService } from '@kiro/database';
+import { DatabaseService } from '../../database';
 import {
   timeApprovals,
   timeCategories,
@@ -6,7 +6,7 @@ import {
   timeReports,
   timeTrackingSettings,
   timesheets,
-} from '@kiro/database';
+} from '../../database';
 import {
   BadRequestException,
   Injectable,
@@ -30,8 +30,8 @@ import type {
   TimeReport,
   TimeLog,
   Timer,
-} from '@kiro/shared';
-import { and, asc, between, desc, eq, gte, lte, sql } from '@kiro/database';
+} from '../../shared';
+import { and, asc, between, desc, eq, gte, lte, sql } from '../../database';
 
 @Injectable()
 export class TimeTrackingService {
@@ -1136,3 +1136,4 @@ export class TimeTrackingService {
       .where(and(eq(timesheets.id, id), eq(timesheets.companyId, companyId)));
   }
 }
+

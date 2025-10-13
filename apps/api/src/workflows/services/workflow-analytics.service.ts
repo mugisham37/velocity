@@ -5,9 +5,9 @@ import {
   workflowInstances,
   workflowSteps,
   workflows,
-} from '@kiro/database';
+} from '../../database';
 import { Injectable } from '@nestjs/common';
-import { and, desc, eq, gte, inArray, lte, sql } from '@kiro/database';
+import { and, desc, eq, gte, inArray, lte, sql } from '../../database';
 import { WorkflowAnalyticsFilter, WorkflowMetrics } from '../dto/workflow.dto';
 
 @Injectable()
@@ -477,3 +477,4 @@ export class WorkflowAnalyticsService {
     }
   }
 }
+

@@ -1,5 +1,5 @@
 import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
-import type { Employee as EmployeeType } from '@kiro/database';
+import type { Employee as EmployeeType } from '../../../database';
 import { EmploymentStatus, EmploymentType } from '../../enums';
 import { Gender, MaritalStatus } from '../dto/create-employee.dto';
 

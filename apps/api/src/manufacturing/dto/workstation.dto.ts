@@ -236,3 +236,4 @@ export class WorkstationCostBreakdown {
   @Field()
   currency!: string;
 }
+

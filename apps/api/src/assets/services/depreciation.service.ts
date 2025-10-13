@@ -9,14 +9,14 @@ import {
   type DepreciationEntry,
   type DepreciationMethod,
   type DepreciationSchedule,
-} from '@kiro/database';
+} from '../../database';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, count, desc, eq, gte, lte } from '@kiro/database';
+import { and, asc, count, desc, eq, gte, lte } from '../../database';
 import {
   AssetRevaluationFilterDto,
   CreateAssetRevaluationDto,
@@ -1078,3 +1078,4 @@ export class DepreciationService {
     return `REV-${String(Number(revaluationCount) + 1).padStart(6, '0')}`;
   }
 }
+

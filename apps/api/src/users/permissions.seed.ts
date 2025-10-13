@@ -1,4 +1,4 @@
-import { db, permissions } from '@kiro/database';
+import { db, permissions } from '../database';
 
 export const SYSTEM_PERMISSIONS = [
   // User Management

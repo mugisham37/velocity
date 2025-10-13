@@ -1,6 +1,6 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import type { Workstation } from '@kiro/database';
+import type { Workstation } from '../../database';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
   CreateWorkstationDto,
@@ -81,3 +81,4 @@ export class WorkstationResolver {
     return true;
   }
 }
+

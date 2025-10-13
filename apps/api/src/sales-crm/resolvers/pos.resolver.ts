@@ -1,4 +1,4 @@
-import type { User } from '@kiro/database';
+import type { User } from '../../database';
 import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -138,3 +138,4 @@ export class POSResolver {
     return 'Daily sales report data';
   }
 }
+

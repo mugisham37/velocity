@@ -262,3 +262,4 @@ export class RbacService {
     PERMISSION_MANAGEMENT: { resource: 'permissions', action: 'manage' },
   };
 }
+

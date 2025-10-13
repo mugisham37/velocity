@@ -10,14 +10,14 @@ import {
   type MaintenanceHistory,
   type SparePart,
   type MaintenanceCost,
-} from '@kiro/database';
+} from '../../database';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, count, desc, eq, ilike, or, sql, gte, lte } from '@kiro/database';
+import { and, asc, count, desc, eq, ilike, or, sql, gte, lte } from '../../database';
 import {
   CreateMaintenanceScheduleDto,
   UpdateMaintenanceScheduleDto,
@@ -960,3 +960,4 @@ export class MaintenanceService {
     }
   }
 }
+

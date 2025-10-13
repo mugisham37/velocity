@@ -28,3 +28,4 @@ export class EnergyMonitoringController {
     return this.energyService.getTotalConsumption(companyId, meterType);
   }
 }
+

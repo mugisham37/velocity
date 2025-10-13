@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { checkDatabaseHealth } from '@kiro/database';
+import { checkDatabaseHealth } from '../database';
 
 export interface HealthStatus {
   status: 'healthy' | 'unhealthy';
@@ -61,3 +61,4 @@ export class HealthService {
     };
   }
 }
+

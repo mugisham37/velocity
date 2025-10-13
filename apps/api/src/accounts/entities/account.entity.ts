@@ -255,3 +255,4 @@ export class GLReportEntry {
   @Field()
   runningBalance!: string;
 }
+

@@ -13,3 +13,4 @@ export class GenerateInsightsInput {
   @IsNotEmpty()
   entityId!: string;
 }
+

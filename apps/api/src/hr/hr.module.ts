@@ -9,3 +9,4 @@ import { PayrollModule } from './payroll/payroll.module';
   exports: [EmployeeModule, AttendanceModule, LeaveModule, PayrollModule],
 })
 export class HrModule {}
+

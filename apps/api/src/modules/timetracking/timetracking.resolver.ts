@@ -19,7 +19,7 @@ import type {
   UpdateTimeTrackingSettings,
   UpdateTimesheet,
   UtilizationReport,
-} from '@kiro/shared';
+} from '../../shared';
 import { TimeTrackingService } from './timetracking.service';
 
 @Resolver('Timesheet')
@@ -321,3 +321,4 @@ export class TimeTrackingResolver {
     );
   }
 }
+

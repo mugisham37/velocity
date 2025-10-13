@@ -1,4 +1,4 @@
-import { DatabaseService } from '@kiro/database';
+import { DatabaseService } from '../../database';
 import {
   projects,
   projectTasks,
@@ -12,7 +12,7 @@ import {
   projectRevenue,
   projectInvoices,
   projectInvoiceLineItems,
-} from '@kiro/database/schema/projects';
+} from '../../database/schema/projects';
 import {
   BadRequestException,
   Injectable,
@@ -47,8 +47,8 @@ import type {
   UpdateProjectMilestone,
   UpdateProjectRevenue,
   UpdateProjectTask
-} from '@kiro/shared';
-import { and, asc, desc, eq, gte, lte, sql } from '@kiro/database';
+} from '../../shared';
+import { and, asc, desc, eq, gte, lte, sql } from '../../database';
 
 @Injectable()
 export class ProjectsService {

@@ -1,5 +1,5 @@
 import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
-import type { LeavePolicy as LeavePolicyType, LeaveRequest, LeaveBalance as LeaveBalanceType } from '@kiro/database';
+import type { LeavePolicy as LeavePolicyType, LeaveRequest, LeaveBalance as LeaveBalanceType } from '../../../database';
 import { LeaveStatus, LeaveType, AccrualType } from '../../enums';
 import { Employee } from '../../employee/entities/employee.entity';
 

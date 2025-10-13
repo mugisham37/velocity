@@ -37,3 +37,4 @@ export class IoTAlertsController {
     return this.alertsService.acknowledge(alertId, userId, companyId);
   }
 }
+

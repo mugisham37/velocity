@@ -10,14 +10,14 @@ import {
   type AssetDisposal,
   type AssetLocation,
   type AssetTransfer,
-} from '@kiro/database';
+} from '../../database';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, count, desc, eq, gte, ilike, lte, or } from '@kiro/database';
+import { and, asc, count, desc, eq, gte, ilike, lte, or } from '../../database';
 import {
   AssetFilterDto,
   AssetStatus,
@@ -891,3 +891,4 @@ export class AssetService {
     return `DSP-${String(Number(disposalCount) + 1).padStart(6, '0')}`;
   }
 }
+

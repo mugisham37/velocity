@@ -1,5 +1,5 @@
 import helmet from '@fastify/helmet';
-import { validateConfig } from '@kiro/config';
+import { validateConfig } from './config';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -115,3 +115,4 @@ bootstrap().catch(error => {
   console.error('Failed to start application:', error);
   process.exit(1);
 });
+

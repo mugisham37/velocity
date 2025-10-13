@@ -21,3 +21,4 @@ export class EnvironmentalMonitoringController {
     return this.environmentalService.getLatestByLocation(locationId, companyId);
   }
 }
+

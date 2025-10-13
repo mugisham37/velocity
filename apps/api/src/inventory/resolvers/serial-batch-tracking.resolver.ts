@@ -4,7 +4,7 @@ import type {
   ProductRecall,
   QualityInspection,
   SerialNumber,
-} from '@kiro/database';
+} from '../../database';
 import { Logger, UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -412,3 +412,4 @@ export class SerialBatchTrackingResolver {
     );
   }
 }
+

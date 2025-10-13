@@ -1,10 +1,10 @@
-import { DatabaseService, workflowInstances, workflows } from '@kiro/database';
+import { DatabaseService, workflowInstances, workflows } from '../../database';
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, inArray } from '@kiro/database';
+import { and, asc, desc, eq, inArray } from '../../database';
 import {
   CreateWorkflowInput,
   UpdateWorkflowInput,
@@ -313,3 +313,4 @@ export class WorkflowsService {
     };
   }
 }
+

@@ -639,3 +639,4 @@ export class AssetRevaluationFilterDto {
   @IsEnum(['ASC', 'DESC'])
   sortOrder?: 'ASC' | 'DESC' = 'DESC';
 }
+

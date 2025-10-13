@@ -5,7 +5,7 @@ import {
   type SalesOrderItem,
   salesOrderItems,
   salesOrders,
-} from '@kiro/database';
+} from '../../database';
 import {
   BadRequestException,
   Inject,
@@ -23,7 +23,7 @@ import {
   lte,
   or,
   sql,
-} from '@kiro/database';
+} from '../../database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import {
@@ -851,3 +851,4 @@ export class SalesOrdersService extends BaseService<
     return { subtotal, totalTax, totalDiscount, grandTotal };
   }
 }
+

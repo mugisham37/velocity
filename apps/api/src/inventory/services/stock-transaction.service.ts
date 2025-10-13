@@ -14,7 +14,7 @@ import {
   type StockLevel,
   type StockReconciliation,
   type StockReservation,
-} from '@kiro/database';
+} from '../../database';
 import {
   BadRequestException,
   ConflictException,
@@ -31,7 +31,7 @@ import {
   ilike,
   or,
   sql,
-} from '@kiro/database';
+} from '../../database';
 import {
   CreateStockEntryDto,
   CreateStockReconciliationDto,
@@ -1225,3 +1225,4 @@ export class StockTransactionService {
       .where(eq(stockLevels.id, currentLevel.id));
   }
 }
+

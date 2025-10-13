@@ -3,8 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { db, eq, and, ilike, count, asc } from '@kiro/database';
-import { employees } from '@kiro/database';
+import { db, eq, and, ilike, count, asc } from '../../database';
+import { employees } from '../../database';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { EmploymentStatus } from '../enums';
@@ -262,3 +262,4 @@ export class EmployeeService {
     return result;
   }
 }
+

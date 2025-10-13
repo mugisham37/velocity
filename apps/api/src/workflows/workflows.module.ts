@@ -1,4 +1,4 @@
-import { DatabaseModule } from '@kiro/database';
+import { DatabaseModule } from '../database';
 import { Module } from '@nestjs/common';
 import { WorkflowAnalyticsResolver } from './resolvers/workflow-analytics.resolver';
 import { WorkflowInstancesResolver } from './resolvers/workflow-instances.resolver';
@@ -38,3 +38,4 @@ import { WorkflowsService } from './services/workflows.service';
   ],
 })
 export class WorkflowsModule {}
+

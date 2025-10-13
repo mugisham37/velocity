@@ -1,5 +1,5 @@
 import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
-import type { Attendance, AttendanceShift } from '@kiro/database';
+import type { Attendance, AttendanceShift } from '../../../database';
 import { AttendanceStatus, ShiftType } from '../../enums';
 import { Employee } from '../../employee/entities/employee.entity';
 
@@ -95,3 +95,4 @@ export class Shift implements AttendanceShift {
   @Field(() => Date)
   updatedAt!: Date;
 }
+

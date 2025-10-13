@@ -6,7 +6,7 @@ import type {
   BOMItem,
   BOMOperation,
   BOMScrapItem,
-} from '@kiro/database';
+} from '../../database';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
   BOMCostBreakdown,
@@ -113,3 +113,4 @@ export class BOMResolver {
     return this.bomService.createBOMVersion(createVersionDto, userId);
   }
 }
+

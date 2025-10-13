@@ -14,7 +14,7 @@ import {
   type ProductRecall,
   type QualityInspection,
   type SerialNumber,
-} from '@kiro/database';
+} from '../../database';
 import {
   BadRequestException,
   Injectable,
@@ -32,7 +32,7 @@ import {
   sql,
   count,
   sum,
-} from '@kiro/database';
+} from '../../database';
 import {
   BatchNumberFilterDto,
   BatchQualityStatus,
@@ -1165,3 +1165,4 @@ export class SerialBatchTrackingService {
     return [];
   }
 }
+

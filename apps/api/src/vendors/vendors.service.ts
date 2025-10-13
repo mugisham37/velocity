@@ -2,7 +2,7 @@ import type {
   NewVendor,
   Vendor,
   VendorContact,
-} from '@kiro/database';
+} from '../database';
 import {
   vendorCategories,
   vendorCategoryMemberships,
@@ -11,10 +11,10 @@ import {
   vendorPerformanceMetrics,
   vendorPortalUsers,
   vendors,
-} from '@kiro/database';
+} from '../database';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { and, avg, desc, eq, like, sql } from '@kiro/database';
+import { and, avg, desc, eq, like, sql } from '../database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
@@ -691,3 +691,4 @@ export class VendorsService extends BaseService<
     return false;
   }
 }
+

@@ -22,7 +22,7 @@ import {
   lte,
   or,
   sql,
-} from '@kiro/database';
+} from '../../database';
 import {
   BadRequestException,
   ConflictException,
@@ -1189,3 +1189,4 @@ export class WarehouseService {
     };
   }
 }
+

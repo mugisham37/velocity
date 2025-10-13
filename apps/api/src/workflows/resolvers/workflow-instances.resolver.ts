@@ -126,3 +126,4 @@ export class WorkflowInstancesResolver {
     return JSON.stringify(metrics);
   }
 }
+

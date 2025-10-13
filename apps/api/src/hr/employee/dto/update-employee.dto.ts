@@ -6,3 +6,4 @@ export class UpdateEmployeeDto extends PartialType(CreateEmployeeDto) {
   @Field({ nullable: true })
   updatedBy?: string;
 }
+

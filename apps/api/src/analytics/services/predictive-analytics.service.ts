@@ -134,3 +134,4 @@ export class PredictiveAnalyticsService {
     return Math.min(probability, 0.95);
   }
 }
+

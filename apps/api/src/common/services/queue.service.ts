@@ -527,3 +527,4 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     });
   }
 }
+

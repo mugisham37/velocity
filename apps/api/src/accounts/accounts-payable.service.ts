@@ -17,7 +17,7 @@ import {
   lte,
   sql,
   type SQL,
-} from '@kiro/database';
+} from '../database';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import type { Logger } from 'winston';

@@ -104,3 +104,4 @@ export class ProcessOptimization {
   @Field(() => [String])
   recommendations!: string[];
 }
+

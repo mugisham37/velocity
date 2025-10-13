@@ -5,9 +5,9 @@ import {
   leadAssignmentRules,
   users,
   leads,
-} from '@kiro/database';
+} from '../../database';
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, sql } from '@kiro/database';
+import { and, eq, sql } from '../../database';
 import { Logger } from 'winston';
 import { BaseService } from '../../common/services/base.service';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
@@ -492,3 +492,4 @@ export class LeadAssignmentService extends BaseService<
     return value;
   }
 }
+

@@ -399,3 +399,4 @@ export class CollaborationResolver {
     return pubSub.asyncIterator(`notificationReceived.${userId}`);
   }
 }
+

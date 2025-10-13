@@ -6,9 +6,9 @@ import {
   leadActivities,
   leads,
   opportunities,
-} from '@kiro/database';
+} from '../../database';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, gte, like, lte, or, sql } from '@kiro/database';
+import { and, asc, desc, eq, gte, like, lte, or, sql } from '../../database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../../common/services/audit.service';
@@ -832,3 +832,4 @@ export class LeadsService extends BaseService<
     return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 }
+

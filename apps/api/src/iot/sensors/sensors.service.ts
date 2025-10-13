@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { db, and, eq } from '@kiro/database';
+import { db, and, eq } from '../../database';
 import {
   iotSensors,
   type IoTSensor,
   type NewIoTSensor,
-} from '@kiro/database';
+} from '../../database';
 
 @Injectable()
 export class IoTSensorsService {
@@ -61,3 +61,4 @@ export class IoTSensorsService {
     }
   }
 }
+

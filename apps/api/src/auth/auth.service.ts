@@ -1,5 +1,5 @@
 import { jwtConfig } from '@kiro/config';
-import type { User } from '@kiro/database';
+import type { User } from '../database';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -132,3 +132,4 @@ export class AuthService {
     return user;
   }
 }
+

@@ -55,3 +55,4 @@ export class ReportBuilderResolver {
     return JSON.stringify(result);
   }
 }
+

@@ -194,3 +194,4 @@ export class POSInvoice {
   @Field()
   createdAt!: Date;
 }
+

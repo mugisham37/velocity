@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { db, and, asc, desc, eq, gte, ilike, or, lte, count } from '@kiro/database';
+import { db, and, asc, desc, eq, gte, ilike, or, lte, count } from '../../database';
 import {
   iotDevices,
   type IoTDevice,
@@ -423,3 +423,4 @@ export class IoTDevicesService {
     }
   }
 }
+

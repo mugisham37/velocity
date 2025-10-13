@@ -9,14 +9,14 @@ import {
   quotations,
   salesOrderItems,
   salesOrders,
-} from '@kiro/database';
+} from '../../database';
 import {
   BadRequestException,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { type SQL, and, desc, eq, gte, ilike, inArray, lte, or, sql } from '@kiro/database';
+import { type SQL, and, desc, eq, gte, ilike, inArray, lte, or, sql } from '../../database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import {
@@ -670,3 +670,4 @@ export class QuotationsService extends BaseService<
     return { subtotal, totalTax, totalDiscount, grandTotal };
   }
 }
+

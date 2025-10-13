@@ -864,3 +864,4 @@ export class UpdateAssetDisposalDto {
   @IsEnum(DisposalStatus)
   status?: DisposalStatus;
 }
+

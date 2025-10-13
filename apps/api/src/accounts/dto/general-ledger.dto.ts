@@ -165,3 +165,4 @@ export class GLReportOptionsInput {
   @IsEnum(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc';
 }
+

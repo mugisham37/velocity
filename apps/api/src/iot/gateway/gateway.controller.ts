@@ -208,3 +208,4 @@ export class IoTGatewayController {
     return this.httpGateway.validateSensorData(sensorData);
   }
 }
+

@@ -827,3 +827,4 @@ export class GenerateGanttChartDto {
   @IsBoolean()
   includeOperations?: boolean;
 }
+

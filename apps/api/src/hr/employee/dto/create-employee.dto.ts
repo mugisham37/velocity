@@ -177,3 +177,4 @@ export class CreateEmployeeDto {
   @IsOptional()
   notes?: string;
 }
+

@@ -19,3 +19,4 @@ export class IoTSensorsController {
     return this.sensorsService.findByDevice(deviceId, companyId);
   }
 }
+

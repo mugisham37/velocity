@@ -1,8 +1,8 @@
-import { db } from '@kiro/database';
-import type { Database } from '@kiro/database';
+import { db } from '../../database';
+import type { Database } from '../../database';
 import { Inject, Injectable } from '@nestjs/common';
 import type { OnModuleInit } from '@nestjs/common';
-import { sql } from '@kiro/database';
+import { sql } from '../../database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 
@@ -663,3 +663,4 @@ export class DatabaseOptimizerService implements OnModuleInit {
     return query.replace(/\s+/g, ' ').trim().substring(0, 200);
   }
 }
+

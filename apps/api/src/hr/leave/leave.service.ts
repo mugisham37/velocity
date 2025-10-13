@@ -3,8 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { db, eq, and, gte, lte, desc } from '@kiro/database';
-import { leavePolicies, leaveRequests, leaveBalances } from '@kiro/database';
+import { db, eq, and, gte, lte, desc } from '../../database';
+import { leavePolicies, leaveRequests, leaveBalances } from '../../database';
 import { EmployeeService } from '../employee/employee.service';
 import {
   ApproveLeaveDto,

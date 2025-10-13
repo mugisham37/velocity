@@ -47,3 +47,4 @@ export class InsightsResponse {
   @Field()
   generatedAt!: string;
 }
+

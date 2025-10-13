@@ -168,3 +168,4 @@ export class PredictMaintenanceDto {
   @IsOptional()
   predictionHorizon?: number;
 }
+

@@ -13,7 +13,7 @@ import {
   type NewWorkstation,
   type Workstation,
   workstations,
-} from '@kiro/database';
+} from '../../database';
 import {
   CreateWorkstationDto,
   UpdateWorkstationDto,
@@ -333,3 +333,4 @@ export class WorkstationService {
     return hours + minutes / 60;
   }
 }
+

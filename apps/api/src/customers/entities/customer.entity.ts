@@ -162,3 +162,4 @@ export class CustomerAnalytics {
   @Field()
   totalCreditLimit!: number;
 }
+

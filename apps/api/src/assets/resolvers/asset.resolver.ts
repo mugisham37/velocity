@@ -223,3 +223,4 @@ export class AssetResolver {
     return this.assetService.completeAssetDisposal(id, userId, companyId);
   }
 }
+

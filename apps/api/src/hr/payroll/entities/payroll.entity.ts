@@ -6,7 +6,7 @@ import type {
   PayrollRun as PayrollRunType,
   PayrollEntry,
   PayrollEntryComponent
-} from '@kiro/database';
+} from '../../../database';
 import { ComponentType, PayrollFrequency, PayrollStatus, PayrollEntryStatus, PaymentMethod } from '../../enums';
 import { Employee } from '../../employee/entities/employee.entity';
 

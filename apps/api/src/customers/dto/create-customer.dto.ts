@@ -244,3 +244,4 @@ export class CreateCustomerSegmentInput {
   @Field()
   criteria: any;
 }
+

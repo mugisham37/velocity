@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { db } from '@kiro/database';
+import { db } from '../../database';
 import { equipmentMetrics, iotSensorData, type NewEquipmentMetric, type NewIoTSensorData } from '@kiro/database/schema';
 import { EquipmentMetricDto, SensorDataDto } from './dto/sensor-data.dto';
 
@@ -268,3 +268,4 @@ export class DataProcessingService {
     }
   }
 }
+

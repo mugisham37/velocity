@@ -37,3 +37,4 @@ export class IoTAnalyticsController {
     return this.analyticsService.getCompanyIoTOverview(companyId);
   }
 }
+

@@ -254,3 +254,4 @@ export class ProfitLossService {
     }, 0);
   }
 }
+

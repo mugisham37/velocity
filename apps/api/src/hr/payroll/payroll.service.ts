@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { db, eq, and, desc } from '@kiro/database';
+import { db, eq, and, desc } from '../../database';
 import { 
   payrollComponents, 
   salaryStructures, 
@@ -12,7 +12,7 @@ import {
   payrollEntries,
   payrollEntryComponents,
   employees 
-} from '@kiro/database';
+} from '../../database';
 import { EmployeeService } from '../employee/employee.service';
 import { AttendanceService } from '../attendance/attendance.service';
 import {

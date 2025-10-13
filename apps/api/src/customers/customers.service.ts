@@ -9,10 +9,10 @@ import {
   customerSegmentMemberships,
   customerSegments,
   customers
-} from '@kiro/database';
+} from '../database';
 import { Inject } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { and, eq, like, sql } from '@kiro/database';
+import { and, eq, like, sql } from '../database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
@@ -609,3 +609,4 @@ export class CustomersService extends BaseService<any, Customer, NewCustomer, Re
     }
   }
 }
+

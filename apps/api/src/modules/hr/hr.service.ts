@@ -1,4 +1,4 @@
-import { DatabaseService } from '@kiro/database';
+import { DatabaseService } from '../../database';
 import {
   departments,
   designations,
@@ -8,7 +8,7 @@ import {
   onboardingTasks,
   employeeOnboarding,
   employeeOnboardingTasks,
-} from '@kiro/database/schema/hr';
+} from '../../database/schema/hr';
 import type {
   CreateDepartmentDto,
   CreateDesignationDto,
@@ -28,13 +28,13 @@ import type {
   EmployeeDirectory,
   EmployeeFilter,
   OrganizationalHierarchy,
-} from '@kiro/shared';
+} from '../../shared';
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, like, or } from '@kiro/database';
+import { and, asc, desc, eq, like, or } from '../../database';
 
 @Injectable()
 export class HRService {
@@ -1132,3 +1132,4 @@ export class HRService {
       .then(result => result[0]!);
   }
 }
+

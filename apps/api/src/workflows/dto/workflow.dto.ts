@@ -683,3 +683,4 @@ export class WorkflowAnalyticsFilter {
   @IsArray()
   workflowIds?: string[];
 }
+

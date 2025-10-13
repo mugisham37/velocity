@@ -72,3 +72,4 @@ export class IoTGatewayService {
     return this.dataProcessing.getRealtimeMetrics(companyId, timeRange);
   }
 }
+

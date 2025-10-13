@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { GET_PROJECTS } from '@/graphql/projects';
 import { useQuery } from '@apollo/client';
-import type { Project, ProjectStatusType } from '@kiro/shared/types/projects';
+import type { Project, ProjectStatusType } from '@/shared/types/projects';
 import { Calendar, Plus, Target, TrendingUp, Users } from 'lucide-react';
 import React, { useState } from 'react';
 import { CreateProjectModal } from './CreateProjectModal';

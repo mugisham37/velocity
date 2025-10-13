@@ -233,3 +233,4 @@ export class LeadConversionResult {
   @Field({ nullable: true })
   opportunity?: any; // Would be Opportunity entity
 }
+

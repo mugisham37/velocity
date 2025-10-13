@@ -1,5 +1,5 @@
-import { db, and, asc, count, desc, eq, sql } from '@kiro/database';
-import type { Database, SQL } from '@kiro/database';
+import { db, and, asc, count, desc, eq, sql } from '../../database';
+import type { Database, SQL } from '../../database';
 import {
   BadRequestException,
   Inject,
@@ -465,3 +465,4 @@ export abstract class BaseService<
     return await this.database.transaction(callback);
   }
 }
+

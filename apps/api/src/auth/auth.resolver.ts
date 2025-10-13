@@ -1,4 +1,4 @@
-import type { User } from '@kiro/database';
+import type { User } from '../database';
 import { UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Resolver } from '@nestjs/graphql';
 import { AuthService } from './auth.service';
@@ -126,3 +126,4 @@ export class AuthResolver {
     return { backupCodes };
   }
 }
+

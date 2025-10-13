@@ -30,3 +30,4 @@ import { VulnerabilityService } from './services/vulnerability.service';
   ],
 })
 export class SecurityModule {}
+

@@ -294,3 +294,4 @@ export class ForecastingService {
     return totalVariation > 0 ? 1 - seasonalVariation / totalVariation : 0;
   }
 }
+

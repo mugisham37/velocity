@@ -12,9 +12,9 @@ import {
   onlinePayments,
   paymentGateways,
   reconciliationItems,
-} from '@kiro/database';
+} from '../database';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, eq, sql, sum } from '@kiro/database';
+import { and, eq, sql, sum } from '../database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
@@ -716,3 +716,4 @@ export class BankingService extends BaseService<
     return transactions;
   }
 }
+

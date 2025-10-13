@@ -18,3 +18,4 @@ import { WorkstationService } from './services/workstation.service';
   exports: [BOMService, WorkstationService, ProductionPlanningService],
 })
 export class ManufacturingModule {}
+

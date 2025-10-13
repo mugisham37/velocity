@@ -8,3 +8,4 @@ import { EnergyMonitoringService } from './energy.service';
   exports: [EnergyMonitoringService],
 })
 export class EnergyMonitoringModule {}
+

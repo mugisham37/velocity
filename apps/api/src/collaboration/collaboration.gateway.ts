@@ -260,3 +260,4 @@ export class CollaborationGateway
     this.server.to(`chat:${channelId}`).emit(event, data);
   }
 }
+

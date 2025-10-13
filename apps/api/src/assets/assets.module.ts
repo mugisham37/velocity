@@ -1,4 +1,4 @@
-import { DatabaseModule } from '@kiro/database';
+import { DatabaseModule } from '../database';
 import { Module } from '@nestjs/common';
 import { AssetResolver } from './resolvers/asset.resolver';
 import { DepreciationResolver } from './resolvers/depreciation.resolver';
@@ -25,3 +25,4 @@ import { MaintenanceService } from './services/maintenance.service';
   exports: [AssetService, DepreciationService, MaintenanceService],
 })
 export class AssetsModule {}
+

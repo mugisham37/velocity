@@ -137,3 +137,4 @@ export class PredictiveMaintenanceController {
     return { message: 'Model deleted successfully' };
   }
 }
+

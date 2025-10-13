@@ -3,9 +3,9 @@ import {
   workflowApprovals,
   workflowInstances,
   workflowSteps,
-} from '@kiro/database';
+} from '../../../database';
 import { Injectable } from '@nestjs/common';
-import { and, eq, lt, sql } from '@kiro/database';
+import { and, eq, lt, sql } from '../../../database';
 import { NotificationService } from '../../common/services/notification.service';
 import {
   ApprovalStatus,
@@ -436,3 +436,4 @@ export class WorkflowSlaService {
     }
   }
 }
+

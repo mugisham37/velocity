@@ -8,3 +8,4 @@ import { IoTAlertsService } from './alerts.service';
   exports: [IoTAlertsService],
 })
 export class IoTAlertsModule {}
+

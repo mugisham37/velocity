@@ -18,3 +18,4 @@ import { PredictiveMaintenanceService } from './predictive-maintenance.service';
   ],
 })
 export class PredictiveMaintenanceModule {}
+

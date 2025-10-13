@@ -368,3 +368,4 @@ export class LeadFilterInput {
   @IsString()
   search?: string;
 }
+

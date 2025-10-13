@@ -167,3 +167,4 @@ export class FinancialRatiosReport {
   @Field()
   generatedAt!: Date;
 }
+

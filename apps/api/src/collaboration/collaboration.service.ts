@@ -62,3 +62,4 @@ export class CollaborationService {
     // and potentially emit to activity feed subscribers
   }
 }
+

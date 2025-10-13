@@ -1333,3 +1333,4 @@ export class SparePartFilterDto {
   @IsEnum(['ASC', 'DESC'])
   sortOrder?: 'ASC' | 'DESC' = 'ASC';
 }
+

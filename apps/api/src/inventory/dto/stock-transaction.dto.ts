@@ -829,3 +829,4 @@ export class StockLedgerQueryDto {
   @IsOptional()
   sortOrder?: 'asc' | 'desc';
 }
+

@@ -2,13 +2,13 @@ import {
   DatabaseService,
   workflowApprovals,
   workflowSteps,
-} from '@kiro/database';
+} from '../../database';
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq, sql } from '@kiro/database';
+import { and, eq, sql } from '../../database';
 import { NotificationService } from '../../common/services/notification.service';
 import {
   ApprovalStatus,
@@ -351,5 +351,6 @@ export class WorkflowApprovalService {
     };
   }
 }
+
 
 

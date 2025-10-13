@@ -32,7 +32,7 @@ import {
   productionPlanItems,
   productionPlans,
   workstations,
-} from '@kiro/database';
+} from '../../database';
 import {
   BadRequestException,
   ConflictException,
@@ -1231,3 +1231,4 @@ export class ProductionPlanningService {
     await db.delete(productionForecasts).where(eq(productionForecasts.id, id));
   }
 }
+

@@ -28,3 +28,4 @@ import { SmartCategorizationService } from './services/smart-categorization.serv
   ],
 })
 export class AnalyticsModule {}
+

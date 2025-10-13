@@ -74,3 +74,4 @@ export class WorkflowAnalyticsResolver {
     return JSON.stringify(items);
   }
 }
+

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { db, and, desc, eq, gte } from '@kiro/database';
+import { db, and, desc, eq, gte } from '../../database';
 import {
   environmentalMonitoring,
   type EnvironmentalMonitoring,
@@ -65,3 +65,4 @@ export class EnvironmentalMonitoringService {
     }
   }
 }
+

@@ -12,7 +12,7 @@ import type {
   UpdateEmployeeDocumentDto,
   UpdateEmployeeDto,
   UpdateOnboardingTaskStatusDto,
-} from '@kiro/shared';
+} from '../../shared';
 import { UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -256,3 +256,4 @@ export class HRResolver {
     );
   }
 }
+

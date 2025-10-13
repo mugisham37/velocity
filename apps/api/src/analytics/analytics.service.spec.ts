@@ -306,3 +306,4 @@ describe('SmartCategorizationService', () => {
     expect(Array.isArray(category.rules)).toBe(true);
   });
 });
+

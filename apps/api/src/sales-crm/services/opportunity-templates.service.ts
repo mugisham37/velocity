@@ -4,8 +4,8 @@ import {
   opportunityTemplateActivities,
   opportunityTemplateStages,
   opportunityTemplates,
-} from '@kiro/database';
-import { and, eq, sql } from '@kiro/database';
+} from '../../database';
+import { and, eq, sql } from '../../database';
 import { Inject, Injectable } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
@@ -500,3 +500,4 @@ export class OpportunityTemplatesService extends BaseService<
     }
   }
 }
+

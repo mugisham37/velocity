@@ -13,9 +13,9 @@ import {
   invoices,
   journalEntries,
   paymentAllocations,
-} from '@kiro/database';
+} from '../database';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, gte, lte, sql, sum } from '@kiro/database';
+import { and, desc, eq, gte, lte, sql, sum } from '../database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
@@ -1103,3 +1103,4 @@ export class AccountsReceivableService extends BaseService<
     return account;
   }
 }
+

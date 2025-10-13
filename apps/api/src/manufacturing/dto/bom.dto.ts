@@ -540,3 +540,4 @@ export class BOMExplosionResult {
   @Field(() => Float)
   totalQuantity!: number;
 }
+

@@ -13,7 +13,7 @@ import {
   userRoles,
   rolePermissions,
   userSessions,
-} from '@kiro/database';
+} from '../database';
 
 interface RoleWithPermissions extends Role {
   permissions: Array<Permission & { conditions?: Record<string, any> | null }>;
@@ -391,3 +391,4 @@ export class UsersService {
     };
   }
 }
+

@@ -4,8 +4,7 @@
   "private": true,
   "description": "KIRO ERP - Next-generation Enterprise Resource Planning System",
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps/*"
   ],
   "scripts": {
     "build": "turbo build",

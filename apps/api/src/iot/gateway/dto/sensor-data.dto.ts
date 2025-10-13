@@ -104,3 +104,4 @@ export class EquipmentMetricDto {
   @IsDateString()
   timestamp?: string;
 }
+

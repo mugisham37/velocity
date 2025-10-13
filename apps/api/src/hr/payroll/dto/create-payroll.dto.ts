@@ -164,3 +164,4 @@ export class ProcessPayrollDto {
   @IsBoolean()
   includeInactive?: boolean;
 }
+

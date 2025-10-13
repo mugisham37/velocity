@@ -509,3 +509,4 @@ export class QuotationStatusAnalyticsType {
   @Field(() => Float)
   totalValue!: number;
 }
+

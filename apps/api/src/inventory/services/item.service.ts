@@ -18,14 +18,14 @@ import {
   type ItemLifecycle,
   type ItemPricingTier,
   type ItemVariant,
-} from '@kiro/database';
+} from '../../database';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, count, desc, eq, ilike, or, sql } from '@kiro/database';
+import { and, asc, count, desc, eq, ilike, or, sql } from '../../database';
 import {
   CreateItemAttributeDto,
   CreateItemAttributeValueDto,
@@ -1052,3 +1052,4 @@ export class ItemService {
       .orderBy(asc(items.itemName));
   }
 }
+

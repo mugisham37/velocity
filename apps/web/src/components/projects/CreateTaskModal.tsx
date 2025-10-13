@@ -24,7 +24,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   CreateProjectTaskSchema,
   type ProjectTask,
-} from '@kiro/shared/types/projects';
+} from '@/shared/types/projects';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { db, and, desc, eq, gte, sum } from '@kiro/database';
+import { db, and, desc, eq, gte, sum } from '../../database';
 import {
   energyConsumption,
   type EnergyConsumption,
@@ -93,3 +93,4 @@ export class EnergyMonitoringService {
     }
   }
 }
+

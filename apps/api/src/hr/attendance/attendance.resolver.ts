@@ -130,3 +130,4 @@ export class AttendanceResolver {
     return true;
   }
 }
+

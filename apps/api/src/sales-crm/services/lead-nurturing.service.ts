@@ -5,9 +5,9 @@ import {
   leadNurturingCampaigns,
   leadCampaignEnrollments,
   leads,
-} from '@kiro/database';
+} from '../../database';
 import { Injectable, Inject } from '@nestjs/common';
-import { and, eq, sql } from '@kiro/database';
+import { and, eq, sql } from '../../database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { BaseService } from '../../common/services/base.service';
@@ -647,3 +647,4 @@ export class LeadNurturingService extends BaseService<
     return value;
   }
 }
+

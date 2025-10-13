@@ -12,7 +12,7 @@ import {
   UpdateEmployeeDocumentSchema,
   UpdateEmployeeSchema,
   UpdateOnboardingTaskStatusSchema,
-} from '@kiro/shared';
+} from '../../shared';
 import {
   Body,
   Controller,
@@ -326,3 +326,4 @@ export class HRController {
     );
   }
 }
+

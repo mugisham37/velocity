@@ -369,3 +369,4 @@ export class AccountsReceivableResolver {
     return true;
   }
 }
+

@@ -1019,3 +1019,4 @@ export class ExpiryAlertDto {
   @Field()
   warehouseLocations!: string[];
 }
+

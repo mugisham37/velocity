@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { UPDATE_PROJECT_TASK } from '@/graphql/projects';
 import { useMutation } from '@apollo/client';
-import type { ProjectTask, TaskStatusType } from '@kiro/shared/types/projects';
+import type { ProjectTask, TaskStatusType } from '@/shared/types/projects';
 import {
     Download,
     Edit,

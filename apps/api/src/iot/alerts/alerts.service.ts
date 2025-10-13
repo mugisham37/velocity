@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { db, and, desc, eq } from '@kiro/database';
+import { db, and, desc, eq } from '../../database';
 import {
   iotAlerts,
   type IoTAlert,
@@ -80,3 +80,4 @@ export class IoTAlertsService {
     }
   }
 }
+

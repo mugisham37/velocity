@@ -30,7 +30,7 @@ import {
   bomUpdateLog,
   boms,
   items,
-} from '@kiro/database';
+} from '../../database';
 import {
   BOMCostBreakdown,
   BOMCostCalculationDto,
@@ -797,3 +797,4 @@ export class BOMService {
       .orderBy(asc(bomAlternativeItems.priority));
   }
 }
+

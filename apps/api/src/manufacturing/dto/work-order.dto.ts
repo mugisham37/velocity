@@ -800,3 +800,4 @@ export class ProductionEntryItemDto {
   @Min(0)
   rate?: number;
 }
+

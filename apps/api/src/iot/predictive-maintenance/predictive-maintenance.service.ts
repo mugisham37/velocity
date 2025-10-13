@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { db, and, desc, eq } from '@kiro/database';
+import { db, and, desc, eq } from '../../database';
 import {
   predictiveMaintenanceModels,
   predictiveMaintenancePredictions,
@@ -7,7 +7,7 @@ import {
   type NewPredictiveMaintenancePrediction,
   type PredictiveMaintenanceModel,
   type PredictiveMaintenancePrediction,
-} from '@kiro/database';
+} from '../../database';
 import { 
   CreatePredictiveMaintenanceModelDto,
   TrainModelDto,
@@ -360,3 +360,4 @@ export class PredictiveMaintenanceService {
     }
   }
 }
+

@@ -32,7 +32,7 @@ import type {
     UpdateProjectRevenue,
     CreateProjectInvoice,
     UpdateProjectInvoice,
-} from '@kiro/shared';
+} from '../../shared';
 import { ProjectsService } from './projects.service';
 
 @Resolver('Project')

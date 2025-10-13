@@ -398,3 +398,4 @@ export class FinancialRatiosService {
     return variance > 0 ? 'improving' : 'declining';
   }
 }
+

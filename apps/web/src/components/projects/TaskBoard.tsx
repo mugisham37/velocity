@@ -44,7 +44,7 @@ const Draggable = ({ children }: MockDraggableProps) => {
   const snapshot = { isDragging: false };
   return <div>{children(provided, snapshot)}</div>;
 };
-import type { ProjectTask, TaskStatusType } from '@kiro/shared/types/projects';
+import type { ProjectTask, TaskStatusType } from '@/shared/types/projects';
 import {
   Calendar,
   Clock,

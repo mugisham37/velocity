@@ -5,9 +5,9 @@ import {
   accounts,
   glEntries,
   journalEntries,
-} from '@kiro/database';
+} from '../database';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, eq, like, sql } from '@kiro/database';
+import { and, eq, like, sql } from '../database';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { AuditService } from '../common/services/audit.service';
@@ -944,3 +944,4 @@ export class AccountsService extends BaseService<
     return templates[templateName] || null;
   }
 }
+

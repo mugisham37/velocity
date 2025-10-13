@@ -58,3 +58,4 @@ export class CreateJournalEntryInput {
   @Type(() => JournalEntryLineInput)
   entries!: JournalEntryLineInput[];
 }
+

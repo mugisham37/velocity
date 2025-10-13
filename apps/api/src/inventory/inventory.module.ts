@@ -1,4 +1,4 @@
-import { DatabaseModule } from '@kiro/database';
+import { DatabaseModule } from '../database';
 import { Module } from '@nestjs/common';
 import { ItemResolver } from './resolvers/item.resolver';
 import { SerialBatchTrackingResolver } from './resolvers/serial-batch-tracking.resolver';
@@ -29,3 +29,4 @@ import { WarehouseService } from './services/warehouse.service';
   ],
 })
 export class InventoryModule {}
+

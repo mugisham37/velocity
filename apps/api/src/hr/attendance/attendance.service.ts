@@ -3,8 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { db, eq, and, gte, lte, desc, asc } from '@kiro/database';
-import { attendance, attendanceShifts, employees } from '@kiro/database';
+import { db, eq, and, gte, lte, desc, asc } from '../../database';
+import { attendance, attendanceShifts, employees } from '../../database';
 import { EmployeeService } from '../employee/employee.service';
 import {
   CreateAttendanceDto,
@@ -370,3 +370,4 @@ export class AttendanceService {
     }
   }
 }
+

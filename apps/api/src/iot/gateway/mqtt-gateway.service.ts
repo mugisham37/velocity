@@ -348,3 +348,4 @@ export class MqttGatewayService implements OnModuleInit, OnModuleDestroy {
     return { ...this.config };
   }
 }
+

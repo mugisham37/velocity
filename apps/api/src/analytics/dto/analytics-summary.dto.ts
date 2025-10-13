@@ -35,3 +35,4 @@ export class AnalyticsSummary {
   @Field()
   timestamp!: string;
 }
+
