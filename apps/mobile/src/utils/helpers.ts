@@ -1,10 +1,68 @@
-import {
-  format,
-  formatDistanceToNow,
-  isToday,
-  isYesterday,
-  parseISO,
-} from 'date-fns';
+// Native date utilities to replace date-fns
+const formatDateInternal = (date: Date, formatStr: string): string => {
+  const options: Intl.DateTimeFormatOptions = {};
+
+  if (formatStr.includes('MMM')) {
+    options.month = 'short';
+  }
+  if (formatStr.includes('dd')) {
+    options.day = '2-digit';
+  }
+  if (formatStr.includes('yyyy')) {
+    options.year = 'numeric';
+  }
+  if (formatStr.includes('HH:mm')) {
+    options.hour = '2-digit';
+    options.minute = '2-digit';
+    options.hour12 = false;
+  }
+
+  return new Intl.DateTimeFormat('en-US', options).format(date);
+};
+
+const parseISO = (dateString: string): Date => {
+  return new Date(dateString);
+};
+
+const isToday = (date: Date): boolean => {
+  const today = new Date();
+  return date.toDateString() === today.toDateString();
+};
+
+const isYesterday = (date: Date): boolean => {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return date.toDateString() === yesterday.toDateString();
+};
+
+const formatDistanceToNow = (
+  date: Date,
+  options?: { addSuffix?: boolean }
+): string => {
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  const diffInDays = Math.floor(diffInHours / 24);
+
+  if (diffInMinutes < 1) {
+    return options?.addSuffix ? 'just now' : 'now';
+  } else if (diffInMinutes < 60) {
+    return options?.addSuffix
+      ? `${diffInMinutes} minutes ago`
+      : `${diffInMinutes} minutes`;
+  } else if (diffInHours < 24) {
+    return options?.addSuffix
+      ? `${diffInHours} hours ago`
+      : `${diffInHours} hours`;
+  } else {
+    return options?.addSuffix ? `${diffInDays} days ago` : `${diffInDays} days`;
+  }
+};
+
+const format = (date: Date, formatStr: string): string => {
+  return formatDateInternal(date, formatStr);
+};
 
 // Date formatting utilities
 export const formatDate = (
@@ -81,7 +139,7 @@ export const capitalizeFirst = (text: string): string => {
 export const capitalizeWords = (text: string): string => {
   return text.replace(
     /\w\S*/g,
-    txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+    txt => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase()
   );
 };
 
@@ -265,7 +323,7 @@ export const throttle = <T extends (...args: any[]) => any>(
 
 // Random utilities
 export const generateId = (): string => {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
 export const generateUUID = (): string => {

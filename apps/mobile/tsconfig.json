@@ -20,7 +20,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "bundler",
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "noEmit": true,
     "isolatedModules": true,
     "jsx": "react-jsx"

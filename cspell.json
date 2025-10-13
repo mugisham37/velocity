@@ -227,7 +227,20 @@
     "timetracking",
     "timesheet",
     "timesheets",
-    "Timesheet"
+    "Timesheet",
+    "yxxx",
+    "netinfo",
+    "barcodes",
+    "uncategorized",
+    "skus",
+    "Skus",
+    "Syncable",
+    "persistor",
+    "textnodes",
+    "multilines",
+    "activedescendant",
+    "proptypes",
+    "sonarjs"
   ],
   "ignorePaths": [
     "node_modules/**",
