@@ -1,10 +1,146 @@
-# Dependencies
+# ===================================================================
+# KIRO ERP - Production-Ready .gitignore
+# Tailored for standalone apps architecture with infrastructure
+# ===================================================================
+
+# ===================================================================
+# DEPENDENCIES & PACKAGE MANAGERS
+# ===================================================================
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+.npm
+.yarn-integrity
+.pnp.*
+
+# Package manager lock files (keep package-lock.json, ignore others)
+yarn.lock
+pnpm-lock.yaml
+
+# ===================================================================
+# BUILD OUTPUTS & COMPILED FILES
+# ===================================================================
+# General build outputs
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Next.js (Web App)
+.next/
+.next/**
+!.next/cache/
+
+# Expo (Mobile App)
+.expo/
+.expo-shared/
+expo-env.d.ts
+
+# NestJS (API)
+dist/
+build/
+
+# ===================================================================
+# DEVELOPMENT & TOOLING
+# ===================================================================
+# Turbo (Monorepo orchestration)
+.turbo/
+
+# TypeScript
+*.tsbuildinfo
+
+# ESLint
+.eslintcache
+
+# Prettier
+.prettierignore
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+e2e-results/
+.nyc_output
+*.lcov
+
+# Vitest
+vitest.config.ts.timestamp-*
+
+# ===================================================================
+# DATABASE & ORM
+# ===================================================================
+# Drizzle ORM
+drizzle/
+migrations/
+*.db
+*.sqlite
+*.sqlite3
+
+# Database dumps and backups
+*.sql.gz
+*.dump
+*.backup
+
+# ===================================================================
+# INFRASTRUCTURE & DEPLOYMENT
+# ===================================================================
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes secrets (keep templates)
+infrastructure/k8s/*secret*.yaml
+!infrastructure/k8s/secrets.yaml
+
+# SSL Certificates & Keys
+infrastructure/nginx/ssl/*.pem
+infrastructure/nginx/ssl/*.key
+infrastructure/nginx/ssl/*.crt
+infrastructure/nginx/ssl/*.p12
+infrastructure/nginx/ssl/*.pfx
+!infrastructure/nginx/ssl/README.md
+
+# Deployment configurations
+.env.production
+.env.staging
+.env.local.*
+
+# Monitoring data
+prometheus-data/
+grafana-data/
+
+# ===================================================================
+# ENVIRONMENT & CONFIGURATION
+# ===================================================================
+# Environment files (keep templates and examples)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Keep these templates
+!.env.example
+!.env.production.template
+!.env.production.example
+
+# Local configuration overrides
+config.local.json
+settings.local.json
+*.local.config.js
+
+# ===================================================================
+# LOGS & RUNTIME DATA
+# ===================================================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # Runtime data
 pids
@@ -12,90 +148,188 @@ pids
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
-coverage/
-*.lcov
-
-# nyc test coverage
-.nyc_output
-
-# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
-.grunt
-
-# Bower dependency directory (https://bower.io/)
-bower_components
-
-# node-waf configuration
-.lock-wscript
-
-# Compiled binary addons (https://nodejs.org/api/addons.html)
-build/Release
-
-# Dependency directories
-jspm_packages/
-
-# Snowpack dependency directory (https://snowpack.dev/)
-web_modules/
-
-# TypeScript cache
-*.tsbuildinfo
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Optional stylelint cache
-.stylelintcache
-
-# Microbundle cache
+# ===================================================================
+# CACHING & TEMPORARY FILES
+# ===================================================================
+# General cache
+.cache/
+.parcel-cache/
 .rpt2_cache/
 .rts2_cache_cjs/
 .rts2_cache_es/
 .rts2_cache_umd/
 
+# Temporary files
+*.tmp
+*.temp
+.temp/
+
+# ===================================================================
+# IDE & EDITOR
+# ===================================================================
+# VSCode (keep shared settings, ignore personal ones)
+.vscode/settings.json
+.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ===================================================================
+# OPERATING SYSTEM
+# ===================================================================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===================================================================
+# MOBILE DEVELOPMENT (React Native/Expo)
+# ===================================================================
+# Expo
+.expo/
+.expo-shared/
+expo-env.d.ts
+web-build/
+
+# React Native
+# Android
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/release/
+
+# iOS
+ios/build/
+ios/Pods/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+ios/Podfile.lock
+
+# ===================================================================
+# SECURITY & SECRETS
+# ===================================================================
+# API Keys and secrets
+.env.production
+.env.staging
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.keystore
+*.jks
+
+# OAuth and authentication
+client_secret*.json
+service-account*.json
+firebase-adminsdk*.json
+
+# ===================================================================
+# BACKUP & ARCHIVE FILES
+# ===================================================================
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+*.swp
+*.swo
+*.tmp
+
+# Compressed files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# ===================================================================
+# GENERATED & AUTO-GENERATED FILES
+# ===================================================================
+generated/
+auto-generated/
+.generated/
+
+# GraphQL generated files
+__generated__/
+*.generated.ts
+*.generated.js
+
+# Prisma (if used in future)
+prisma/migrations/
+prisma/*.db
+
+# ===================================================================
+# PERFORMANCE & PROFILING
+# ===================================================================
+# Bundle analysis
+bundle-analyzer-report.html
+stats.json
+
+# Performance profiling
+*.cpuprofile
+*.heapprofile
+*.heapsnapshot
+
+# ===================================================================
+# MISCELLANEOUS
+# ===================================================================
 # Optional REPL history
 .node_repl_history
 
 # Output of 'npm pack'
 *.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
-
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# Next.js build output
-.next
-out/
-
-# Nuxt.js build / generate output
-.nuxt
-dist
-
-# Gatsby files
-.cache/
-public
-
-# Vuepress build output
-.vuepress/dist
-
-# Vuepress v2.x temp and cache directory
-.temp
-.cache
-
-# Docusaurus cache and generated files
-.docusaurus
 
 # Serverless directories
 .serverless/
@@ -112,88 +346,26 @@ public
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 
-# yarn v2
+# Yarn v2
 .yarn/cache
 .yarn/unplugged
 .yarn/build-state.yml
 .yarn/install-state.gz
-.pnp.*
 
-# Turbo
-.turbo
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
 
-# Build outputs
-dist/
-build/
-*.tsbuildinfo
+# Storybook build outputs
+storybook-static/
 
-# Testing
-test-results/
-playwright-report/
-e2e-results/
-coverage/
+# Rush
+common/deploy/
+common/temp/
+common/autoinstallers/*/.npmrc
+**/.rush/temp/
 
-# Logs
-logs
-*.log
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# IDE
-.vscode/settings.json
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Temporary files
-*.tmp
-*.temp
-
-# Docker
-.dockerignore
-
-# Local development
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Backup files
-*.bak
-*.backup
-
-# Generated files
-generated/
-auto-generated/
-
-# Package manager lock files (keep only one)
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-
-# Drizzle
-drizzle/
-
-# Certificates and keys
-*.pem
-*.key
-*.crt
-*.p12
-*.pfx
-
-# Local configuration overrides
-config.local.json
-settings.local.json
+# Nx
+.nx/cache
