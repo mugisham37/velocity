@@ -112,22 +112,21 @@ export class ProjectsService {
   }
 
   async getProjects(companyId: string, filters?: any): Promise<Project[]> {
-    let query = this.db.db
-      .select()
-      .from(projects)
-      .where(eq(projects.companyId, companyId));
+    const conditions = [eq(projects.companyId, companyId)];
 
     if (filters?.status) {
-      query = query.where(eq(projects.status, filters.status));
+      conditions.push(eq(projects.status, filters.status));
     }
 
     if (filters?.projectManagerId) {
-      query = query.where(
-        eq(projects.projectManagerId, filters.projectManagerId)
-      );
+      conditions.push(eq(projects.projectManagerId, filters.projectManagerId));
     }
 
-    const result = await query.orderBy(desc(projects.createdAt));
+    const result = await this.db.db
+      .select()
+      .from(projects)
+      .where(and(...conditions))
+      .orderBy(desc(projects.createdAt));
     return result as Project[];
   }
 
@@ -806,20 +805,21 @@ export class ProjectsService {
     // Validate project access
     await this.getProject(projectId, companyId);
 
-    let query = this.db.db
-      .select()
-      .from(projectCosts)
-      .where(eq(projectCosts.projectId, projectId));
+    const conditions = [eq(projectCosts.projectId, projectId)];
 
     if (filter?.status) {
-      query = query.where(eq(projectCosts.status, filter.status));
+      conditions.push(eq(projectCosts.status, filter.status));
     }
 
     if (filter?.costType) {
-      query = query.where(eq(projectCosts.costType, filter.costType));
+      conditions.push(eq(projectCosts.costType, filter.costType));
     }
 
-    const costs = await query.orderBy(desc(projectCosts.costDate));
+    const costs = await this.db.db
+      .select()
+      .from(projectCosts)
+      .where(and(...conditions))
+      .orderBy(desc(projectCosts.costDate));
     return costs.map(cost => ({
       id: cost.id,
       projectId: cost.projectId,

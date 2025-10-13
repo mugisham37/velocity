@@ -370,8 +370,6 @@ export class BOMService {
   }
 
   async findBOMs(filter: BOMFilterDto): Promise<BOM[]> {
-    let query = db.select().from(boms);
-
     const conditions = [];
 
     if (filter.companyId) {
@@ -411,11 +409,12 @@ export class BOMService {
       );
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    return await query.orderBy(desc(boms.createdAt));
+    const queryBuilder = db.select().from(boms);
+    
+    return await (conditions.length > 0 
+      ? queryBuilder.where(and(...conditions))
+      : queryBuilder
+    ).orderBy(desc(boms.createdAt));
   }
 
   async createBOMVersion(

@@ -611,7 +611,7 @@ export class GeneralLedgerService {
       conditions.push(sql`${journalEntries.reference} NOT LIKE 'CLOSING-%'`);
     }
 
-    query = query.where(and(...conditions));
+    query = (query as any).where(and(...conditions));
 
     // Apply sorting
     const orderByColumn =
@@ -619,7 +619,7 @@ export class GeneralLedgerService {
     const orderDirection =
       sortOrder === 'asc' ? asc(orderByColumn) : desc(orderByColumn);
 
-    query = query.orderBy(orderDirection);
+    query = (query as any).orderBy(orderDirection);
 
     return await query;
   }

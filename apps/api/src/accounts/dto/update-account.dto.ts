@@ -34,5 +34,7 @@ export class UpdateAccountInput {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  [key: string]: unknown;
 }
 

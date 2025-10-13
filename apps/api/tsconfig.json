@@ -1,15 +1,72 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
+    // Target and Module System
+    "target": "es2021",
+    "lib": ["es2021"],
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "moduleDetection": "force",
+
+    // JavaScript Support
+    "allowJs": false,
+    "checkJs": false,
+    "skipLibCheck": true,
+
+    // Emit
+    "noEmit": false,
     "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
+    "removeComments": false,
+    "importHelpers": true,
+    "downlevelIteration": true,
+    "isolatedModules": true,
+
+    // Interop Constraints
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+
+    // Type Checking - Adjusted for NestJS
+    "strict": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": false,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noImplicitOverride": true,
+    "useUnknownInCatchVariables": true,
+    "exactOptionalPropertyTypes": false,
+    "noUncheckedIndexedAccess": false,
+    "noPropertyAccessFromIndexSignature": false,
+
+    // Additional Checks - Relaxed for development
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "noFallthroughCasesInSwitch": true,
+
+    // NestJS Required
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+
+    // Path Mapping
+    "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@kiro/database": ["../../packages/database/src/index"],
+      "@kiro/database/*": ["../../packages/database/src/*"],
+      "@kiro/shared": ["../../packages/shared/src/index"],
+      "@kiro/shared/*": ["../../packages/shared/src/*"],
+      "@kiro/config": ["../../packages/config/src/index"],
+      "@kiro/config/*": ["../../packages/config/src/*"]
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
+  "exclude": ["node_modules", "dist", "test", "**/*spec.ts", "**/*.test.ts"]
 }

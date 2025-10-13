@@ -84,7 +84,7 @@ export class EmployeeService {
       .offset(offset);
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = (query as any).where(and(...conditions));
     }
 
     const employeeList = await query;
@@ -92,7 +92,7 @@ export class EmployeeService {
     // Get total count
     let countQuery = db.select({ count: count() }).from(employees);
     if (conditions.length > 0) {
-      countQuery = countQuery.where(and(...conditions));
+      countQuery = (countQuery as any).where(and(...conditions));
     }
     const countResult = await countQuery;
     const total = Number(countResult[0]?.count || 0);

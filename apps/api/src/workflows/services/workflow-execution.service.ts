@@ -4,13 +4,16 @@ import {
   workflowInstances,
   workflowSteps,
   workflows,
-} from '../../../database';
+  and,
+  eq,
+  inArray,
+  sql,
+} from '../../database';
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq, inArray, sql } from '../../../database';
 import { NotificationService } from '../../common/services/notification.service';
 import {
   CreateWorkflowInstanceInput,
@@ -132,21 +135,21 @@ export class WorkflowExecutionService {
       conditions.push(inArray(workflowInstances.status, options.status));
     }
 
-    let query = this.db.db
+    let queryBuilder = this.db.db
       .select()
       .from(workflowInstances)
       .where(and(...conditions))
       .orderBy(workflowInstances.createdAt);
 
     if (options?.limit) {
-      query = query.limit(options.limit);
+      queryBuilder = (queryBuilder as any).limit(options.limit);
     }
 
     if (options?.offset) {
-      query = query.offset(options.offset);
+      queryBuilder = (queryBuilder as any).offset(options.offset);
     }
 
-    const instances = await query;
+    const instances = await queryBuilder;
     return instances.map(instance => ({ ...instance }) as WorkflowInstance);
   }
 

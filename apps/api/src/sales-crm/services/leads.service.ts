@@ -614,12 +614,6 @@ export class LeadsService extends BaseService<
     limit: number = 50,
     offset: number = 0
   ): Promise<{ leads: Lead[]; total: number }> {
-    let query = this.database
-      .select()
-      .from(leads)
-      .where(eq(leads.companyId, companyId));
-
-    // Apply filters
     const conditions = [eq(leads.companyId, companyId)];
 
     if (filter.status?.length) {
@@ -678,7 +672,11 @@ export class LeadsService extends BaseService<
       );
     }
 
-    query = query.where(and(...conditions));
+    // Build the final query
+    const finalQuery = this.database
+      .select()
+      .from(leads)
+      .where(and(...conditions));
 
     // Get total count
     const countResult = await this.database
@@ -689,7 +687,7 @@ export class LeadsService extends BaseService<
     const total = Number(countResult[0]?.count || 0);
 
     // Get paginated results
-    const results = await query
+    const results = await finalQuery
       .orderBy(desc(leads.createdAt))
       .limit(limit)
       .offset(offset);

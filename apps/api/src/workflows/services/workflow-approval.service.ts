@@ -127,7 +127,7 @@ export class WorkflowApprovalService {
   ): Promise<WorkflowApproval[]> {
     // If company filter is provided, join with workflow instances
     if (companyId) {
-      const { workflowInstances } = await import('@kiro/database');
+      const { workflowInstances } = await import('../../database');
       const approvals = await this.db.db
         .select()
         .from(workflowApprovals)

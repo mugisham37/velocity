@@ -3,9 +3,12 @@ import {
   workflowApprovals,
   workflowInstances,
   workflowSteps,
-} from '../../../database';
+  and,
+  eq,
+  lt,
+  sql,
+} from '../../database';
 import { Injectable } from '@nestjs/common';
-import { and, eq, lt, sql } from '../../../database';
 import { NotificationService } from '../../common/services/notification.service';
 import {
   ApprovalStatus,

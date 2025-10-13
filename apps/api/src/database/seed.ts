@@ -46,9 +46,9 @@ async function seedDatabase() {
       .values({
         name: 'System Administrator',
         description: 'Full system access with all permissions',
-        permissions: ['*'], // Wildcard for all permissions
+        isSystemRole: true,
         companyId: company.id,
-      } satisfies NewRole)
+      })
       .returning();
 
     await db
@@ -56,9 +56,9 @@ async function seedDatabase() {
       .values({
         name: 'Standard User',
         description: 'Standard user with limited permissions',
-        permissions: ['read:own', 'write:own'],
+        isSystemRole: false,
         companyId: company.id,
-      } satisfies NewRole)
+      })
       .returning();
 
     console.log('✅ Created default roles');

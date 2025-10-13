@@ -11,6 +11,7 @@ export interface AuditLogEntry {
   ipAddress?: string;
   userAgent?: string;
   timestamp?: Date;
+  metadata?: any;
 }
 
 @Injectable()

@@ -330,7 +330,9 @@ export class ThreatDetectionService {
       // Clean up old threats (keep only last 100)
       if (this.activeThreats.size > 100) {
         const firstKey = this.activeThreats.keys().next().value;
-        this.activeThreats.delete(firstKey);
+        if (firstKey !== undefined) {
+          this.activeThreats.delete(firstKey);
+        }
       }
     } catch (error) {
       this.logger.error('Failed to log threat', { error, threat });

@@ -13,7 +13,7 @@ import {
 import { companies } from './companies';
 
 // Employee Management Tables
-export const employees = pgTable('employees', {
+export const employees: any = pgTable('employees', {
   id: uuid('id').primaryKey().defaultRandom(),
   employeeId: varchar('employee_id', { length: 50 }).notNull().unique(),
   firstName: varchar('first_name', { length: 100 }).notNull(),
@@ -36,7 +36,7 @@ export const employees = pgTable('employees', {
   // Organizational Structure
   departmentId: uuid('department_id').references(() => departments.id),
   designationId: uuid('designation_id').references(() => designations.id),
-  reportsToId: uuid('reports_to_id').references(() => employees.id),
+  reportsToId: uuid('reports_to_id').references((): any => employees.id),
   companyId: uuid('company_id')
     .references(() => companies.id)
     .notNull(),
@@ -56,13 +56,13 @@ export const employees = pgTable('employees', {
   updatedBy: uuid('updated_by'),
 });
 
-export const departments = pgTable('departments', {
+export const departments: any = pgTable('departments', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 255 }).notNull(),
   code: varchar('code', { length: 50 }).notNull(),
   description: text('description'),
   parentDepartmentId: uuid('parent_department_id').references(
-    () => departments.id
+    (): any => departments.id
   ),
   headOfDepartmentId: uuid('head_of_department_id').references(
     () => employees.id

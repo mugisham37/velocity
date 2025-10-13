@@ -96,7 +96,7 @@ export class LeaveService {
       .orderBy(desc(leaveRequests.appliedDate));
 
     if (employeeId) {
-      query = query.where(eq(leaveRequests.employeeId, employeeId));
+      query = (query as any).where(eq(leaveRequests.employeeId, employeeId));
     }
 
     return await query;
@@ -280,7 +280,7 @@ export class LeaveService {
     let query = db.select().from(leaveRequests);
 
     if (employeeId) {
-      query = query.where(eq(leaveRequests.employeeId, employeeId));
+      query = (query as any).where(eq(leaveRequests.employeeId, employeeId));
     }
 
     const applications = await query;

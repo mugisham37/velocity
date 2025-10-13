@@ -32,6 +32,7 @@ export interface UpdateAccountDto {
   isGroup?: boolean;
   description?: string;
   isActive?: boolean;
+  [key: string]: unknown;
 }
 
 export interface CreateJournalEntryDto {

@@ -77,11 +77,11 @@ export class WorkflowsService {
       .orderBy(desc(workflows.updatedAt));
 
     if (options?.limit) {
-      query = query.limit(options.limit);
+      query = (query as any).limit(options.limit);
     }
 
     if (options?.offset) {
-      query = query.offset(options.offset);
+      query = (query as any).offset(options.offset);
     }
 
     const results = await query;

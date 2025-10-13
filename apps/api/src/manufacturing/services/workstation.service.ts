@@ -194,8 +194,6 @@ export class WorkstationService {
   }
 
   async findWorkstations(filter: WorkstationFilterDto): Promise<Workstation[]> {
-    let query = db.select().from(workstations);
-
     const conditions = [];
 
     if (filter.companyId) {
@@ -224,11 +222,12 @@ export class WorkstationService {
       );
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    return await query.orderBy(desc(workstations.createdAt));
+    const queryBuilder = db.select().from(workstations);
+    
+    return await (conditions.length > 0 
+      ? queryBuilder.where(and(...conditions))
+      : queryBuilder
+    ).orderBy(desc(workstations.createdAt));
   }
 
   async getWorkstationCapacityInfo(

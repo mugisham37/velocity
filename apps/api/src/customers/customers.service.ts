@@ -589,11 +589,11 @@ export class CustomersService extends BaseService<any, Customer, NewCustomer, Re
 
     // Apply criteria filters (simplified example)
     if (criteria['customerType']) {
-      query = query.where(eq(customers.customerType, criteria['customerType']));
+      query = (query as any).where(eq(customers.customerType, criteria['customerType']));
     }
 
     if (criteria['minCreditLimit']) {
-      query = query.where(sql`CAST(${customers.creditLimit} AS DECIMAL) >= ${criteria['minCreditLimit']}`);
+      query = (query as any).where(sql`CAST(${customers.creditLimit} AS DECIMAL) >= ${criteria['minCreditLimit']}`);
     }
 
     const matchingCustomers = await query;

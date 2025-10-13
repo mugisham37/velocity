@@ -5,19 +5,19 @@ import { Kind, ValueNode } from 'graphql';
 export class JSONObjectScalar implements CustomScalar<object, object> {
   description = 'JSON object custom scalar type';
 
-  parseValue(value: object): object {
-    return value; // value from the client
+  parseValue(value: unknown): object {
+    return value as object; // value from the client
   }
 
-  serialize(value: object): object {
-    return value; // value sent to the client
+  serialize(value: unknown): object {
+    return value as object; // value sent to the client
   }
 
   parseLiteral(ast: ValueNode): object {
     if (ast.kind === Kind.OBJECT) {
       return this.parseObject(ast);
     }
-    return null;
+    return {};
   }
 
   private parseObject(ast: any): object {

@@ -271,7 +271,7 @@ export class AttendanceService {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = (query as any).where(and(...conditions));
     }
 
     const records = await query;

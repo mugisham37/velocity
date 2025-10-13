@@ -91,7 +91,7 @@ export class WorkflowTemplateService {
       );
     }
 
-    let query = this.db.db
+    let queryBuilder = this.db.db
       .select()
       .from(workflowTemplates)
       .orderBy(
@@ -100,18 +100,18 @@ export class WorkflowTemplateService {
       );
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      queryBuilder = (queryBuilder as any).where(and(...conditions));
     }
 
     if (options?.limit) {
-      query = query.limit(options.limit);
+      queryBuilder = (queryBuilder as any).limit(options.limit);
     }
 
     if (options?.offset) {
-      query = query.offset(options.offset);
+      queryBuilder = (queryBuilder as any).offset(options.offset);
     }
 
-    const results = await query;
+    const results = await queryBuilder;
     return results.map(this.mapToDto);
   }
 

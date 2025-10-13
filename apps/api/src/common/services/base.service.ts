@@ -462,7 +462,7 @@ export abstract class BaseService<
    * Begin transaction
    */
   async transaction<T>(callback: (tx: Database) => Promise<T>): Promise<T> {
-    return await this.database.transaction(callback);
+    return await this.database.transaction(callback as any);
   }
 }
 

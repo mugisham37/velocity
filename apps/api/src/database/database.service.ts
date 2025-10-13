@@ -7,7 +7,7 @@ import * as schema from './schema';
 export class DatabaseService {
   private client: postgres.Sql;
   public db: ReturnType<typeof drizzle>;
-  public query: typeof schema;
+  public schema: typeof schema;
 
   constructor() {
     // Initialize PostgreSQL connection
@@ -22,7 +22,7 @@ export class DatabaseService {
 
     // Create Drizzle database instance
     this.db = drizzle(this.client, { schema });
-    this.query = schema;
+    this.schema = schema;
   }
 
   // Convenience methods for common operations

@@ -223,29 +223,26 @@ export class TimeTrackingService {
   }
 
   async getTimesheets(companyId: string, filters?: any): Promise<Timesheet[]> {
-    let query = this.db.db
-      .select()
-      .from(timesheets)
-      .where(eq(timesheets.companyId, companyId));
+    const conditions = [eq(timesheets.companyId, companyId)];
 
     if (filters?.employeeId) {
-      query = query.where(eq(timesheets.employeeId, filters.employeeId));
+      conditions.push(eq(timesheets.employeeId, filters.employeeId));
     }
 
     if (filters?.status) {
-      query = query.where(eq(timesheets.status, filters.status));
+      conditions.push(eq(timesheets.status, filters.status));
     }
 
     if (filters?.startDate && filters?.endDate) {
-      query = query.where(
-        and(
-          gte(timesheets.startDate, filters.startDate),
-          lte(timesheets.endDate, filters.endDate)
-        )
-      );
+      conditions.push(gte(timesheets.startDate, filters.startDate));
+      conditions.push(lte(timesheets.endDate, filters.endDate));
     }
 
-    const result = await query.orderBy(desc(timesheets.createdAt));
+    const result = await this.db.db
+      .select()
+      .from(timesheets)
+      .where(and(...conditions))
+      .orderBy(desc(timesheets.createdAt));
     return result.map(timesheet => this.transformTimesheet(timesheet));
   }
 
@@ -590,7 +587,17 @@ export class TimeTrackingService {
     endDate: string,
     employeeId?: string
   ): Promise<UtilizationReport[]> {
-    let query = this.db.db
+    const conditions = [
+      eq(timesheets.companyId, companyId),
+      eq(timesheets.status, 'Approved'),
+      between(timesheets.startDate, startDate, endDate)
+    ];
+
+    if (employeeId) {
+      conditions.push(eq(timesheets.employeeId, employeeId));
+    }
+
+    const results = await this.db.db
       .select({
         employeeId: timesheets.employeeId,
         totalHours: sql<number>`SUM(${timesheets.totalHours})`,
@@ -598,20 +605,8 @@ export class TimeTrackingService {
         nonBillableHours: sql<number>`SUM(${timesheets.nonBillableHours})`,
       })
       .from(timesheets)
-      .where(
-        and(
-          eq(timesheets.companyId, companyId),
-          eq(timesheets.status, 'Approved'),
-          between(timesheets.startDate, startDate, endDate)
-        )
-      )
+      .where(and(...conditions))
       .groupBy(timesheets.employeeId);
-
-    if (employeeId) {
-      query = query.where(eq(timesheets.employeeId, employeeId));
-    }
-
-    const results = await query;
 
     return results.map(result => ({
       employeeId: result.employeeId,
@@ -806,31 +801,37 @@ export class TimeTrackingService {
 
   // Time Entry Management
   async getTimeEntries(filters?: any): Promise<TimeEntry[]> {
-    let query = this.db.db.select().from(timeEntries);
+    const conditions = [];
 
     if (filters?.timesheetId) {
-      query = query.where(eq(timeEntries.timesheetId, filters.timesheetId));
+      conditions.push(eq(timeEntries.timesheetId, filters.timesheetId));
     }
 
     if (filters?.projectId) {
-      query = query.where(eq(timeEntries.projectId, filters.projectId));
+      conditions.push(eq(timeEntries.projectId, filters.projectId));
     }
 
     if (filters?.taskId) {
-      query = query.where(eq(timeEntries.taskId, filters.taskId));
+      conditions.push(eq(timeEntries.taskId, filters.taskId));
     }
 
     if (filters?.isBillable !== undefined) {
-      query = query.where(eq(timeEntries.isBillable, filters.isBillable));
+      conditions.push(eq(timeEntries.isBillable, filters.isBillable));
     }
 
     if (filters?.startDate && filters?.endDate) {
-      query = query.where(
+      conditions.push(
         between(timeEntries.startTime, filters.startDate, filters.endDate)
       );
     }
 
-    const result = await query.orderBy(desc(timeEntries.startTime));
+    const queryBuilder = this.db.db.select().from(timeEntries);
+    
+    const result = await (conditions.length > 0 
+      ? queryBuilder.where(and(...conditions)) 
+      : queryBuilder
+    ).orderBy(desc(timeEntries.startTime));
+    
     return result.map(entry => this.transformTimeEntry(entry));
   }
 

@@ -270,8 +270,6 @@ export class ProductionPlanningService {
   async findProductionPlans(
     filter: ProductionPlanFilterDto
   ): Promise<ProductionPlan[]> {
-    let query = db.select().from(productionPlans);
-
     const conditions = [];
 
     if (filter.companyId) {
@@ -303,11 +301,12 @@ export class ProductionPlanningService {
       );
     }
 
-    if (conditions.length > 0) {
-      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
-    }
-
-    return await query.orderBy(desc(productionPlans.createdAt));
+    const queryBuilder = db.select().from(productionPlans);
+    
+    return await (conditions.length > 0 
+      ? queryBuilder.where(and(...conditions))
+      : queryBuilder
+    ).orderBy(desc(productionPlans.createdAt));
   }
 
   async getProductionPlanItems(planId: string): Promise<ProductionPlanItem[]> {
@@ -569,8 +568,6 @@ export class ProductionPlanningService {
   }
 
   async findMRPRuns(filter: MRPRunFilterDto): Promise<MRPRun[]> {
-    let query = db.select().from(mrpRuns);
-
     const conditions = [];
 
     if (filter.companyId) {
@@ -597,16 +594,15 @@ export class ProductionPlanningService {
       conditions.push(or(like(mrpRuns.runName, `%${filter.search}%`)));
     }
 
-    if (conditions.length > 0) {
-      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
-    }
-
-    return await query.orderBy(desc(mrpRuns.createdAt));
+    const queryBuilder = db.select().from(mrpRuns);
+    
+    return await (conditions.length > 0 
+      ? queryBuilder.where(and(...conditions))
+      : queryBuilder
+    ).orderBy(desc(mrpRuns.createdAt));
   }
 
   async getMRPResults(filter: MRPResultFilterDto): Promise<MRPResult[]> {
-    let query = db.select().from(mrpResults);
-
     const conditions = [eq(mrpResults.mrpRunId, filter.mrpRunId)];
 
     if (filter.itemId) {
@@ -638,11 +634,13 @@ export class ProductionPlanningService {
     }
 
     const validConditions = conditions.filter(Boolean);
-    if (validConditions.length > 0) {
-      query = query.where(validConditions.length === 1 ? validConditions[0] : and(...validConditions));
-    }
-
-    return await query.orderBy(
+    
+    const queryBuilder = db.select().from(mrpResults);
+    
+    return await (validConditions.length > 0 
+      ? queryBuilder.where(and(...validConditions))
+      : queryBuilder
+    ).orderBy(
       asc(mrpResults.requiredDate),
       asc(mrpResults.itemCode)
     );
@@ -860,8 +858,6 @@ export class ProductionPlanningService {
   async findCapacityPlans(
     filter: CapacityPlanFilterDto
   ): Promise<CapacityPlan[]> {
-    let query = db.select().from(capacityPlans);
-
     const conditions = [];
 
     if (filter.companyId) {
@@ -892,11 +888,12 @@ export class ProductionPlanningService {
       conditions.push(or(like(capacityPlans.planName, `%${filter.search}%`)));
     }
 
-    if (conditions.length > 0) {
-      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
-    }
-
-    return await query.orderBy(desc(capacityPlans.createdAt));
+    const queryBuilder = db.select().from(capacityPlans);
+    
+    return await (conditions.length > 0 
+      ? queryBuilder.where(and(...conditions))
+      : queryBuilder
+    ).orderBy(desc(capacityPlans.createdAt));
   }
 
   async getCapacityPlanResults(planId: string): Promise<CapacityPlanResult[]> {
@@ -1050,8 +1047,6 @@ export class ProductionPlanningService {
   async findProductionForecasts(
     filter: ProductionForecastFilterDto
   ): Promise<ProductionForecast[]> {
-    let query = db.select().from(productionForecasts);
-
     const conditions = [];
 
     if (filter.companyId) {
@@ -1098,11 +1093,12 @@ export class ProductionPlanningService {
       );
     }
 
-    if (conditions.length > 0) {
-      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
-    }
-
-    return await query.orderBy(desc(productionForecasts.forecastDate));
+    const queryBuilder = db.select().from(productionForecasts);
+    
+    return await (conditions.length > 0 
+      ? queryBuilder.where(and(...conditions))
+      : queryBuilder
+    ).orderBy(desc(productionForecasts.forecastDate));
   }
 
   async getForecastAccuracy(companyId: string): Promise<ForecastAccuracy[]> {
@@ -1165,28 +1161,26 @@ export class ProductionPlanningService {
   private async getProductionPlansForGantt(
     generateDto: GenerateGanttChartDto
   ): Promise<GanttChartItem[]> {
-    let query = db
+    const conditions = [
+      gte(
+        productionPlanItems.plannedStartDate,
+        new Date(generateDto.fromDate)
+      ),
+      lte(productionPlanItems.plannedEndDate, new Date(generateDto.toDate))
+    ];
+
+    if (generateDto.productionPlanId) {
+      conditions.push(eq(productionPlans.id, generateDto.productionPlanId));
+    }
+
+    const planItems = await db
       .select()
       .from(productionPlanItems)
       .innerJoin(
         productionPlans,
         eq(productionPlanItems.productionPlanId, productionPlans.id)
       )
-      .where(
-        and(
-          gte(
-            productionPlanItems.plannedStartDate,
-            new Date(generateDto.fromDate)
-          ),
-          lte(productionPlanItems.plannedEndDate, new Date(generateDto.toDate))
-        )
-      );
-
-    if (generateDto.productionPlanId) {
-      query = query.where(eq(productionPlans.id, generateDto.productionPlanId));
-    }
-
-    const planItems = await query;
+      .where(and(...conditions));
 
     return planItems.map(item => ({
       id: item.production_plan_items.id,
