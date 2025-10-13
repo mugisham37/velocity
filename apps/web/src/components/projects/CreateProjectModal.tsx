@@ -67,7 +67,6 @@ export function CreateProjectModal({
     formState: { errors },
     reset,
     setValue,
-    watch,
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -75,8 +74,6 @@ export function CreateProjectModal({
       useTemplate: false,
     },
   });
-
-  const watchedTemplateId = watch('templateId');
 
   const onSubmit = async (data: FormData) => {
     const { useTemplate: _, ...projectData } = data;
@@ -93,7 +90,7 @@ export function CreateProjectModal({
 
     // Find the selected template and populate form fields
     const template = templatesData?.projectTemplates?.find(
-      t => t.id === templateId
+      (t: any) => t.id === templateId
     );
     if (template) {
       setValue('projectName', template.templateName);
@@ -127,7 +124,7 @@ export function CreateProjectModal({
               <Checkbox
                 id='useTemplate'
                 checked={useTemplate}
-                onCheckedChange={setUseTemplate}
+                onCheckedChange={(checked) => setUseTemplate(checked === true)}
               />
               <Label htmlFor='useTemplate'>Create from template</Label>
             </div>
@@ -140,7 +137,7 @@ export function CreateProjectModal({
                     <SelectValue placeholder='Select a template' />
                   </SelectTrigger>
                   <SelectContent>
-                    {templatesData?.projectTemplates?.map(template => (
+                    {templatesData?.projectTemplates?.map((template: any) => (
                       <SelectItem key={template.id} value={template.id}>
                         <div>
                           <div className='font-medium'>

@@ -48,7 +48,21 @@ interface UseCollaborationOptions {
   autoConnect?: boolean;
 }
 
-export function useCollaboration(options: UseCollaborationOptions = { documentId: '', channelId: '' }) {
+interface UseCollaborationReturn {
+  isConnected: boolean;
+  onlineUsers: CollaborationUser[];
+  documentState: DocumentState | null;
+  sendOperation: (operation: any) => void;
+  messages: Message[];
+  typingUsers: Set<string>;
+  sendMessage: (content: string) => void;
+  startTyping: () => void;
+  stopTyping: () => void;
+  getOnlineUsers: () => CollaborationUser[];
+  socket: Socket | null;
+}
+
+export function useCollaboration(options: UseCollaborationOptions = { documentId: '', channelId: '' }): UseCollaborationReturn {
   const { documentId, channelId, autoConnect = true } = options;
   const { accessToken: token } = useAuthStore();
   const socketRef = useRef<Socket | null>(null);
@@ -292,11 +306,8 @@ export function useCollaboration(options: UseCollaborationOptions = { documentId
     socket.emit('typing-stop', { channelId });
   };
 
-  const getOnlineUsers = () => {
-    const socket = socketRef.current;
-    if (!socket) return;
-
-    socket.emit('get-online-users');
+  const getOnlineUsers = (): CollaborationUser[] => {
+    return onlineUsers;
   };
 
   return {

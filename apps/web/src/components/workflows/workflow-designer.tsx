@@ -112,7 +112,7 @@ export default function WorkflowDesigner({
     useState<ReactFlowInstance | null>(null);
 
   const onConnect = useCallback(
-    (params: Connection) => setEdges(eds => addEdge(params, eds)),
+    (params: Connection) => setEdges((eds: Edge[]) => addEdge(params, eds)),
     [setEdges]
   );
 
@@ -146,7 +146,7 @@ export default function WorkflowDesigner({
         },
       };
 
-      setNodes(nds => nds.concat(newNode));
+      setNodes((nds: Node[]) => nds.concat(newNode));
     },
     [reactFlowInstance, setNodes]
   );
@@ -161,7 +161,7 @@ export default function WorkflowDesigner({
   };
 
   const updateNodeData = (nodeId: string, newData: any) => {
-    setNodes(nds =>
+    setNodes((nds: Node[]) =>
       nds.map(node =>
         node.id === nodeId
           ? { ...node, data: { ...node.data, ...newData } }
@@ -171,8 +171,8 @@ export default function WorkflowDesigner({
   };
 
   const deleteNode = (nodeId: string) => {
-    setNodes(nds => nds.filter(node => node.id !== nodeId));
-    setEdges(eds =>
+    setNodes((nds: Node[]) => nds.filter(node => node.id !== nodeId));
+    setEdges((eds: Edge[]) =>
       eds.filter(edge => edge.source !== nodeId && edge.target !== nodeId)
     );
     setSelectedNode(null);

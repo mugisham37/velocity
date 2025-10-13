@@ -132,7 +132,7 @@ export function EnhancedWorkflowDesigner({
 
   const onConnect = useCallback(
     (params: Connection) => {
-      setEdges(eds => addEdge(params, eds));
+      setEdges((eds: Edge[]) => addEdge(params, eds));
       setIsDirty(true);
     },
     [setEdges]
@@ -168,7 +168,7 @@ export function EnhancedWorkflowDesigner({
         },
       };
 
-      setNodes(nds => nds.concat(newNode));
+      setNodes((nds: Node[]) => nds.concat(newNode));
       setIsDirty(true);
     },
     [reactFlowInstance, setNodes]
@@ -200,7 +200,7 @@ export function EnhancedWorkflowDesigner({
   }, []);
 
   const updateNodeData = (nodeId: string, newData: any) => {
-    setNodes(nds =>
+    setNodes((nds: Node[]) =>
       nds.map(node =>
         node.id === nodeId
           ? { ...node, data: { ...node.data, ...newData } }
@@ -212,8 +212,8 @@ export function EnhancedWorkflowDesigner({
 
   const deleteSelectedElement = () => {
     if (selectedNode) {
-      setNodes(nds => nds.filter(node => node.id !== selectedNode.id));
-      setEdges(eds =>
+      setNodes((nds: Node[]) => nds.filter(node => node.id !== selectedNode.id));
+      setEdges((eds: Edge[]) =>
         eds.filter(
           edge =>
             edge.source !== selectedNode.id && edge.target !== selectedNode.id
@@ -222,7 +222,7 @@ export function EnhancedWorkflowDesigner({
       setSelectedNode(null);
       setIsDirty(true);
     } else if (selectedEdge) {
-      setEdges(eds => eds.filter(edge => edge.id !== selectedEdge.id));
+      setEdges((eds: Edge[]) => eds.filter(edge => edge.id !== selectedEdge.id));
       setSelectedEdge(null);
       setIsDirty(true);
     }

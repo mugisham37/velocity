@@ -4,7 +4,7 @@ module.exports = {
     '@eslint/js/recommended',
     '@typescript-eslint/recommended',
     '@typescript-eslint/recommended-requiring-type-checking',
-    '@typescr't/strict',
+    '@typescript-eslint/strict',
     'prettier'
   ],
   parser: '@typescript-eslint/parser',

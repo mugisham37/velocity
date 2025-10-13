@@ -74,7 +74,7 @@ export function WorkflowList({
                 <Link
                   href={`/workflows/${workflow.id}`}
                   className='text-lg font-semibold text-gray-900 hover:text-blue-600'
-                  onClick={e => e.stopPropagation()}
+                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
                 >
                   {workflow.name}
                 </Link>

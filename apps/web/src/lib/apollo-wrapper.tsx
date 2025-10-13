@@ -6,8 +6,8 @@ import {
   ApolloNextAppProvider,
   NextSSRApolloClient,
   SSRMultipartLink,
+  NextSSRInMemoryCache,
 } from '@apollo/experimental-nextjs-app-support/ssr';
-import { InMemoryCache } from '@apollo/client';
 
 function makeClient() {
   const httpLink = new HttpLink({
@@ -32,7 +32,7 @@ function makeClient() {
   });
 
   return new NextSSRApolloClient({
-    cache: new InMemoryCache(),
+    cache: new NextSSRInMemoryCache(),
     link:
       typeof window === 'undefined'
         ? ApolloLink.from([
