@@ -1,4 +1,4 @@
-import { rateLimitConfig } from '@kiro/config';
+import { rateLimitConfig } from './config';
 import { ApolloFederationDriver } from '@nestjs/apollo';
 import type { ApolloFederationDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';

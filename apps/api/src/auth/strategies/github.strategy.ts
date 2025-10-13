@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-github2';
-import { oauthConfig } from '@kiro/config';
+import { oauthConfig } from '../../config';
 
 @Injectable()
 export class GitHubStrategy extends PassportStrategy(Strategy, 'github') {

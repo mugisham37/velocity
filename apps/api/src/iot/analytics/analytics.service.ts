@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { db, and, eq, gte, sql } from '../../database';
-import { equipmentMetrics, iotSensorData } from '@kiro/database/schema';
+import { equipmentMetrics, iotSensorData } from '../../database/schema';
 
 @Injectable()
 export class IoTAnalyticsService {

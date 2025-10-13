@@ -4,7 +4,7 @@ import {
   energyConsumption,
   type EnergyConsumption,
   type NewEnergyConsumption,
-} from '@kiro/database/schema';
+} from '../../database/schema';
 
 @Injectable()
 export class EnergyMonitoringService {

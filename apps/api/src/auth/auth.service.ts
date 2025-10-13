@@ -1,4 +1,4 @@
-import { jwtConfig } from '@kiro/config';
+import { jwtConfig } from '../config';
 import type { User } from '../database';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';

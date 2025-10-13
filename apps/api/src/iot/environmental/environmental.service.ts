@@ -4,7 +4,7 @@ import {
   environmentalMonitoring,
   type EnvironmentalMonitoring,
   type NewEnvironmentalMonitoring,
-} from '@kiro/database/schema';
+} from '../../database/schema';
 
 @Injectable()
 export class EnvironmentalMonitoringService {

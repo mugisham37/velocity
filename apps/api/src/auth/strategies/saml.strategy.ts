@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-saml';
-import { samlConfig } from '@kiro/config';
+import { samlConfig } from '../../config';
 
 @Injectable()
 export class SamlStrategy extends PassportStrategy(Strategy, 'saml') {

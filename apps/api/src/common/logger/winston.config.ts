@@ -1,5 +1,5 @@
 import * as winston from 'winston';
-import { config } from '@kiro/config';
+import { config } from '../../config';
 
 const { combine, timestamp, errors, json, printf, colorize } = winston.format;
 

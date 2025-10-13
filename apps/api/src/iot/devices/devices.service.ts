@@ -9,7 +9,7 @@ import {
   iotDevices,
   type IoTDevice,
   type NewIoTDevice,
-} from '@kiro/database/schema';
+} from '../../database/schema';
 import { CreateIoTDeviceDto } from './dto/create-device.dto';
 import { DeviceQueryDto } from './dto/device-query.dto';
 import { UpdateIoTDeviceDto } from './dto/update-device.dto';

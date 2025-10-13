@@ -4,7 +4,7 @@ import {
   iotAlerts,
   type IoTAlert,
   type NewIoTAlert,
-} from '@kiro/database/schema';
+} from '../../database/schema';
 
 @Injectable()
 export class IoTAlertsService {

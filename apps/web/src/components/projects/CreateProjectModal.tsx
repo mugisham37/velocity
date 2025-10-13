@@ -21,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CREATE_PROJECT, GET_PROJECT_TEMPLATES } from '@/graphql/projects';
 import { useMutation, useQuery } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateProjectSchema } from '@packages/shared/types/projects';
+import { CreateProjectSchema } from '@/shared/types/projects';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
