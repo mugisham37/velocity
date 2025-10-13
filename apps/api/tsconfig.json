@@ -7,10 +7,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "paths": {
-      "@/*": ["src/*"],
-      "@kiro/database": ["../../packages/database/src"],
-      "@kiro/database/*": ["../../packages/database/src/*"],
-      "@kiro/config": ["../../packages/config/src"]
+      "@/*": ["src/*"]
     }
   },
   "include": ["src/**/*"],

@@ -13,7 +13,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./packages/database/init:/docker-entrypoint-initdb.d
+      - ../database/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kiro_user -d kiro_erp_dev"]
       interval: 10s

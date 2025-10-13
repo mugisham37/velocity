@@ -9,8 +9,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@kiro/database': resolve(__dirname, '../../packages/database/src'),
-      '@kiro/config': resolve(__dirname, '../../packages/config/src'),
+      '@': resolve(__dirname, './src'),
     },
   },
 });

@@ -23,10 +23,7 @@ COPY .npmrc* ./
 # Copy workspace package files
 COPY apps/api/package*.json ./apps/api/
 COPY apps/web/package*.json ./apps/web/
-COPY packages/config/package*.json ./packages/config/
-COPY packages/database/package*.json ./packages/database/
-COPY packages/shared/package*.json ./packages/shared/
-COPY packages/ui/package*.json ./packages/ui/
+COPY apps/mobile/package*.json ./apps/mobile/
 
 # Install dependencies
 RUN npm ci --only=production && npm cache clean --force
@@ -38,10 +35,6 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
-COPY --from=deps /app/packages/config/node_modules ./packages/config/node_modules
-COPY --from=deps /app/packages/database/node_modules ./packages/database/node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
-COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules
 
 # Copy source code
 COPY . .
@@ -63,10 +56,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Copy built application
 COPY --from=builder --chown=nextjs:nodejs /app/apps/api/dist ./apps/api/dist
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next ./apps/web/.next
-COPY --from=builder --chown=nextjs:nodejs /app/packages/config/dist ./packages/config/dist
-COPY --from=builder --chown=nextjs:nodejs /app/packages/database/dist ./packages/database/dist
-COPY --from=builder --chown=nextjs:nodejs /app/packages/shared/dist ./packages/shared/dist
-COPY --from=builder --chown=nextjs:nodejs /app/packages/ui/dist ./packages/ui/dist
 
 # Copy package files and production dependencies
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules

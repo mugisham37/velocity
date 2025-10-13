@@ -34,10 +34,7 @@ COPY .npmrc* ./
 # Copy workspace package files
 COPY apps/api/package*.json ./apps/api/
 COPY apps/web/package*.json ./apps/web/
-COPY packages/config/package*.json ./packages/config/
-COPY packages/database/package*.json ./packages/database/
-COPY packages/shared/package*.json ./packages/shared/
-COPY packages/ui/package*.json ./packages/ui/
+COPY apps/mobile/package*.json ./apps/mobile/
 
 # Install dependencies with npm ci for faster, reliable builds
 RUN npm ci --only=development
@@ -50,7 +47,7 @@ RUN chown -R nextjs:nodejs /app
 USER nextjs
 
 # Create volume mount points for hot reloading
-VOLUME ["/app/apps", "/app/packages"]
+VOLUME ["/app/apps"]
 
 # Expose ports for different services
 EXPOSE 3000    # Next.js frontend

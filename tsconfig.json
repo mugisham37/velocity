@@ -64,7 +64,6 @@
     // Path Mapping
     "baseUrl": ".",
     "paths": {
-      "@kiro/ui": ["./packages/ui/src/index"],
       "@kiro/ui/*": ["./packages/ui/src/*"],
       "@kiro/database": ["./packages/database/src/index"],
       "@kiro/database/*": ["./packages/database/src/*"],

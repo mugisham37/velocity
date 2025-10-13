@@ -13,11 +13,7 @@
       "@/lib/*": ["./src/lib/*"],
       "@/hooks/*": ["./src/hooks/*"],
       "@/store/*": ["./src/store/*"],
-      "@/types/*": ["./src/types/*"],
-      "@kiro/ui": ["../../packages/ui/src"],
-      "@kiro/ui/*": ["../../packages/ui/src/*"],
-      "@kiro/shared": ["../../packages/shared/src"],
-      "@kiro/shared/*": ["../../packages/shared/src/*"]
+      "@/types/*": ["./src/types/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
