@@ -99,9 +99,9 @@ if (-not $SkipTests) {
     Write-Status "Running tests..."
     try {
         if ($Verbose) {
-            npm run test -- --run
+            pnpm run test -- --run
         } else {
-            npm run test -- --run 2>&1 | Out-Null
+            pnpm run test -- --run 2>&1 | Out-Null
         }
         Write-Success "Tests passed"
     } catch {

@@ -1,10 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    appDir: true,
     typedRoutes: true,
+    optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react'],
   },
-  transpilePackages: ['@kiro/ui', '@kiro/shared'],
   images: {
     domains: ['localhost'],
   },

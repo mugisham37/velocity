@@ -28,16 +28,18 @@ RUN adduser --system --uid 1001 nextjs
 
 # Copy package files for dependency installation
 COPY package*.json ./
+COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
 COPY turbo.json ./
-COPY .npmrc* ./
+COPY .npmrc ./
 
 # Copy workspace package files
 COPY apps/api/package*.json ./apps/api/
 COPY apps/web/package*.json ./apps/web/
 COPY apps/mobile/package*.json ./apps/mobile/
 
-# Install dependencies with npm ci for faster, reliable builds
-RUN npm ci --only=development
+# Install dependencies with pnpm for faster, reliable builds
+RUN corepack enable pnpm && pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
@@ -61,4 +63,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:4000/health || exit 1
 
 # Start development servers with hot reloading
-CMD ["npm", "run", "dev"]
+CMD ["pnpm", "run", "dev"]

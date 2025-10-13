@@ -123,9 +123,9 @@ fi
 if [[ "$SKIP_TESTS" == false ]]; then
     print_status "Running tests..."
     if [[ "$VERBOSE" == true ]]; then
-        npm run test -- --run
+        pnpm run test -- --run
     else
-        npm run test -- --run > /dev/null 2>&1
+        pnpm run test -- --run > /dev/null 2>&1
     fi
     print_success "Tests passed"
 fi

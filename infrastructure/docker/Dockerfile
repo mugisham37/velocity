@@ -17,8 +17,10 @@ FROM base AS deps
 
 # Copy package files
 COPY package*.json ./
+COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
 COPY turbo.json ./
-COPY .npmrc* ./
+COPY .npmrc ./
 
 # Copy workspace package files
 COPY apps/api/package*.json ./apps/api/
@@ -26,7 +28,7 @@ COPY apps/web/package*.json ./apps/web/
 COPY apps/mobile/package*.json ./apps/mobile/
 
 # Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN corepack enable pnpm && pnpm install --prod --frozen-lockfile
 
 # Stage 2: Build the application
 FROM base AS builder
@@ -44,7 +46,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build the application
-RUN npm run build
+RUN corepack enable pnpm && pnpm run build
 
 # Stage 3: Production runtime
 FROM base AS runner
@@ -78,4 +80,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:4000/health || exit 1
 
 # Start the application
-CMD ["npm", "run", "start"]
+CMD ["pnpm", "run", "start"]

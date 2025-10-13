@@ -3,9 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "KIRO ERP - Next-generation Enterprise Resource Planning System",
-  "workspaces": [
-    "apps/*"
-  ],
+
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
@@ -20,7 +18,7 @@
     "test:watch": "turbo test:watch",
     "test:coverage": "turbo test:coverage",
     "test:e2e": "turbo test:e2e",
-    "validate": "npm run typecheck && npm run lint && npm run test -- --run",
+    "validate": "pnpm run typecheck && pnpm run lint && pnpm run test -- --run",
     "docker:up": "docker-compose -f infrastructure/docker/docker-compose.yml up -d",
     "docker:down": "docker-compose -f infrastructure/docker/docker-compose.yml down",
     "docker:logs": "docker-compose -f infrastructure/docker/docker-compose.yml logs -f",
@@ -35,7 +33,7 @@
     "setup": "node scripts/setup-dev.js",
     "setup:win": "powershell -ExecutionPolicy Bypass -File scripts/setup-dev.ps1",
     "prepare": "husky install",
-    "postinstall": "npm run prepare"
+    "postinstall": "pnpm run prepare"
   },
   "devDependencies": {
     "@turbo/gen": "^1.10.12",
@@ -58,7 +56,7 @@
   },
   "engines": {
     "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "pnpm": ">=8.0.0"
   },
-  "packageManager": "npm@9.8.1"
+  "packageManager": "pnpm@8.15.1"
 }

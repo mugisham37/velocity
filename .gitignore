@@ -16,9 +16,9 @@ lerna-debug.log*
 .yarn-integrity
 .pnp.*
 
-# Package manager lock files (keep package-lock.json, ignore others)
+# Package manager lock files (keep pnpm-lock.yaml, ignore others)
+package-lock.json
 yarn.lock
-pnpm-lock.yaml
 
 # ===================================================================
 # BUILD OUTPUTS & COMPILED FILES
