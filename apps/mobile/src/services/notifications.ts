@@ -1,5 +1,4 @@
-import { store } from '@store/index';
-import { addNotification, setPushToken } from '@store/notifications';
+import { useNotificationStore } from '@store/index';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { NotificationData } from '../types';
@@ -26,7 +25,7 @@ class NotificationService {
     try {
       const token = await this.getPushToken();
       if (token) {
-        store.dispatch(setPushToken(token));
+        useNotificationStore.getState().setPushToken(token);
       }
     } catch (error) {
       console.error('Failed to get push token:', error);
@@ -44,13 +43,13 @@ class NotificationService {
       return false;
     }
 
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
+    const existingPermissions = await Notifications.getPermissionsAsync();
+    let finalStatus = (existingPermissions as any).status;
 
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
+    if ((existingPermissions as any).status !== 'granted') {
+      const requestedPermissions =
+        await Notifications.requestPermissionsAsync();
+      finalStatus = (requestedPermissions as any).status;
     }
 
     if (finalStatus !== 'granted') {
@@ -85,14 +84,12 @@ class NotificationService {
         isRead: false,
       };
 
-      store.dispatch(
-        addNotification({
-          ...notificationData,
-          timestamp: new Date(),
-          message: notificationData.body || '',
-          isRead: false,
-        })
-      );
+      useNotificationStore.getState().addNotification({
+        ...notificationData,
+        timestamp: new Date(),
+        message: notificationData.body || '',
+        isRead: false,
+      });
     });
 
     // Handle notification taps

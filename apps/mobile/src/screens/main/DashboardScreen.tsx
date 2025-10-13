@@ -9,11 +9,9 @@ import {
   useTheme,
 } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useSelector } from 'react-redux';
 
 import { syncService } from '@services/sync';
-import { useAuthStore } from '@store/auth';
-import { RootState } from '@store/index';
+import { useAuthStore, useSyncStore } from '@store/index';
 import { formatCurrency, formatRelativeTime } from '@utils/helpers';
 
 interface DashboardStats {
@@ -26,7 +24,7 @@ interface DashboardStats {
 export default function DashboardScreen() {
   const theme = useTheme();
   const { user } = useAuthStore();
-  const syncState = useSelector((state: RootState) => state.sync);
+  const syncState = useSyncStore();
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({
     totalSales: 0,

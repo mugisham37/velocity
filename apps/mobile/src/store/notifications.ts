@@ -1,4 +1,7 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
 interface NotificationData {
   id: string;
   title: string;
@@ -10,83 +13,84 @@ interface NotificationData {
 
 interface NotificationState {
   notifications: NotificationData[];
-}
-
-interface NotificationState {
-  notifications: NotificationData[];
   unreadCount: number;
   pushToken?: string;
 }
 
-const initialState: NotificationState = {
-  notifications: [],
-  unreadCount: 0,
-  pushToken: undefined,
+type NotificationStore = NotificationState & {
+  addNotification: (notification: NotificationData) => void;
+  markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+  removeNotification: (id: string) => void;
+  clearAllNotifications: () => void;
+  setPushToken: (token: string) => void;
+  setNotifications: (notifications: NotificationData[]) => void;
 };
 
-const notificationSlice = createSlice({
-  name: 'notifications',
-  initialState,
-  reducers: {
-    addNotification: (state, action: PayloadAction<NotificationData>) => {
-      state.notifications.unshift(action.payload);
-      if (!action.payload.isRead) {
-        state.unreadCount += 1;
-      }
-    },
+export const useNotificationStore = create<NotificationStore>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      notifications: [],
+      unreadCount: 0,
+      pushToken: undefined,
 
-    markAsRead: (state, action: PayloadAction<string>) => {
-      const notification = state.notifications.find(
-        n => n.id === action.payload
-      );
-      if (notification && !notification.isRead) {
-        notification.isRead = true;
-        state.unreadCount = Math.max(0, state.unreadCount - 1);
-      }
-    },
+      // Actions
+      addNotification: (notification: NotificationData) => {
+        set(state => ({
+          notifications: [notification, ...state.notifications],
+          unreadCount: notification.isRead
+            ? state.unreadCount
+            : state.unreadCount + 1,
+        }));
+      },
 
-    markAllAsRead: state => {
-      state.notifications.forEach(notification => {
-        notification.isRead = true;
-      });
-      state.unreadCount = 0;
-    },
+      markAsRead: (id: string) => {
+        set(state => {
+          const notifications = state.notifications.map(notification =>
+            notification.id === id
+              ? { ...notification, isRead: true }
+              : notification
+          );
+          const unreadCount = notifications.filter(n => !n.isRead).length;
+          return { notifications, unreadCount };
+        });
+      },
 
-    removeNotification: (state, action: PayloadAction<string>) => {
-      const index = state.notifications.findIndex(n => n.id === action.payload);
-      if (index !== -1) {
-        const notification = state.notifications[index];
-        if (!notification.isRead) {
-          state.unreadCount = Math.max(0, state.unreadCount - 1);
-        }
-        state.notifications.splice(index, 1);
-      }
-    },
+      markAllAsRead: () => {
+        set(state => ({
+          notifications: state.notifications.map(notification => ({
+            ...notification,
+            isRead: true,
+          })),
+          unreadCount: 0,
+        }));
+      },
 
-    clearAllNotifications: state => {
-      state.notifications = [];
-      state.unreadCount = 0;
-    },
+      removeNotification: (id: string) => {
+        set(state => {
+          const notifications = state.notifications.filter(n => n.id !== id);
+          const unreadCount = notifications.filter(n => !n.isRead).length;
+          return { notifications, unreadCount };
+        });
+      },
 
-    setPushToken: (state, action: PayloadAction<string>) => {
-      state.pushToken = action.payload;
-    },
+      clearAllNotifications: () => {
+        set({ notifications: [], unreadCount: 0 });
+      },
 
-    setNotifications: (state, action: PayloadAction<NotificationData[]>) => {
-      state.notifications = action.payload;
-      state.unreadCount = action.payload.filter(n => !n.isRead).length;
-    },
-  },
-});
+      setPushToken: (token: string) => {
+        set({ pushToken: token });
+      },
 
-export const {
-  addNotification,
-  markAsRead,
-  markAllAsRead,
-  removeNotification,
-  clearAllNotifications,
-  setPushToken,
-  setNotifications,
-} = notificationSlice.actions;
-
-export default notificationSlice.reducer;
+      setNotifications: (notifications: NotificationData[]) => {
+        const unreadCount = notifications.filter(n => !n.isRead).length;
+        set({ notifications, unreadCount });
+      },
+    }),
+    {
+      name: 'notification-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+    }
+  )
+);

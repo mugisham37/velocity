@@ -1,4 +1,6 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 interface PendingAction {
   id: string;
@@ -18,155 +20,180 @@ interface OfflineState {
   pendingActions: PendingAction[];
 }
 
-const initialState: OfflineState = {
-  entities: {
-    customers: {},
-    products: {},
-    salesOrders: {},
-  },
-  pendingActions: [],
+type OfflineStore = OfflineState & {
+  setEntity: (entityType: string, id: string, data: any) => void;
+  setEntities: (entityType: string, entities: Record<string, any>) => void;
+  updateEntity: (entityType: string, id: string, data: Partial<any>) => void;
+  deleteEntity: (entityType: string, id: string) => void;
+  addPendingAction: (
+    type: 'create' | 'update' | 'delete',
+    entity: string,
+    data: any
+  ) => void;
+  removePendingAction: (id: string) => void;
+  clearPendingActions: () => void;
+  updateSyncStatus: (
+    entityType: string,
+    id: string,
+    status: 'pending' | 'syncing' | 'synced' | 'error'
+  ) => void;
+  clearOfflineData: () => void;
 };
 
-const offlineSlice = createSlice({
-  name: 'offline',
-  initialState,
-  reducers: {
-    // Generic entity operations
-    setEntity: (
-      state,
-      action: PayloadAction<{ entityType: string; id: string; data: any }>
-    ) => {
-      const { entityType, id, data } = action.payload;
-      if (!state.entities[entityType]) {
-        state.entities[entityType] = {};
-      }
-      state.entities[entityType][id] = {
-        ...data,
-        lastModified: new Date(),
-        needsSync: false,
-        syncStatus: 'synced',
-      };
-    },
-
-    setEntities: (
-      state,
-      action: PayloadAction<{
-        entityType: string;
-        entities: Record<string, any>;
-      }>
-    ) => {
-      const { entityType, entities } = action.payload;
-      state.entities[entityType] = entities;
-    },
-
-    updateEntity: (
-      state,
-      action: PayloadAction<{
-        entityType: string;
-        id: string;
-        data: Partial<any>;
-      }>
-    ) => {
-      const { entityType, id, data } = action.payload;
-      if (state.entities[entityType]?.[id]) {
-        state.entities[entityType][id] = {
-          ...state.entities[entityType][id],
-          ...data,
-          lastModified: new Date(),
-          needsSync: true,
-          syncStatus: 'pending',
-        };
-      }
-    },
-
-    deleteEntity: (
-      state,
-      action: PayloadAction<{ entityType: string; id: string }>
-    ) => {
-      const { entityType, id } = action.payload;
-      if (state.entities[entityType]?.[id]) {
-        state.entities[entityType][id] = {
-          ...state.entities[entityType][id],
-          isDeleted: true,
-          lastModified: new Date(),
-          needsSync: true,
-          syncStatus: 'pending',
-        };
-      }
-    },
-
-    // Pending actions
-    addPendingAction: (
-      state,
-      action: PayloadAction<{
-        type: 'create' | 'update' | 'delete';
-        entity: string;
-        data: any;
-      }>
-    ) => {
-      const { type, entity, data } = action.payload;
-      state.pendingActions.push({
-        id: `${Date.now()}-${Math.random()}`,
-        type,
-        entity,
-        data,
-        timestamp: new Date(),
-      });
-    },
-
-    removePendingAction: (
-      state: OfflineState,
-      action: PayloadAction<string>
-    ) => {
-      state.pendingActions = state.pendingActions.filter(
-        pendingAction => pendingAction.id !== action.payload
-      );
-    },
-
-    clearPendingActions: state => {
-      state.pendingActions = [];
-    },
-
-    // Sync status updates
-    updateSyncStatus: (
-      state,
-      action: PayloadAction<{
-        entityType: string;
-        id: string;
-        status: 'pending' | 'syncing' | 'synced' | 'error';
-      }>
-    ) => {
-      const { entityType, id, status } = action.payload;
-      if (state.entities[entityType]?.[id]) {
-        state.entities[entityType][id].syncStatus = status;
-        if (status === 'synced') {
-          state.entities[entityType][id].needsSync = false;
-        }
-      }
-    },
-
-    // Clear all offline data
-    clearOfflineData: state => {
-      state.entities = {
+export const useOfflineStore = create<OfflineStore>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      entities: {
         customers: {},
         products: {},
         salesOrders: {},
-      };
-      state.pendingActions = [];
-    },
-  },
-});
+      },
+      pendingActions: [],
 
-export const {
-  setEntity,
-  setEntities,
-  updateEntity,
-  deleteEntity,
-  addPendingAction,
-  removePendingAction,
-  clearPendingActions,
-  updateSyncStatus,
-  clearOfflineData,
-} = offlineSlice.actions;
+      // Actions
+      setEntity: (entityType: string, id: string, data: any) => {
+        set(state => ({
+          entities: {
+            ...state.entities,
+            [entityType]: {
+              ...state.entities[entityType],
+              [id]: {
+                ...data,
+                lastModified: new Date(),
+                needsSync: false,
+                syncStatus: 'synced',
+              },
+            },
+          },
+        }));
+      },
 
-export default offlineSlice.reducer;
+      setEntities: (entityType: string, entities: Record<string, any>) => {
+        set(state => ({
+          entities: {
+            ...state.entities,
+            [entityType]: entities,
+          },
+        }));
+      },
+
+      updateEntity: (entityType: string, id: string, data: Partial<any>) => {
+        set(state => {
+          const currentEntity = state.entities[entityType]?.[id];
+          if (!currentEntity) return state;
+
+          return {
+            entities: {
+              ...state.entities,
+              [entityType]: {
+                ...state.entities[entityType],
+                [id]: {
+                  ...currentEntity,
+                  ...data,
+                  lastModified: new Date(),
+                  needsSync: true,
+                  syncStatus: 'pending',
+                },
+              },
+            },
+          };
+        });
+      },
+
+      deleteEntity: (entityType: string, id: string) => {
+        set(state => {
+          const currentEntity = state.entities[entityType]?.[id];
+          if (!currentEntity) return state;
+
+          return {
+            entities: {
+              ...state.entities,
+              [entityType]: {
+                ...state.entities[entityType],
+                [id]: {
+                  ...currentEntity,
+                  isDeleted: true,
+                  lastModified: new Date(),
+                  needsSync: true,
+                  syncStatus: 'pending',
+                },
+              },
+            },
+          };
+        });
+      },
+
+      addPendingAction: (
+        type: 'create' | 'update' | 'delete',
+        entity: string,
+        data: any
+      ) => {
+        set(state => ({
+          pendingActions: [
+            ...state.pendingActions,
+            {
+              id: `${Date.now()}-${Math.random()}`,
+              type,
+              entity,
+              data,
+              timestamp: new Date(),
+            },
+          ],
+        }));
+      },
+
+      removePendingAction: (id: string) => {
+        set(state => ({
+          pendingActions: state.pendingActions.filter(
+            action => action.id !== id
+          ),
+        }));
+      },
+
+      clearPendingActions: () => {
+        set({ pendingActions: [] });
+      },
+
+      updateSyncStatus: (
+        entityType: string,
+        id: string,
+        status: 'pending' | 'syncing' | 'synced' | 'error'
+      ) => {
+        set(state => {
+          const currentEntity = state.entities[entityType]?.[id];
+          if (!currentEntity) return state;
+
+          return {
+            entities: {
+              ...state.entities,
+              [entityType]: {
+                ...state.entities[entityType],
+                [id]: {
+                  ...currentEntity,
+                  syncStatus: status,
+                  needsSync: status !== 'synced',
+                },
+              },
+            },
+          };
+        });
+      },
+
+      clearOfflineData: () => {
+        set({
+          entities: {
+            customers: {},
+            products: {},
+            salesOrders: {},
+          },
+          pendingActions: [],
+        });
+      },
+    }),
+    {
+      name: 'offline-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+    }
+  )
+);

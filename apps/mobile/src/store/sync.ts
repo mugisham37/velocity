@@ -1,61 +1,78 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { SyncState } from '../types';
 
-const initialState: SyncState = {
-  isOnline: true,
-  lastSyncAt: undefined,
-  pendingChanges: 0,
-  isSyncing: false,
-  syncProgress: 0,
+type SyncStore = SyncState & {
+  setOnlineStatus: (isOnline: boolean) => void;
+  setSyncStatus: (isSyncing: boolean) => void;
+  setSyncProgress: (progress: number) => void;
+  setLastSyncAt: (date: Date) => void;
+  setPendingChanges: (count: number) => void;
+  incrementPendingChanges: () => void;
+  decrementPendingChanges: () => void;
+  resetSync: () => void;
 };
 
-const syncSlice = createSlice({
-  name: 'sync',
-  initialState,
-  reducers: {
-    setOnlineStatus: (state, action: PayloadAction<boolean>) => {
-      state.isOnline = action.payload;
-    },
-    setSyncStatus: (state, action: PayloadAction<boolean>) => {
-      state.isSyncing = action.payload;
-      if (!action.payload) {
-        state.syncProgress = 0;
-      }
-    },
-    setSyncProgress: (state, action: PayloadAction<number>) => {
-      state.syncProgress = action.payload;
-    },
-    setLastSyncAt: (state, action: PayloadAction<Date>) => {
-      state.lastSyncAt = action.payload;
-    },
-    setPendingChanges: (state, action: PayloadAction<number>) => {
-      state.pendingChanges = action.payload;
-    },
-    incrementPendingChanges: state => {
-      state.pendingChanges += 1;
-    },
-    decrementPendingChanges: state => {
-      if (state.pendingChanges > 0) {
-        state.pendingChanges -= 1;
-      }
-    },
-    resetSync: state => {
-      state.pendingChanges = 0;
-      state.isSyncing = false;
-      state.syncProgress = 0;
-    },
-  },
-});
+export const useSyncStore = create<SyncStore>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      isOnline: true,
+      lastSyncAt: undefined,
+      pendingChanges: 0,
+      isSyncing: false,
+      syncProgress: 0,
 
-export const {
-  setOnlineStatus,
-  setSyncStatus,
-  setSyncProgress,
-  setLastSyncAt,
-  setPendingChanges,
-  incrementPendingChanges,
-  decrementPendingChanges,
-  resetSync,
-} = syncSlice.actions;
+      // Actions
+      setOnlineStatus: (isOnline: boolean) => {
+        set({ isOnline });
+      },
 
-export default syncSlice.reducer;
+      setSyncStatus: (isSyncing: boolean) => {
+        set(state => ({
+          isSyncing,
+          syncProgress: isSyncing ? state.syncProgress : 0,
+        }));
+      },
+
+      setSyncProgress: (syncProgress: number) => {
+        set({ syncProgress });
+      },
+
+      setLastSyncAt: (lastSyncAt: Date) => {
+        set({ lastSyncAt });
+      },
+
+      setPendingChanges: (pendingChanges: number) => {
+        set({ pendingChanges });
+      },
+
+      incrementPendingChanges: () => {
+        set(state => ({ pendingChanges: state.pendingChanges + 1 }));
+      },
+
+      decrementPendingChanges: () => {
+        set(state => ({
+          pendingChanges: Math.max(0, state.pendingChanges - 1),
+        }));
+      },
+
+      resetSync: () => {
+        set({
+          pendingChanges: 0,
+          isSyncing: false,
+          syncProgress: 0,
+        });
+      },
+    }),
+    {
+      name: 'sync-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: state => ({
+        lastSyncAt: state.lastSyncAt,
+        pendingChanges: state.pendingChanges,
+      }),
+    }
+  )
+);

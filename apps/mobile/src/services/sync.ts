@@ -1,17 +1,5 @@
 import NetInfo from '@react-native-community/netinfo';
-import { store } from '@store/index';
-import {
-  clearPendingActions,
-  setEntities,
-  updateSyncStatus,
-} from '@store/offline';
-import {
-  setLastSyncAt,
-  setOnlineStatus,
-  setPendingChanges,
-  setSyncProgress,
-  setSyncStatus,
-} from '@store/sync';
+import { useOfflineStore, useSyncStore } from '@store/index';
 import {
   GET_CUSTOMERS,
   GET_PRODUCTS,
@@ -29,7 +17,7 @@ class SyncService {
 
     // Monitor network status
     NetInfo.addEventListener(state => {
-      store.dispatch(setOnlineStatus(state.isConnected ?? false));
+      useSyncStore.getState().setOnlineStatus(state.isConnected ?? false);
 
       // Auto-sync when coming back online
       if (state.isConnected) {
@@ -40,8 +28,8 @@ class SyncService {
     // Set up periodic sync (every 5 minutes when online)
     this.syncInterval = setInterval(
       () => {
-        const state = store.getState();
-        if (state.sync.isOnline && !state.sync.isSyncing) {
+        const syncState = useSyncStore.getState();
+        if (syncState.isOnline && !syncState.isSyncing) {
           this.syncData();
         }
       },
@@ -50,7 +38,7 @@ class SyncService {
 
     // Initial sync
     const netInfo = await NetInfo.fetch();
-    store.dispatch(setOnlineStatus(netInfo.isConnected ?? false));
+    useSyncStore.getState().setOnlineStatus(netInfo.isConnected ?? false);
 
     if (netInfo.isConnected) {
       await this.syncData();
@@ -60,74 +48,66 @@ class SyncService {
   }
 
   async syncData() {
-    const state = store.getState();
+    const syncState = useSyncStore.getState();
 
-    if (!state.sync.isOnline || state.sync.isSyncing) {
+    if (!syncState.isOnline || syncState.isSyncing) {
       return;
     }
 
-    store.dispatch(setSyncStatus(true));
-    store.dispatch(setSyncProgress(0));
+    useSyncStore.getState().setSyncStatus(true);
+    useSyncStore.getState().setSyncProgress(0);
 
     try {
       // Step 1: Push pending changes (25% progress)
       await this.pushPendingChanges();
-      store.dispatch(setSyncProgress(25));
+      useSyncStore.getState().setSyncProgress(25);
 
       // Step 2: Pull customers (50% progress)
       await this.pullCustomers();
-      store.dispatch(setSyncProgress(50));
+      useSyncStore.getState().setSyncProgress(50);
 
       // Step 3: Pull products (75% progress)
       await this.pullProducts();
-      store.dispatch(setSyncProgress(75));
+      useSyncStore.getState().setSyncProgress(75);
 
       // Step 4: Pull sales orders (100% progress)
       await this.pullSalesOrders();
-      store.dispatch(setSyncProgress(100));
+      useSyncStore.getState().setSyncProgress(100);
 
       // Update last sync time
-      store.dispatch(setLastSyncAt(new Date()));
+      useSyncStore.getState().setLastSyncAt(new Date());
 
       // Clear pending changes count
-      store.dispatch(setPendingChanges(0));
+      useSyncStore.getState().setPendingChanges(0);
     } catch (error) {
       console.error('Sync failed:', error);
       throw error;
     } finally {
-      store.dispatch(setSyncStatus(false));
-      store.dispatch(setSyncProgress(0));
+      useSyncStore.getState().setSyncStatus(false);
+      useSyncStore.getState().setSyncProgress(0);
     }
   }
 
   private async pushPendingChanges() {
-    const state = store.getState();
-    const pendingActions = state.offline.pendingActions;
+    const offlineState = useOfflineStore.getState();
+    const pendingActions = offlineState.pendingActions;
 
     for (const action of pendingActions) {
       try {
         await this.executePendingAction(action);
-        store.dispatch(
-          updateSyncStatus({
-            entityType: action.entity,
-            id: action.data.id,
-            status: 'synced',
-          })
-        );
+        useOfflineStore
+          .getState()
+          .updateSyncStatus(action.entity, action.data.id, 'synced');
       } catch (error) {
         console.error(`Failed to sync ${action.type} ${action.entity}:`, error);
-        store.dispatch(
-          updateSyncStatus({
-            entityType: action.entity,
-            id: action.data.id,
-            status: 'error',
-          })
-        );
+        useOfflineStore
+          .getState()
+          .updateSyncStatus(action.entity, action.data.id, 'error');
       }
     }
 
     // Clear successfully synced actions
-    store.dispatch(clearPendingActions());
+    useOfflineStore.getState().clearPendingActions();
   }
 
   private async executePendingAction(action: any) {
@@ -181,9 +161,7 @@ class SyncService {
         {}
       );
 
-      store.dispatch(
-        setEntities({ entityType: 'customers', entities: customers })
-      );
+      useOfflineStore.getState().setEntities('customers', customers);
 
       // Also store in local database
       await databaseService.storeCustomers(result.data.customers);
@@ -210,9 +188,7 @@ class SyncService {
         return acc;
       }, {});
 
-      store.dispatch(
-        setEntities({ entityType: 'products', entities: products })
-      );
+      useOfflineStore.getState().setEntities('products', products);
 
       // Also store in local database
       await databaseService.storeProducts(result.data.products);
@@ -242,9 +218,7 @@ class SyncService {
         {}
       );
 
-      store.dispatch(
-        setEntities({ entityType: 'salesOrders', entities: salesOrders })
-      );
+      useOfflineStore.getState().setEntities('salesOrders', salesOrders);
 
       // Also store in local database
       await databaseService.storeSalesOrders(result.data.salesOrders);
@@ -255,22 +229,22 @@ class SyncService {
   }
 
   async forceSyncEntity(entityType: string, entityId: string) {
-    store.dispatch(
-      updateSyncStatus({ entityType, id: entityId, status: 'syncing' })
-    );
+    useOfflineStore
+      .getState()
+      .updateSyncStatus(entityType, entityId, 'syncing');
 
     try {
       // Implementation would depend on the entity type
       // This is a placeholder
       console.log(`Force syncing ${entityType} ${entityId}`);
 
-      store.dispatch(
-        updateSyncStatus({ entityType, id: entityId, status: 'synced' })
-      );
+      useOfflineStore
+        .getState()
+        .updateSyncStatus(entityType, entityId, 'synced');
     } catch (error) {
-      store.dispatch(
-        updateSyncStatus({ entityType, id: entityId, status: 'error' })
-      );
+      useOfflineStore
+        .getState()
+        .updateSyncStatus(entityType, entityId, 'error');
       throw error;
     }
   }

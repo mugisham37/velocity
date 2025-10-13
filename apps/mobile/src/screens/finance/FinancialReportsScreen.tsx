@@ -234,7 +234,6 @@ export default function FinancialReportsScreen() {
                     name={report.icon}
                     size={24}
                     color={theme.colors.primary}
-                    style={styles.reportIcon}
                   />
                   <View style={styles.reportDetails}>
                     <Text

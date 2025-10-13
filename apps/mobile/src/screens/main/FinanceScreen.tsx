@@ -11,9 +11,8 @@ import {
   useTheme,
 } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useSelector } from 'react-redux';
 
-import { RootState } from '@store/index';
+import { useSyncStore } from '@store/index';
 import { formatCurrency, formatPercentage } from '@utils/helpers';
 
 interface FinancialMetrics {
@@ -38,7 +37,7 @@ interface FinancialAlert {
 
 export default function FinanceScreen() {
   const theme = useTheme();
-  const syncState = useSelector((state: RootState) => state.sync);
+  const syncState = useSyncStore();
   const [refreshing, setRefreshing] = useState(false);
   const [metrics, setMetrics] = useState<FinancialMetrics>({
     totalRevenue: 0,
@@ -329,7 +328,7 @@ export default function FinanceScreen() {
         <Card style={styles.reportsCard}>
           <Card.Title
             title='Financial Reports'
-            right={props => (
+            right={(props: any) => (
               <IconButton
                 {...props}
                 icon='chevron-right'
@@ -343,8 +342,12 @@ export default function FinanceScreen() {
             <List.Item
               title='Balance Sheet'
               description='Assets, liabilities, and equity'
-              left={props => <List.Icon {...props} icon='scale-balance' />}
-              right={props => <List.Icon {...props} icon='chevron-right' />}
+              left={(props: any) => (
+                <List.Icon {...props} icon='scale-balance' />
+              )}
+              right={(props: any) => (
+                <List.Icon {...props} icon='chevron-right' />
+              )}
               onPress={() => {
                 /* Navigate to balance sheet */
               }}
@@ -352,8 +355,10 @@ export default function FinanceScreen() {
             <List.Item
               title='Profit & Loss'
               description='Revenue and expenses'
-              left={props => <List.Icon {...props} icon='trending-up' />}
-              right={props => <List.Icon {...props} icon='chevron-right' />}
+              left={(props: any) => <List.Icon {...props} icon='trending-up' />}
+              right={(props: any) => (
+                <List.Icon {...props} icon='chevron-right' />
+              )}
               onPress={() => {
                 /* Navigate to P&L */
               }}
@@ -361,8 +366,10 @@ export default function FinanceScreen() {
             <List.Item
               title='Cash Flow'
               description='Cash receipts and payments'
-              left={props => <List.Icon {...props} icon='cash-flow' />}
-              right={props => <List.Icon {...props} icon='chevron-right' />}
+              left={(props: any) => <List.Icon {...props} icon='cash-flow' />}
+              right={(props: any) => (
+                <List.Icon {...props} icon='chevron-right' />
+              )}
               onPress={() => {
                 /* Navigate to cash flow */
               }}
@@ -370,8 +377,10 @@ export default function FinanceScreen() {
             <List.Item
               title='Financial Ratios'
               description='Key performance indicators'
-              left={props => <List.Icon {...props} icon='calculator' />}
-              right={props => <List.Icon {...props} icon='chevron-right' />}
+              left={(props: any) => <List.Icon {...props} icon='calculator' />}
+              right={(props: any) => (
+                <List.Icon {...props} icon='chevron-right' />
+              )}
               onPress={() => {
                 /* Navigate to ratios */
               }}

@@ -5,14 +5,14 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { Provider as PaperProvider } from 'react-native-paper';
-import { Provider as ReduxProvider } from 'react-redux';
+// Redux provider removed - using Zustand stores
 
 import { AppNavigator } from '@navigation/AppNavigator';
 import { apolloClient } from '@services/apollo';
 import { notificationService } from '@services/notifications';
 import { syncService } from '@services/sync';
 import { useAuthStore } from '@store/auth';
-import { store } from '@store/index';
+// Store is now handled by individual Zustand stores
 import { theme } from '@utils/theme';
 
 // Keep the splash screen visible while we fetch resources
@@ -69,15 +69,13 @@ export default function App() {
   }
 
   return (
-    <ReduxProvider store={store}>
-      <ApolloProvider client={apolloClient}>
-        <PaperProvider theme={theme}>
-          <NavigationContainer onReady={onLayoutRootView}>
-            <AppNavigator />
-            <StatusBar style='auto' />
-          </NavigationContainer>
-        </PaperProvider>
-      </ApolloProvider>
-    </ReduxProvider>
+    <ApolloProvider client={apolloClient}>
+      <PaperProvider theme={theme}>
+        <NavigationContainer onReady={onLayoutRootView}>
+          <AppNavigator />
+          <StatusBar style='auto' />
+        </NavigationContainer>
+      </PaperProvider>
+    </ApolloProvider>
   );
 }

@@ -462,7 +462,7 @@ class DatabaseService {
               const row = rows.item(i);
 
               // Parse items
-              const items = [];
+              const items: any[] = [];
               if (row.item_ids) {
                 const itemIds = row.item_ids.split(',');
                 const productIds = row.product_ids.split(',');
