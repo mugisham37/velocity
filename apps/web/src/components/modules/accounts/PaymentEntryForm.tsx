@@ -11,6 +11,7 @@ import {
 } from '@/types/accounts';
 import { apiClient } from '@/lib/api/client';
 import { useNotifications } from '@/hooks/useNotifications';
+import { getErrorMessage } from '@/lib/utils/form-utils';
 import { 
   TrashIcon, 
   ExclamationTriangleIcon,
@@ -145,8 +146,8 @@ export function PaymentEntryForm({ paymentEntry, onSave, onCancel }: PaymentEntr
 
   // Calculate totals
   const totals = useMemo(() => {
-    const totalAllocated = (watchedReferences || []).reduce((sum, ref) => sum + (ref.allocated_amount || 0), 0);
-    const totalDeductions = (watchedDeductions || []).reduce((sum, ded) => sum + (ded.amount || 0), 0);
+    const totalAllocated = (watchedReferences || []).reduce((sum: number, ref: any) => sum + (ref.allocated_amount || 0), 0);
+    const totalDeductions = (watchedDeductions || []).reduce((sum: number, ded: any) => sum + (ded.amount || 0), 0);
     const unallocatedAmount = watchedReceivedAmount - totalAllocated - totalDeductions;
     const differenceAmount = watchedPaidAmount - watchedReceivedAmount;
     
@@ -408,7 +409,7 @@ export function PaymentEntryForm({ paymentEntry, onSave, onCancel }: PaymentEntr
               )}
             />
             {errors.payment_type && (
-              <p className="mt-1 text-sm text-red-600">{errors.payment_type.message}</p>
+              <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.payment_type)}</p>
             )}
           </div>
 
@@ -435,7 +436,7 @@ export function PaymentEntryForm({ paymentEntry, onSave, onCancel }: PaymentEntr
               )}
             />
             {errors.party_type && (
-              <p className="mt-1 text-sm text-red-600">{errors.party_type.message}</p>
+              <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.party_type)}</p>
             )}
           </div>
 
@@ -463,7 +464,7 @@ export function PaymentEntryForm({ paymentEntry, onSave, onCancel }: PaymentEntr
               )}
             />
             {errors.party && (
-              <p className="mt-1 text-sm text-red-600">{errors.party.message}</p>
+              <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.party)}</p>
             )}
           </div>
 
@@ -485,7 +486,7 @@ export function PaymentEntryForm({ paymentEntry, onSave, onCancel }: PaymentEntr
               )}
             />
             {errors.posting_date && (
-              <p className="mt-1 text-sm text-red-600">{errors.posting_date.message}</p>
+              <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.posting_date)}</p>
             )}
           </div>
         </div>
@@ -515,7 +516,7 @@ export function PaymentEntryForm({ paymentEntry, onSave, onCancel }: PaymentEntr
               )}
             />
             {errors.company && (
-              <p className="mt-1 text-sm text-red-600">{errors.company.message}</p>
+              <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.company)}</p>
             )}
           </div>
 
@@ -543,7 +544,7 @@ export function PaymentEntryForm({ paymentEntry, onSave, onCancel }: PaymentEntr
               )}
             />
             {errors.mode_of_payment && (
-              <p className="mt-1 text-sm text-red-600">{errors.mode_of_payment.message}</p>
+              <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.mode_of_payment)}</p>
             )}
           </div>
 

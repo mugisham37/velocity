@@ -23,7 +23,7 @@ interface FormToolbarProps {
   document?: DocumentState;
   onSave: () => void;
   onSubmit: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
   onPrint: () => void;
   onEmail: () => void;
   onShare: () => void;
@@ -155,7 +155,7 @@ export function FormToolbar({
             )}
 
             {/* Cancel button */}
-            {canCancel && (
+            {canCancel && onCancel && (
               <button
                 onClick={onCancel}
                 disabled={isLoading}

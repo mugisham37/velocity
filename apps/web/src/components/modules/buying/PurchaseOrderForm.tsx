@@ -4,11 +4,11 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  PurchaseOrder, 
-  PurchaseOrderItem, 
-  PurchaseOrderTax, 
-  Supplier 
+import {
+  PurchaseOrder,
+  PurchaseOrderItem,
+  PurchaseOrderTax,
+  Supplier,
 } from '@/types/buying';
 import { DynamicForm, FormToolbar, FormSection } from '@/components/forms';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -33,7 +33,12 @@ const purchaseOrderItemSchema = z.object({
 });
 
 const purchaseOrderTaxSchema = z.object({
-  charge_type: z.enum(['On Net Total', 'On Previous Row Amount', 'On Previous Row Total', 'Actual']),
+  charge_type: z.enum([
+    'On Net Total',
+    'On Previous Row Amount',
+    'On Previous Row Total',
+    'Actual',
+  ]),
   account_head: z.string().min(1, 'Account head is required'),
   description: z.string().min(1, 'Description is required'),
   rate: z.number().optional(),
@@ -55,15 +60,17 @@ const purchaseOrderSchema = z.object({
   price_list_currency: z.string().default('INR'),
   plc_conversion_rate: z.number().default(1),
   ignore_pricing_rule: z.boolean().default(false),
-  
+
   // Items
-  items: z.array(purchaseOrderItemSchema).min(1, 'At least one item is required'),
-  
+  items: z
+    .array(purchaseOrderItemSchema)
+    .min(1, 'At least one item is required'),
+
   // Taxes
   taxes_and_charges: z.string().optional(),
   tax_category: z.string().optional(),
   taxes: z.array(purchaseOrderTaxSchema).default([]),
-  
+
   // Additional fields
   cost_center: z.string().optional(),
   project: z.string().optional(),
@@ -75,7 +82,7 @@ const purchaseOrderSchema = z.object({
   payment_terms_template: z.string().optional(),
   tc_name: z.string().optional(),
   terms: z.string().optional(),
-  
+
   // Totals (calculated fields)
   total_qty: z.number().default(0),
   base_total: z.number().default(0),
@@ -107,12 +114,14 @@ export default function PurchaseOrderForm({
   onSubmit,
   onCancel,
   isLoading = false,
-  mode = 'create'
+  mode = 'create',
 }: PurchaseOrderFormProps) {
   const { showNotification } = useNotifications();
   const { getDocument, getList } = useDocuments();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
+    null
+  );
 
   const form = useForm<PurchaseOrderFormData>({
     resolver: zodResolver(purchaseOrderSchema),
@@ -126,14 +135,16 @@ export default function PurchaseOrderForm({
       ignore_pricing_rule: false,
       is_subcontracted: false,
       drop_ship: false,
-      items: [{
-        item_code: '',
-        item_name: '',
-        qty: 1,
-        rate: 0,
-        uom: '',
-        discount_percentage: 0,
-      }],
+      items: [
+        {
+          item_code: '',
+          item_name: '',
+          qty: 1,
+          rate: 0,
+          uom: '',
+          discount_percentage: 0,
+        },
+      ],
       taxes: [],
       total_qty: 0,
       base_total: 0,
@@ -150,12 +161,20 @@ export default function PurchaseOrderForm({
     },
   });
 
-  const { fields: itemFields, append: appendItem, remove: removeItem } = useFieldArray({
+  const {
+    fields: itemFields,
+    append: appendItem,
+    remove: removeItem,
+  } = useFieldArray({
     control: form.control,
     name: 'items',
   });
 
-  const { fields: taxFields, append: appendTax, remove: removeTax } = useFieldArray({
+  const {
+    fields: taxFields,
+    append: appendTax,
+    remove: removeTax,
+  } = useFieldArray({
     control: form.control,
     name: 'taxes',
   });
@@ -170,13 +189,19 @@ export default function PurchaseOrderForm({
     const loadSuppliers = async () => {
       try {
         const response = await getList('Supplier', {
-          fields: ['name', 'supplier_name', 'supplier_type', 'default_currency', 'default_price_list'],
+          fields: [
+            'name',
+            'supplier_name',
+            'supplier_type',
+            'default_currency',
+            'default_price_list',
+          ],
           limit: 100,
         });
         setSuppliers(response.data);
       } catch (error) {
         console.error('Failed to load suppliers:', error);
-        showNotification('Failed to load suppliers', 'error');
+        showNotification('error', 'Error', 'Failed to load suppliers');
       }
     };
 
@@ -190,7 +215,7 @@ export default function PurchaseOrderForm({
         try {
           const supplier = await getDocument('Supplier', watchedSupplier);
           setSelectedSupplier(supplier);
-          
+
           // Update form with supplier defaults
           if (supplier.default_currency) {
             form.setValue('currency', supplier.default_currency);
@@ -228,12 +253,12 @@ export default function PurchaseOrderForm({
       const qty = item.qty || 0;
       const rate = item.rate || 0;
       const discountPercentage = item.discount_percentage || 0;
-      
+
       totalQty += qty;
       const amount = qty * rate;
       const discountAmount = (amount * discountPercentage) / 100;
       const netAmount = amount - discountAmount;
-      
+
       baseTotal += netAmount;
       total += netAmount / conversionRate;
     });
@@ -304,11 +329,15 @@ export default function PurchaseOrderForm({
     try {
       if (onSave) {
         await onSave(data);
-        showNotification('Purchase Order saved successfully', 'success');
+        showNotification(
+          'success',
+          'Success',
+          'Purchase Order saved successfully'
+        );
       }
     } catch (error) {
       console.error('Failed to save purchase order:', error);
-      showNotification('Failed to save purchase order', 'error');
+      showNotification('error', 'Error', 'Failed to save purchase order');
     }
   };
 
@@ -316,11 +345,15 @@ export default function PurchaseOrderForm({
     try {
       if (onSubmit) {
         await onSubmit(data);
-        showNotification('Purchase Order submitted successfully', 'success');
+        showNotification(
+          'success',
+          'Success',
+          'Purchase Order submitted successfully'
+        );
       }
     } catch (error) {
       console.error('Failed to submit purchase order:', error);
-      showNotification('Failed to submit purchase order', 'error');
+      showNotification('error', 'Error', 'Failed to submit purchase order');
     }
   };
 
@@ -330,71 +363,94 @@ export default function PurchaseOrderForm({
       label: 'Supplier Details',
       collapsible: false,
       fields: [
-        'naming_series', 'supplier', 'supplier_name', 
-        'transaction_date', 'schedule_date', 'supplier_quotation'
-      ]
+        'naming_series',
+        'supplier',
+        'supplier_name',
+        'transaction_date',
+        'schedule_date',
+        'supplier_quotation',
+      ],
     },
     {
       id: 'currency_and_price_list',
       label: 'Currency and Price List',
       collapsible: true,
       fields: [
-        'currency', 'conversion_rate', 'buying_price_list', 
-        'price_list_currency', 'plc_conversion_rate', 'ignore_pricing_rule'
-      ]
+        'currency',
+        'conversion_rate',
+        'buying_price_list',
+        'price_list_currency',
+        'plc_conversion_rate',
+        'ignore_pricing_rule',
+      ],
     },
     {
       id: 'items',
       label: 'Items',
       collapsible: false,
-      fields: ['items']
+      fields: ['items'],
     },
     {
       id: 'taxes_and_charges',
       label: 'Taxes and Charges',
       collapsible: true,
-      fields: ['taxes_and_charges', 'tax_category', 'taxes']
+      fields: ['taxes_and_charges', 'tax_category', 'taxes'],
     },
     {
       id: 'totals',
       label: 'Totals',
       collapsible: false,
       fields: [
-        'total_qty', 'base_total', 'total', 'base_net_total', 'net_total',
-        'base_total_taxes_and_charges', 'total_taxes_and_charges',
-        'base_grand_total', 'grand_total', 'rounding_adjustment', 'rounded_total'
-      ]
+        'total_qty',
+        'base_total',
+        'total',
+        'base_net_total',
+        'net_total',
+        'base_total_taxes_and_charges',
+        'total_taxes_and_charges',
+        'base_grand_total',
+        'grand_total',
+        'rounding_adjustment',
+        'rounded_total',
+      ],
     },
     {
       id: 'additional_info',
       label: 'Additional Information',
       collapsible: true,
       fields: [
-        'company', 'cost_center', 'project', 'is_subcontracted',
-        'drop_ship', 'customer', 'sales_order', 'payment_terms_template'
-      ]
+        'company',
+        'cost_center',
+        'project',
+        'is_subcontracted',
+        'drop_ship',
+        'customer',
+        'sales_order',
+        'payment_terms_template',
+      ],
     },
     {
       id: 'terms_and_conditions',
       label: 'Terms and Conditions',
       collapsible: true,
-      fields: ['tc_name', 'terms']
-    }
+      fields: ['tc_name', 'terms'],
+    },
   ];
 
   return (
-    <div className="purchase-order-form">
+    <div className='purchase-order-form'>
       <FormToolbar
-        title={mode === 'create' ? 'New Purchase Order' : 'Purchase Order'}
         onSave={form.handleSubmit(handleSave)}
         onSubmit={form.handleSubmit(handleSubmit)}
         onCancel={onCancel}
+        onPrint={() => {}}
+        onEmail={() => {}}
+        onShare={() => {}}
         isLoading={isLoading}
-        canSave={mode !== 'view'}
-        canSubmit={mode !== 'view'}
+        readOnly={mode === 'view'}
       />
 
-      <form className="space-y-6">
+      <form className='space-y-6'>
         {formSections.map((section) => (
           <FormSection
             key={section.id}
@@ -402,116 +458,146 @@ export default function PurchaseOrderForm({
             collapsible={section.collapsible}
           >
             {section.id === 'items' ? (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h4 className="text-sm font-medium text-gray-900">Items</h4>
+              <div className='space-y-4'>
+                <div className='flex items-center justify-between'>
+                  <h4 className='text-sm font-medium text-gray-900'>Items</h4>
                   {mode !== 'view' && (
                     <button
-                      type="button"
+                      type='button'
                       onClick={handleAddItem}
-                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                      className='rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700'
                     >
                       Add Item
                     </button>
                   )}
                 </div>
-                
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+
+                <div className='overflow-x-auto'>
+                  <table className='min-w-full divide-y divide-gray-200'>
+                    <thead className='bg-gray-50'>
                       <tr>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Item Code</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Item Name</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">UOM</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rate</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Discount %</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Schedule Date</th>
-                        {mode !== 'view' && <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>}
+                        <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase'>
+                          Item Code
+                        </th>
+                        <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase'>
+                          Item Name
+                        </th>
+                        <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase'>
+                          Qty
+                        </th>
+                        <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase'>
+                          UOM
+                        </th>
+                        <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase'>
+                          Rate
+                        </th>
+                        <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase'>
+                          Discount %
+                        </th>
+                        <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase'>
+                          Amount
+                        </th>
+                        <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase'>
+                          Schedule Date
+                        </th>
+                        {mode !== 'view' && (
+                          <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase'>
+                            Actions
+                          </th>
+                        )}
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className='divide-y divide-gray-200 bg-white'>
                       {itemFields.map((field, index) => {
                         const item = watchedItems[index];
                         const amount = (item?.qty || 0) * (item?.rate || 0);
-                        const discountAmount = (amount * (item?.discount_percentage || 0)) / 100;
+                        const discountAmount =
+                          (amount * (item?.discount_percentage || 0)) / 100;
                         const netAmount = amount - discountAmount;
 
                         return (
                           <tr key={field.id}>
-                            <td className="px-3 py-2">
+                            <td className='px-3 py-2'>
                               <input
                                 {...form.register(`items.${index}.item_code`)}
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                placeholder="Item Code"
+                                className='w-full rounded border border-gray-300 px-2 py-1 text-sm'
+                                placeholder='Item Code'
                                 readOnly={mode === 'view'}
                               />
                             </td>
-                            <td className="px-3 py-2">
+                            <td className='px-3 py-2'>
                               <input
                                 {...form.register(`items.${index}.item_name`)}
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                placeholder="Item Name"
+                                className='w-full rounded border border-gray-300 px-2 py-1 text-sm'
+                                placeholder='Item Name'
                                 readOnly={mode === 'view'}
                               />
                             </td>
-                            <td className="px-3 py-2">
+                            <td className='px-3 py-2'>
                               <input
-                                {...form.register(`items.${index}.qty`, { valueAsNumber: true })}
-                                type="number"
-                                step="0.01"
-                                className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                                {...form.register(`items.${index}.qty`, {
+                                  valueAsNumber: true,
+                                })}
+                                type='number'
+                                step='0.01'
+                                className='w-20 rounded border border-gray-300 px-2 py-1 text-sm'
                                 readOnly={mode === 'view'}
                               />
                             </td>
-                            <td className="px-3 py-2">
+                            <td className='px-3 py-2'>
                               <input
                                 {...form.register(`items.${index}.uom`)}
-                                className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                                placeholder="UOM"
+                                className='w-20 rounded border border-gray-300 px-2 py-1 text-sm'
+                                placeholder='UOM'
                                 readOnly={mode === 'view'}
                               />
                             </td>
-                            <td className="px-3 py-2">
+                            <td className='px-3 py-2'>
                               <input
-                                {...form.register(`items.${index}.rate`, { valueAsNumber: true })}
-                                type="number"
-                                step="0.01"
-                                className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+                                {...form.register(`items.${index}.rate`, {
+                                  valueAsNumber: true,
+                                })}
+                                type='number'
+                                step='0.01'
+                                className='w-24 rounded border border-gray-300 px-2 py-1 text-sm'
                                 readOnly={mode === 'view'}
                               />
                             </td>
-                            <td className="px-3 py-2">
+                            <td className='px-3 py-2'>
                               <input
-                                {...form.register(`items.${index}.discount_percentage`, { valueAsNumber: true })}
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                max="100"
-                                className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                                {...form.register(
+                                  `items.${index}.discount_percentage`,
+                                  { valueAsNumber: true }
+                                )}
+                                type='number'
+                                step='0.01'
+                                min='0'
+                                max='100'
+                                className='w-20 rounded border border-gray-300 px-2 py-1 text-sm'
                                 readOnly={mode === 'view'}
                               />
                             </td>
-                            <td className="px-3 py-2 text-right">
-                              <span className="text-sm font-medium">
+                            <td className='px-3 py-2 text-right'>
+                              <span className='text-sm font-medium'>
                                 {netAmount.toFixed(2)}
                               </span>
                             </td>
-                            <td className="px-3 py-2">
+                            <td className='px-3 py-2'>
                               <input
-                                {...form.register(`items.${index}.schedule_date`)}
-                                type="date"
-                                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
+                                {...form.register(
+                                  `items.${index}.schedule_date`
+                                )}
+                                type='date'
+                                className='w-32 rounded border border-gray-300 px-2 py-1 text-sm'
                                 readOnly={mode === 'view'}
                               />
                             </td>
                             {mode !== 'view' && (
-                              <td className="px-3 py-2">
+                              <td className='px-3 py-2'>
                                 <button
-                                  type="button"
+                                  type='button'
                                   onClick={() => handleRemoveItem(index)}
-                                  className="text-red-600 hover:text-red-800 text-sm"
+                                  className='text-sm text-red-600 hover:text-red-800'
                                   disabled={itemFields.length === 1}
                                 >
                                   Remove
@@ -526,40 +612,42 @@ export default function PurchaseOrderForm({
                 </div>
               </div>
             ) : section.id === 'taxes_and_charges' ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className='space-y-4'>
+                <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className='mb-1 block text-sm font-medium text-gray-700'>
                       Taxes and Charges Template
                     </label>
                     <input
                       {...form.register('taxes_and_charges')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="Select template"
+                      className='w-full rounded-md border border-gray-300 px-3 py-2'
+                      placeholder='Select template'
                       readOnly={mode === 'view'}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className='mb-1 block text-sm font-medium text-gray-700'>
                       Tax Category
                     </label>
                     <input
                       {...form.register('tax_category')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="Tax Category"
+                      className='w-full rounded-md border border-gray-300 px-3 py-2'
+                      placeholder='Tax Category'
                       readOnly={mode === 'view'}
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <h4 className="text-sm font-medium text-gray-900">Tax Details</h4>
+                <div className='space-y-2'>
+                  <div className='flex items-center justify-between'>
+                    <h4 className='text-sm font-medium text-gray-900'>
+                      Tax Details
+                    </h4>
                     {mode !== 'view' && (
                       <button
-                        type="button"
+                        type='button'
                         onClick={handleAddTax}
-                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                        className='rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700'
                       >
                         Add Tax
                       </button>
@@ -567,53 +655,64 @@ export default function PurchaseOrderForm({
                   </div>
 
                   {taxFields.map((field, index) => (
-                    <div key={field.id} className="grid grid-cols-1 md:grid-cols-5 gap-2 p-3 border border-gray-200 rounded">
+                    <div
+                      key={field.id}
+                      className='grid grid-cols-1 gap-2 rounded border border-gray-200 p-3 md:grid-cols-5'
+                    >
                       <div>
                         <select
                           {...form.register(`taxes.${index}.charge_type`)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                          className='w-full rounded border border-gray-300 px-2 py-1 text-sm'
                           disabled={mode === 'view'}
                         >
-                          <option value="On Net Total">On Net Total</option>
-                          <option value="On Previous Row Amount">On Previous Row Amount</option>
-                          <option value="On Previous Row Total">On Previous Row Total</option>
-                          <option value="Actual">Actual</option>
+                          <option value='On Net Total'>On Net Total</option>
+                          <option value='On Previous Row Amount'>
+                            On Previous Row Amount
+                          </option>
+                          <option value='On Previous Row Total'>
+                            On Previous Row Total
+                          </option>
+                          <option value='Actual'>Actual</option>
                         </select>
                       </div>
                       <div>
                         <input
                           {...form.register(`taxes.${index}.account_head`)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                          placeholder="Account Head"
+                          className='w-full rounded border border-gray-300 px-2 py-1 text-sm'
+                          placeholder='Account Head'
                           readOnly={mode === 'view'}
                         />
                       </div>
                       <div>
                         <input
-                          {...form.register(`taxes.${index}.rate`, { valueAsNumber: true })}
-                          type="number"
-                          step="0.01"
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                          placeholder="Rate %"
+                          {...form.register(`taxes.${index}.rate`, {
+                            valueAsNumber: true,
+                          })}
+                          type='number'
+                          step='0.01'
+                          className='w-full rounded border border-gray-300 px-2 py-1 text-sm'
+                          placeholder='Rate %'
                           readOnly={mode === 'view'}
                         />
                       </div>
                       <div>
                         <input
-                          {...form.register(`taxes.${index}.tax_amount`, { valueAsNumber: true })}
-                          type="number"
-                          step="0.01"
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                          placeholder="Tax Amount"
+                          {...form.register(`taxes.${index}.tax_amount`, {
+                            valueAsNumber: true,
+                          })}
+                          type='number'
+                          step='0.01'
+                          className='w-full rounded border border-gray-300 px-2 py-1 text-sm'
+                          placeholder='Tax Amount'
                           readOnly={mode === 'view'}
                         />
                       </div>
                       {mode !== 'view' && (
                         <div>
                           <button
-                            type="button"
+                            type='button'
                             onClick={() => handleRemoveTax(index)}
-                            className="text-red-600 hover:text-red-800 text-sm"
+                            className='text-sm text-red-600 hover:text-red-800'
                           >
                             Remove
                           </button>
@@ -624,64 +723,74 @@ export default function PurchaseOrderForm({
                 </div>
               </div>
             ) : section.id === 'totals' ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className='grid grid-cols-2 gap-4 md:grid-cols-4'>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Total Qty</label>
+                  <label className='mb-1 block text-sm font-medium text-gray-700'>
+                    Total Qty
+                  </label>
                   <input
                     {...form.register('total_qty', { valueAsNumber: true })}
-                    type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                    type='number'
+                    className='w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2'
                     readOnly
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Net Total</label>
+                  <label className='mb-1 block text-sm font-medium text-gray-700'>
+                    Net Total
+                  </label>
                   <input
                     {...form.register('net_total', { valueAsNumber: true })}
-                    type="number"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                    type='number'
+                    step='0.01'
+                    className='w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2'
                     readOnly
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Total Taxes</label>
+                  <label className='mb-1 block text-sm font-medium text-gray-700'>
+                    Total Taxes
+                  </label>
                   <input
-                    {...form.register('total_taxes_and_charges', { valueAsNumber: true })}
-                    type="number"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                    {...form.register('total_taxes_and_charges', {
+                      valueAsNumber: true,
+                    })}
+                    type='number'
+                    step='0.01'
+                    className='w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2'
                     readOnly
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Grand Total</label>
+                  <label className='mb-1 block text-sm font-medium text-gray-700'>
+                    Grand Total
+                  </label>
                   <input
                     {...form.register('grand_total', { valueAsNumber: true })}
-                    type="number"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 font-semibold"
+                    type='number'
+                    step='0.01'
+                    className='w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 font-semibold'
                     readOnly
                   />
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                 {section.fields.map((fieldName) => {
                   const fieldConfig = getFieldConfig(fieldName);
                   return (
                     <div key={fieldName}>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className='mb-1 block text-sm font-medium text-gray-700'>
                         {fieldConfig.label}
                       </label>
                       {fieldConfig.type === 'select' ? (
                         <select
                           {...form.register(fieldName as any)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          className='w-full rounded-md border border-gray-300 px-3 py-2'
                           disabled={mode === 'view'}
                         >
-                          <option value="">Select {fieldConfig.label}</option>
-                          {fieldConfig.options?.map((option) => (
+                          <option value=''>Select {fieldConfig.label}</option>
+                          {fieldConfig.options?.map((option: any) => (
                             <option key={option.value} value={option.value}>
                               {option.label}
                             </option>
@@ -690,26 +799,35 @@ export default function PurchaseOrderForm({
                       ) : fieldConfig.type === 'textarea' ? (
                         <textarea
                           {...form.register(fieldName as any)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          className='w-full rounded-md border border-gray-300 px-3 py-2'
                           rows={3}
                           readOnly={mode === 'view'}
                         />
                       ) : fieldConfig.type === 'checkbox' ? (
-                        <div className="flex items-center">
+                        <div className='flex items-center'>
                           <input
                             {...form.register(fieldName as any)}
-                            type="checkbox"
-                            className="mr-2"
+                            type='checkbox'
+                            className='mr-2'
                             disabled={mode === 'view'}
                           />
-                          <span className="text-sm text-gray-700">{fieldConfig.label}</span>
+                          <span className='text-sm text-gray-700'>
+                            {fieldConfig.label}
+                          </span>
                         </div>
                       ) : (
                         <input
-                          {...form.register(fieldName as any, fieldConfig.type === 'number' ? { valueAsNumber: true } : {})}
+                          {...form.register(
+                            fieldName as any,
+                            fieldConfig.type === 'number'
+                              ? { valueAsNumber: true }
+                              : {}
+                          )}
                           type={fieldConfig.type}
-                          step={fieldConfig.type === 'number' ? '0.01' : undefined}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          step={
+                            fieldConfig.type === 'number' ? '0.01' : undefined
+                          }
+                          className='w-full rounded-md border border-gray-300 px-3 py-2'
                           readOnly={mode === 'view'}
                         />
                       )}
@@ -723,23 +841,27 @@ export default function PurchaseOrderForm({
 
         {/* Drop Ship Section */}
         {watchedDropShip && (
-          <FormSection title="Drop Ship Details" collapsible={false}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormSection title='Drop Ship Details' collapsible={false}>
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
+                <label className='mb-1 block text-sm font-medium text-gray-700'>
+                  Customer
+                </label>
                 <input
                   {...form.register('customer')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  placeholder="Customer for drop ship"
+                  className='w-full rounded-md border border-gray-300 px-3 py-2'
+                  placeholder='Customer for drop ship'
                   readOnly={mode === 'view'}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sales Order</label>
+                <label className='mb-1 block text-sm font-medium text-gray-700'>
+                  Sales Order
+                </label>
                 <input
                   {...form.register('sales_order')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  placeholder="Related sales order"
+                  className='w-full rounded-md border border-gray-300 px-3 py-2'
+                  placeholder='Related sales order'
                   readOnly={mode === 'view'}
                 />
               </div>

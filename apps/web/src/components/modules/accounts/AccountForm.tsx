@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { Account, AccountType, RootType, ReportType } from '@/types/accounts';
 import { apiClient } from '@/lib/api/client';
 import { useNotifications } from '@/hooks/useNotifications';
+import { getErrorMessage } from '@/lib/utils/form-utils';
 
 const accountSchema = z.object({
   account_name: z.string().min(1, 'Account name is required'),
@@ -251,7 +252,7 @@ export function AccountForm({ account, parentAccount, onSave, onCancel }: Accoun
               )}
             />
             {errors.account_name && (
-              <p className="mt-1 text-sm text-red-600">{errors.account_name.message}</p>
+              <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.account_name)}</p>
             )}
           </div>
 
@@ -299,7 +300,7 @@ export function AccountForm({ account, parentAccount, onSave, onCancel }: Accoun
               )}
             />
             {errors.company && (
-              <p className="mt-1 text-sm text-red-600">{errors.company.message}</p>
+              <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.company)}</p>
             )}
           </div>
 
@@ -353,7 +354,7 @@ export function AccountForm({ account, parentAccount, onSave, onCancel }: Accoun
               )}
             />
             {errors.root_type && (
-              <p className="mt-1 text-sm text-red-600">{errors.root_type.message}</p>
+              <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.root_type)}</p>
             )}
           </div>
 
@@ -382,7 +383,7 @@ export function AccountForm({ account, parentAccount, onSave, onCancel }: Accoun
               )}
             />
             {errors.account_type && (
-              <p className="mt-1 text-sm text-red-600">{errors.account_type.message}</p>
+              <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.account_type)}</p>
             )}
           </div>
 

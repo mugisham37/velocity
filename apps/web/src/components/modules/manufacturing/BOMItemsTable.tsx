@@ -129,7 +129,7 @@ export function BOMItemsTable({ items, onChange, bomQuantity }: BOMItemsTablePro
             <label className="text-sm font-medium">UOM</label>
             <Select
               value={newItem.uom || ''}
-              onValueChange={(value) => setNewItem(prev => ({ ...prev, uom: value }))}
+              onValueChange={(value: any) => setNewItem(prev => ({ ...prev, uom: value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select UOM" />
@@ -155,7 +155,7 @@ export function BOMItemsTable({ items, onChange, bomQuantity }: BOMItemsTablePro
             <label className="text-sm font-medium">Source Warehouse</label>
             <Select
               value={newItem.source_warehouse || ''}
-              onValueChange={(value) => setNewItem(prev => ({ ...prev, source_warehouse: value }))}
+              onValueChange={(value: any) => setNewItem(prev => ({ ...prev, source_warehouse: value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select warehouse" />
@@ -245,7 +245,7 @@ export function BOMItemsTable({ items, onChange, bomQuantity }: BOMItemsTablePro
                   <TableCell>
                     <Select
                       value={item.source_warehouse || ''}
-                      onValueChange={(value) => updateItem(index, 'source_warehouse', value)}
+                      onValueChange={(value: any) => updateItem(index, 'source_warehouse', value)}
                     >
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder="Warehouse" />
@@ -261,14 +261,14 @@ export function BOMItemsTable({ items, onChange, bomQuantity }: BOMItemsTablePro
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           checked={item.sourced_by_supplier}
-                          onCheckedChange={(checked) => updateItem(index, 'sourced_by_supplier', checked)}
+                          onCheckedChange={(checked: any) => updateItem(index, 'sourced_by_supplier', checked)}
                         />
                         <span className="text-xs">Supplier</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           checked={item.include_item_in_manufacturing}
-                          onCheckedChange={(checked) => updateItem(index, 'include_item_in_manufacturing', checked)}
+                          onCheckedChange={(checked: any) => updateItem(index, 'include_item_in_manufacturing', checked)}
                         />
                         <span className="text-xs">Include</span>
                       </div>

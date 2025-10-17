@@ -9,24 +9,34 @@ import { FormSection } from './FormSection';
 import { evaluateDependsOn } from '@/lib/utils/form-utils';
 
 interface DynamicFormProps {
-  doctype: string;
-  meta: DocTypeSchema;
+  id?: string;
+  doctype?: string;
+  meta?: DocTypeSchema;
+  schema?: any;
+  form?: any;
   document?: DocumentState;
   onSubmit: (data: Record<string, unknown>) => void;
   onChange?: (data: Record<string, unknown>) => void;
   readOnly?: boolean;
+  className?: string;
 }
 
 export function DynamicForm({
+  id,
   doctype,
   meta,
+  schema,
+  form,
   document,
   onSubmit,
   onChange,
   readOnly = false,
+  className,
 }: DynamicFormProps) {
   // Create dynamic validation schema based on DocType fields
   const validationSchema = useMemo(() => {
+    if (!meta) return z.object({});
+    
     const schemaFields: Record<string, z.ZodTypeAny> = {};
 
     meta.fields.forEach((field) => {
@@ -82,10 +92,10 @@ export function DynamicForm({
     });
 
     return z.object(schemaFields);
-  }, [meta.fields]);
+  }, [meta?.fields]);
 
   // Initialize form with React Hook Form
-  const methods = useForm({
+  const methods = form || useForm({
     resolver: zodResolver(validationSchema),
     defaultValues: document?.data || {},
     mode: 'onChange',
@@ -110,6 +120,8 @@ export function DynamicForm({
 
   // Group fields by sections
   const sections = useMemo(() => {
+    if (!meta) return [];
+    
     if (meta.formSettings?.sections?.length) {
       return meta.formSettings.sections.map((section) => ({
         ...section,
@@ -127,7 +139,7 @@ export function DynamicForm({
         collapsible: false,
       },
     ];
-  }, [meta.fields, meta.formSettings]);
+  }, [meta?.fields, meta?.formSettings]);
 
   // Filter visible fields based on depends_on conditions
   const getVisibleFields = (fields: DocField[]) => {
@@ -144,8 +156,9 @@ export function DynamicForm({
   return (
     <FormProvider {...methods}>
       <form
+        id={id}
         onSubmit={methods.handleSubmit(handleFormSubmit)}
-        className="space-y-6"
+        className={className || "space-y-6"}
       >
         <div className="bg-white rounded-lg border border-gray-200">
           {sections.map((section, index) => {
@@ -159,7 +172,7 @@ export function DynamicForm({
                 title={section.label}
                 fields={visibleFields}
                 collapsible={section.collapsible}
-                columns={meta.formSettings?.layout?.columns || 2}
+                columns={meta?.formSettings?.layout?.columns || 2}
                 readOnly={readOnly}
               />
             );

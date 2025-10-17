@@ -11,6 +11,7 @@ import {
 } from '@/types/accounts';
 import { apiClient } from '@/lib/api/client';
 import { useNotifications } from '@/hooks/useNotifications';
+import { getErrorMessage } from '@/lib/utils/form-utils';
 import { 
   PlusIcon, 
   TrashIcon, 
@@ -153,8 +154,8 @@ export function JournalEntryForm({ journalEntry, onSave, onCancel }: JournalEntr
 
   // Calculate totals
   const totals = useMemo(() => {
-    const totalDebit = watchedAccounts.reduce((sum, acc) => sum + (acc.debit || 0), 0);
-    const totalCredit = watchedAccounts.reduce((sum, acc) => sum + (acc.credit || 0), 0);
+    const totalDebit = watchedAccounts.reduce((sum: number, acc: any) => sum + (acc.debit || 0), 0);
+    const totalCredit = watchedAccounts.reduce((sum: number, acc: any) => sum + (acc.credit || 0), 0);
     const difference = totalDebit - totalCredit;
     
     return {
@@ -215,10 +216,10 @@ export function JournalEntryForm({ journalEntry, onSave, onCancel }: JournalEntr
     const accounts = watchedAccounts;
     if (accounts.length < 2) return;
 
-    const totalDebit = accounts.reduce((sum, acc, index) => 
+    const totalDebit = accounts.reduce((sum: number, acc: any, index: number) => 
       index < accounts.length - 1 ? sum + (acc.debit || 0) : sum, 0
     );
-    const totalCredit = accounts.reduce((sum, acc, index) => 
+    const totalCredit = accounts.reduce((sum: number, acc: any, index: number) => 
       index < accounts.length - 1 ? sum + (acc.credit || 0) : sum, 0
     );
 
@@ -361,7 +362,7 @@ export function JournalEntryForm({ journalEntry, onSave, onCancel }: JournalEntr
               )}
             />
             {errors.voucher_type && (
-              <p className="mt-1 text-sm text-red-600">{errors.voucher_type.message}</p>
+              <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.voucher_type)}</p>
             )}
           </div>
 
@@ -389,7 +390,7 @@ export function JournalEntryForm({ journalEntry, onSave, onCancel }: JournalEntr
               )}
             />
             {errors.company && (
-              <p className="mt-1 text-sm text-red-600">{errors.company.message}</p>
+              <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.company)}</p>
             )}
           </div>
 
@@ -411,7 +412,7 @@ export function JournalEntryForm({ journalEntry, onSave, onCancel }: JournalEntr
               )}
             />
             {errors.posting_date && (
-              <p className="mt-1 text-sm text-red-600">{errors.posting_date.message}</p>
+              <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.posting_date)}</p>
             )}
           </div>
         </div>

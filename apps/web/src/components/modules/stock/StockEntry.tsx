@@ -145,7 +145,7 @@ export function StockEntry({ entryName, onSave, onCancel, readOnly = false }: St
     let totalOutgoing = 0;
     let totalIncoming = 0;
 
-    formData.items?.forEach((item) => {
+    formData.items?.forEach((item: any) => {
       if (item.s_warehouse) {
         totalOutgoing += item.amount || 0;
       }

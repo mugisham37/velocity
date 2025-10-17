@@ -195,7 +195,25 @@ export function useDocuments() {
     return response.json();
   }, []);
 
+  const getDocument = useCallback(async (doctype: string, name: string) => {
+    // This is a simplified implementation
+    // In a real implementation, this would use the API client
+    const response = await fetch(`/api/method/frappe.client.get?doctype=${doctype}&name=${name}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch document');
+    }
+    
+    return response.json();
+  }, []);
+
   return {
     getList,
+    getDocument,
   };
 }

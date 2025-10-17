@@ -135,7 +135,7 @@ export function MaterialRequest({ requestName, onSave, onCancel, readOnly = fals
       let orderedQty = 0;
       let receivedQty = 0;
 
-      formData.items.forEach((item) => {
+      formData.items.forEach((item: any) => {
         totalQty += item.qty || 0;
         orderedQty += item.ordered_qty || 0;
         receivedQty += item.received_qty || 0;

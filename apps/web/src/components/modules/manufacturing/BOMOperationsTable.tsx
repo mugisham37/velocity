@@ -119,7 +119,7 @@ export function BOMOperationsTable({ operations, onChange, routing }: BOMOperati
             <label className="text-sm font-medium">Operation *</label>
             <Select
               value={newOperation.operation || ''}
-              onValueChange={(value) => setNewOperation(prev => ({ ...prev, operation: value }))}
+              onValueChange={(value: any) => setNewOperation(prev => ({ ...prev, operation: value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select operation" />
@@ -137,7 +137,7 @@ export function BOMOperationsTable({ operations, onChange, routing }: BOMOperati
             <label className="text-sm font-medium">Workstation *</label>
             <Select
               value={newOperation.workstation || ''}
-              onValueChange={(value) => setNewOperation(prev => ({ ...prev, workstation: value }))}
+              onValueChange={(value: any) => setNewOperation(prev => ({ ...prev, workstation: value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select workstation" />
@@ -283,7 +283,7 @@ export function BOMOperationsTable({ operations, onChange, routing }: BOMOperati
                   <TableCell>
                     <Checkbox
                       checked={operation.fixed_time}
-                      onCheckedChange={(checked) => updateOperation(index, 'fixed_time', checked)}
+                      onCheckedChange={(checked: any) => updateOperation(index, 'fixed_time', checked)}
                     />
                   </TableCell>
                   <TableCell>

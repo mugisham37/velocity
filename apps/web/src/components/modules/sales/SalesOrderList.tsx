@@ -60,10 +60,11 @@ export default function SalesOrderList({
 
   const columns = [
     {
-      key: 'name',
+      fieldname: 'name',
+      fieldtype: 'Link',
       label: 'ID',
       sortable: true,
-      width: '120px',
+      width: 120,
       render: (value: string, record: SalesOrder) => (
         <button
           onClick={() => onView?.(record)}
@@ -74,30 +75,34 @@ export default function SalesOrderList({
       ),
     },
     {
-      key: 'customer_name',
+      fieldname: 'customer_name',
+      fieldtype: 'Data',
       label: 'Customer',
       sortable: true,
-      width: '200px',
+      width: 200,
     },
     {
-      key: 'transaction_date',
+      fieldname: 'transaction_date',
+      fieldtype: 'Date',
       label: 'Date',
       sortable: true,
-      width: '120px',
+      width: 120,
       render: (value: string) => new Date(value).toLocaleDateString(),
     },
     {
-      key: 'delivery_date',
+      fieldname: 'delivery_date',
+      fieldtype: 'Date',
       label: 'Delivery Date',
       sortable: true,
-      width: '120px',
+      width: 120,
       render: (value: string) => value ? new Date(value).toLocaleDateString() : '-',
     },
     {
-      key: 'grand_total',
+      fieldname: 'grand_total',
+      fieldtype: 'Currency',
       label: 'Grand Total',
       sortable: true,
-      width: '120px',
+      width: 120,
       align: 'right' as const,
       render: (value: number, record: SalesOrder) => 
         `${record.currency} ${value?.toLocaleString() || '0.00'}`,
@@ -187,50 +192,38 @@ export default function SalesOrderList({
 
   const filterFields = [
     {
-      key: 'customer',
+      fieldname: 'customer',
+      fieldtype: 'Link',
       label: 'Customer',
-      type: 'link' as const,
-      doctype: 'Customer',
+      options: 'Customer',
     },
     {
-      key: 'status',
+      fieldname: 'status',
+      fieldtype: 'Select',
       label: 'Status',
-      type: 'select' as const,
-      options: [
-        { value: 'Draft', label: 'Draft' },
-        { value: 'To Deliver and Bill', label: 'To Deliver and Bill' },
-        { value: 'To Bill', label: 'To Bill' },
-        { value: 'To Deliver', label: 'To Deliver' },
-        { value: 'Completed', label: 'Completed' },
-        { value: 'Cancelled', label: 'Cancelled' },
-        { value: 'Closed', label: 'Closed' },
-      ],
+      options: 'Draft\nTo Deliver and Bill\nTo Bill\nTo Deliver\nCompleted\nCancelled\nClosed',
     },
     {
-      key: 'order_type',
+      fieldname: 'order_type',
+      fieldtype: 'Select',
       label: 'Order Type',
-      type: 'select' as const,
-      options: [
-        { value: 'Sales', label: 'Sales' },
-        { value: 'Maintenance', label: 'Maintenance' },
-        { value: 'Shopping Cart', label: 'Shopping Cart' },
-      ],
+      options: 'Sales\nMaintenance\nShopping Cart',
     },
     {
-      key: 'company',
+      fieldname: 'company',
+      fieldtype: 'Link',
       label: 'Company',
-      type: 'link' as const,
-      doctype: 'Company',
+      options: 'Company',
     },
     {
-      key: 'transaction_date',
+      fieldname: 'transaction_date',
+      fieldtype: 'Date',
       label: 'Date Range',
-      type: 'daterange' as const,
     },
     {
-      key: 'grand_total',
+      fieldname: 'grand_total',
+      fieldtype: 'Currency',
       label: 'Amount Range',
-      type: 'numberrange' as const,
     },
     {
       key: 'sales_partner',
@@ -335,7 +328,8 @@ export default function SalesOrderList({
       <div className="mt-6">
         <ListPagination
           pagination={pagination}
-          onPaginationChange={updatePagination}
+          onPageChange={(page) => updatePagination({ page })}
+          onPageSizeChange={(pageSize) => updatePagination({ pageSize })}
         />
       </div>
     </div>

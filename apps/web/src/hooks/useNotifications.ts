@@ -69,6 +69,24 @@ export function useNotifications() {
     showSuccess('Success', message);
   }, [showSuccess]);
 
+  // Legacy method for backward compatibility
+  const showNotification = useCallback((type: 'success' | 'error' | 'warning' | 'info', title: string, message?: string) => {
+    switch (type) {
+      case 'success':
+        showSuccess(title, message);
+        break;
+      case 'error':
+        showError(title, message);
+        break;
+      case 'warning':
+        showWarning(title, message);
+        break;
+      case 'info':
+        showInfo(title, message);
+        break;
+    }
+  }, [showSuccess, showError, showWarning, showInfo]);
+
   return {
     // State
     notifications,
@@ -88,5 +106,6 @@ export function useNotifications() {
     showInfo,
     showApiError,
     showApiSuccess,
+    showNotification,
   };
 }

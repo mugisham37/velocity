@@ -14,6 +14,7 @@ export interface POSPaymentMethod {
   mode_of_payment: string;
   account: string;
   default?: boolean;
+  type?: string;
 }
 
 export interface POSCartItem {
@@ -55,6 +56,7 @@ export interface POSPayment {
   mode_of_payment: string;
   amount: number;
   account?: string;
+  type?: string;
 }
 
 export interface POSSettings {
@@ -89,6 +91,7 @@ export interface POSClosingEntry {
   posting_date: string;
   posting_time: string;
   pos_profile: string;
+  pos_profile_name?: string;
   user: string;
   company: string;
   period_start_date: string;
@@ -97,9 +100,17 @@ export interface POSClosingEntry {
   net_total: number;
   total_taxes_and_charges: number;
   grand_total: number;
-  payment_reconciliation: any[];
+  payment_reconciliation: POSClosingPayment[];
   docstatus: number;
   status: string;
+  name?: string;
+}
+
+export interface POSClosingPayment {
+  mode_of_payment: string;
+  opening_amount: number;
+  expected_amount: number;
+  difference: number;
 }
 
 export interface POSState {

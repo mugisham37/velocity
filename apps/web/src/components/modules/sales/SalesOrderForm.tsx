@@ -174,7 +174,7 @@ export default function SalesOrderForm({
         setCustomers(response.data);
       } catch (error) {
         console.error('Failed to load customers:', error);
-        showNotification('Failed to load customers', 'error');
+        showNotification('error', 'Error', 'Failed to load customers');
       }
     };
 
@@ -302,11 +302,11 @@ export default function SalesOrderForm({
     try {
       if (onSave) {
         await onSave(data);
-        showNotification('Sales Order saved successfully', 'success');
+        showNotification('success', 'Success', 'Sales Order saved successfully');
       }
     } catch (error) {
       console.error('Failed to save sales order:', error);
-      showNotification('Failed to save sales order', 'error');
+      showNotification('error', 'Error', 'Failed to save sales order');
     }
   };
 
@@ -314,11 +314,11 @@ export default function SalesOrderForm({
     try {
       if (onSubmit) {
         await onSubmit(data);
-        showNotification('Sales Order submitted successfully', 'success');
+        showNotification('success', 'Success', 'Sales Order submitted successfully');
       }
     } catch (error) {
       console.error('Failed to submit sales order:', error);
-      showNotification('Failed to submit sales order', 'error');
+      showNotification('error', 'Error', 'Failed to submit sales order');
     }
   };
 
@@ -383,13 +383,14 @@ export default function SalesOrderForm({
   return (
     <div className="sales-order-form">
       <FormToolbar
-        title={mode === 'create' ? 'New Sales Order' : 'Sales Order'}
         onSave={form.handleSubmit(handleSave)}
         onSubmit={form.handleSubmit(handleSubmit)}
         onCancel={onCancel}
+        onPrint={() => {}}
+        onEmail={() => {}}
+        onShare={() => {}}
         isLoading={isLoading}
-        canSave={mode !== 'view'}
-        canSubmit={mode !== 'view'}
+        readOnly={mode === 'view'}
       />
 
       <form className="space-y-6">
@@ -670,7 +671,7 @@ export default function SalesOrderForm({
                           disabled={mode === 'view'}
                         >
                           <option value="">Select {fieldConfig.label}</option>
-                          {fieldConfig.options?.map((option) => (
+                          {fieldConfig.options?.map((option: any) => (
                             <option key={option.value} value={option.value}>
                               {option.label}
                             </option>

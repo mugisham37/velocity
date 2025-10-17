@@ -119,9 +119,9 @@ export function GeneralLedgerReport({ className = '' }: GeneralLedgerReportProps
       const entries: GeneralLedgerEntry[] = ((reportData as any)?.data || []).map((row: unknown[]) => ({
         posting_date: row[0] || '',
         account: row[1] || '',
-        debit: parseFloat(row[2]) || 0,
-        credit: parseFloat(row[3]) || 0,
-        balance: parseFloat(row[4]) || 0,
+        debit: parseFloat(String(row[2])) || 0,
+        credit: parseFloat(String(row[3])) || 0,
+        balance: parseFloat(String(row[4])) || 0,
         voucher_type: row[5] || '',
         voucher_no: row[6] || '',
         against: row[7] || '',

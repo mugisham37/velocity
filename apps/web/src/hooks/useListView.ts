@@ -27,10 +27,12 @@ export interface UseListViewReturn {
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
+  loading: boolean;
 
   // State
   filters: FilterCondition[];
   sort: SortCondition[];
+  sorting: SortCondition[];
   pagination: PaginationState;
   selection: string[];
 
@@ -39,18 +41,22 @@ export interface UseListViewReturn {
   addFilter: (filter: FilterCondition) => void;
   removeFilter: (fieldname: string) => void;
   clearFilters: () => void;
+  updateFilters: (filters: FilterCondition[]) => void;
 
   setSort: (sort: SortCondition[]) => void;
   addSort: (fieldname: string, direction: 'asc' | 'desc') => void;
   removeSort: (fieldname: string) => void;
   clearSort: () => void;
+  updateSorting: (sort: SortCondition[]) => void;
 
   setPage: (page: number) => void;
   setPageSize: (pageSize: number) => void;
+  updatePagination: (pagination: Partial<PaginationState>) => void;
 
   setSelection: (selection: string[]) => void;
   selectAll: () => void;
   clearSelection: () => void;
+  updateSelection: (selection: string[]) => void;
 
   // Utilities
   refetch: () => void;
@@ -206,6 +212,23 @@ export function useListView({
     setSelection([]);
   }, []);
 
+  // Additional action methods for backward compatibility
+  const updateFilters = useCallback((newFilters: FilterCondition[]) => {
+    setFilters(newFilters);
+  }, []);
+
+  const updateSorting = useCallback((newSort: SortCondition[]) => {
+    setSort(newSort);
+  }, []);
+
+  const updatePagination = useCallback((newPagination: Partial<PaginationState>) => {
+    setPagination(prev => ({ ...prev, ...newPagination }));
+  }, []);
+
+  const updateSelection = useCallback((newSelection: string[]) => {
+    setSelection(newSelection);
+  }, []);
+
   // Utility actions
   const refresh = useCallback(() => {
     query.refetch();
@@ -219,10 +242,12 @@ export function useListView({
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,
+    loading: query.isLoading,
 
     // State
     filters,
     sort,
+    sorting: sort,
     pagination,
     selection,
 
@@ -231,18 +256,22 @@ export function useListView({
     addFilter,
     removeFilter,
     clearFilters,
+    updateFilters,
 
     setSort,
     addSort,
     removeSort,
     clearSort,
+    updateSorting,
 
     setPage,
     setPageSize,
+    updatePagination,
 
     setSelection,
     selectAll,
     clearSelection,
+    updateSelection,
 
     // Utilities
     refetch: query.refetch,

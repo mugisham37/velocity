@@ -113,12 +113,12 @@ export function TrialBalanceReport({
         (reportData as any)?.data || []
       ).map((row: unknown[]) => ({
         account: row[0] || '',
-        opening_debit: parseFloat(row[1]) || 0,
-        opening_credit: parseFloat(row[2]) || 0,
-        debit: parseFloat(row[3]) || 0,
-        credit: parseFloat(row[4]) || 0,
-        closing_debit: parseFloat(row[5]) || 0,
-        closing_credit: parseFloat(row[6]) || 0,
+        opening_debit: parseFloat(String(row[1])) || 0,
+        opening_credit: parseFloat(String(row[2])) || 0,
+        debit: parseFloat(String(row[3])) || 0,
+        credit: parseFloat(String(row[4])) || 0,
+        closing_debit: parseFloat(String(row[5])) || 0,
+        closing_credit: parseFloat(String(row[6])) || 0,
       }));
 
       // Filter out zero values if requested

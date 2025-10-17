@@ -8,18 +8,20 @@ import { cn } from '@/lib/utils';
 
 interface FormSectionProps {
   title: string;
-  fields: DocField[];
+  fields?: DocField[];
   collapsible?: boolean;
   columns?: number;
   readOnly?: boolean;
+  children?: React.ReactNode;
 }
 
 export function FormSection({
   title,
-  fields,
+  fields = [],
   collapsible = false,
   columns = 2,
   readOnly = false,
+  children,
 }: FormSectionProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -56,23 +58,27 @@ export function FormSection({
       {/* Section Content */}
       {!isCollapsed && (
         <div className="p-6">
-          <div
-            className={cn(
-              'grid gap-6',
-              columns === 1 && 'grid-cols-1',
-              columns === 2 && 'grid-cols-1 md:grid-cols-2',
-              columns === 3 && 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
-              columns === 4 && 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
-            )}
-          >
-            {fields.map((field) => (
-              <FormField
-                key={field.fieldname}
-                field={field}
-                readOnly={readOnly || field.readonly}
-              />
-            ))}
-          </div>
+          {children ? (
+            children
+          ) : (
+            <div
+              className={cn(
+                'grid gap-6',
+                columns === 1 && 'grid-cols-1',
+                columns === 2 && 'grid-cols-1 md:grid-cols-2',
+                columns === 3 && 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+                columns === 4 && 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+              )}
+            >
+              {fields.map((field) => (
+                <FormField
+                  key={field.fieldname}
+                  field={field}
+                  readOnly={readOnly || field.readonly}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

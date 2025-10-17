@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Item, ItemAttribute, DocTypeSchema } from '@/types';
+import { Item, ItemAttribute, DocTypeSchema, FieldType } from '@/types';
 import { FormSection } from '@/components/forms/FormSection';
 import { FormToolbar } from '@/components/forms/FormToolbar';
 import { Timeline } from '@/components/forms/Timeline';
