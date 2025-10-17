@@ -1,6 +1,6 @@
 // Memoization utilities for performance optimization
 
-import { useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 
 // Deep comparison for complex objects
 export function deepEqual(a: any, b: any): boolean {
@@ -37,7 +37,7 @@ export function deepEqual(a: any, b: any): boolean {
 
 // Memoization with deep comparison
 export function useDeepMemo<T>(factory: () => T, deps: React.DependencyList): T {
-  const ref = useRef<{ deps: React.DependencyList; value: T }>();
+  const ref = useRef<{ deps: React.DependencyList; value: T } | undefined>(undefined);
   
   if (!ref.current || !deepEqual(ref.current.deps, deps)) {
     ref.current = {
@@ -129,11 +129,14 @@ export function useMemoizedList<T>(
   return useMemo(() => {
     return items.map((item, index) => {
       const key = keyExtractor(item, index);
-      return (
-        <MemoizedListItem key={key} item={item} index={index} renderItem={renderItem} />
-      );
+      return React.createElement(MemoizedListItem as any, { 
+        key, 
+        item, 
+        index, 
+        renderItem 
+      });
     });
-  }, [items, ...deps]);
+  }, [items, renderItem, keyExtractor, ...deps]);
 }
 
 // Memoized list item component
@@ -146,7 +149,7 @@ const MemoizedListItem = React.memo(function MemoizedListItem<T>({
   index: number;
   renderItem: (item: T, index: number) => React.ReactNode;
 }) {
-  return <>{renderItem(item, index)}</>;
+  return React.createElement(React.Fragment, null, renderItem(item, index));
 });
 
 // Intersection observer hook for lazy rendering
@@ -191,13 +194,9 @@ export function LazyRenderer({
   rootMargin?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const isVisible = useIntersectionObserver(ref, { rootMargin });
+  const isVisible = useIntersectionObserver(ref as React.RefObject<Element>, { rootMargin });
   
-  return (
-    <div ref={ref}>
-      {isVisible ? children : fallback}
-    </div>
-  );
+  return React.createElement('div', { ref }, isVisible ? children : fallback);
 }
 
 // Memoized form field component
@@ -223,10 +222,8 @@ export const MemoizedFormField = React.memo(function MemoizedFormField({
     [value, onChange]
   );
   
-  return (
-    <div className="form-field">
-      {/* Field implementation */}
-    </div>
+  return React.createElement('div', { className: "form-field" }, 
+    React.createElement('span', null, 'Field implementation placeholder')
   );
 });
 
@@ -334,4 +331,4 @@ export function useMemoizedSelector<T, R>(
   return ref.current;
 }
 
-import React, { useState } from 'react';
+// React import is already at the top

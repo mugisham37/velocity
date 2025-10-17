@@ -77,7 +77,9 @@ const DraggableField: React.FC<DraggableFieldProps> = ({ field, index, onRemove,
 
   return (
     <div
-      ref={(node) => drag(drop(node))}
+      ref={(node) => {
+        drag(drop(node));
+      }}
       className={`flex items-center justify-between p-2 bg-white border border-gray-200 rounded-md cursor-move ${
         isDragging ? 'opacity-50' : ''
       }`}
@@ -114,11 +116,9 @@ const DraggableField: React.FC<DraggableFieldProps> = ({ field, index, onRemove,
 export function FieldSelector({ 
   availableFields, 
   selectedFields, 
-  relations, 
   onFieldsChange 
 }: FieldSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedRelations, setExpandedRelations] = useState<Set<string>>(new Set());
 
   const filteredFields = availableFields.filter(field =>
     field.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -144,15 +144,7 @@ export function FieldSelector({
     onFieldsChange(newFields);
   };
 
-  const toggleRelation = (relationKey: string) => {
-    const newExpanded = new Set(expandedRelations);
-    if (newExpanded.has(relationKey)) {
-      newExpanded.delete(relationKey);
-    } else {
-      newExpanded.add(relationKey);
-    }
-    setExpandedRelations(newExpanded);
-  };
+
 
   const groupedFields = filteredFields.reduce((acc, field) => {
     const doctype = field.doctype;

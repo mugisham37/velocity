@@ -1,5 +1,7 @@
 // Role-based access control system
 
+import React from 'react';
+
 export interface Permission {
   read: boolean;
   write: boolean;
@@ -295,7 +297,7 @@ export class AccessControlManager {
       const ownerPermissions = docPermission.if_owner || this.getDefaultPermission(true);
       users.push({
         user: docPermission.owner,
-        permissions: ownerPermissions,
+        permissions: { ...this.getDefaultPermission(false), ...ownerPermissions } as Permission,
         source: 'owner',
       });
     }
@@ -305,7 +307,7 @@ export class AccessControlManager {
       for (const share of docPermission.shared_with) {
         users.push({
           user: share.user,
-          permissions: { ...this.getDefaultPermission(false), ...share.permissions },
+          permissions: { ...this.getDefaultPermission(false), ...share.permissions } as Permission,
           source: 'shared',
         });
       }
@@ -515,10 +517,10 @@ export function PermissionWrapper({
   permission,
   docname,
   fallback = null,
-}: PermissionWrapperProps) {
+}: PermissionWrapperProps): React.ReactElement {
   const hasAccess = accessControlManager.hasPermission(username, doctype, permission, docname);
   
-  return hasAccess ? <>{children}</> : <>{fallback}</>;
+  return React.createElement(React.Fragment, null, hasAccess ? children : fallback);
 }
 
 /**
@@ -540,8 +542,8 @@ export function FieldPermissionWrapper({
   fieldname,
   permission,
   fallback = null,
-}: FieldPermissionWrapperProps) {
+}: FieldPermissionWrapperProps): React.ReactElement {
   const hasAccess = accessControlManager.hasFieldPermission(username, doctype, fieldname, permission);
   
-  return hasAccess ? <>{children}</> : <>{fallback}</>;
+  return React.createElement(React.Fragment, null, hasAccess ? children : fallback);
 }

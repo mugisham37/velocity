@@ -32,6 +32,15 @@ export function useWebSocketStatus() {
     client.disconnect();
   }, [client]);
 
+  const reconnect = useCallback(async () => {
+    try {
+      client.disconnect();
+      await client.connect();
+    } catch (error) {
+      console.error('Failed to reconnect WebSocket:', error);
+    }
+  }, [client]);
+
   return {
     status,
     isConnected: status === 'connected',
@@ -40,6 +49,7 @@ export function useWebSocketStatus() {
     hasError: status === 'error',
     connect,
     disconnect,
+    reconnect,
   };
 }
 

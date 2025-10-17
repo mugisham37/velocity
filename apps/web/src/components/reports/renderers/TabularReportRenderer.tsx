@@ -37,7 +37,7 @@ export function TabularReportRenderer({
     return rows.slice(startIndex, endIndex);
   }, [rows, currentPage, pageSize]);
 
-  const formatCellValue = (value: unknown, column: ReportColumn, rowIndex: number) => {
+  const formatCellValue = (value: unknown, column: ReportColumn) => {
     if (value === null || value === undefined || value === '') {
       return '-';
     }
@@ -51,7 +51,7 @@ export function TabularReportRenderer({
       if (column.format === 'Percentage') {
         return `${(value * 100).toFixed(2)}%`;
       }
-      if (column.format === 'Float' || typeof value === 'number') {
+      if (column.format === 'Float') {
         const format = formattingOptions?.number_format || 'standard';
         if (format === 'standard') {
           return value.toLocaleString();
@@ -86,6 +86,11 @@ export function TabularReportRenderer({
           return value;
         }
       }
+      return value;
+    }
+
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No';
     }
 
     return String(value);
@@ -205,7 +210,7 @@ export function TabularReportRenderer({
                           getColumnAlignment(column) === 'center' ? 'text-center' : 'text-left'
                         } ${formattingOptions?.freeze_first_column && cellIndex === 0 ? 'sticky left-0 bg-white z-10' : ''}`}
                       >
-                        {formatCellValue(cell, column, rowIndex)}
+                        {formatCellValue(cell, column)}
                       </td>
                     );
                   })}

@@ -1,7 +1,8 @@
 // Advanced caching strategies for optimal performance
 
-import { QueryClient, QueryKey, InfiniteData } from '@tanstack/react-query';
+import { QueryClient, QueryKey } from '@tanstack/react-query';
 import { queryKeys } from './config';
+import { apiClient } from '@/lib/api/client';
 
 // Cache invalidation strategies
 export enum CacheStrategy {
@@ -176,7 +177,7 @@ export class CacheManager {
 
   private getQueryKeyType(queryKey: QueryKey): string {
     if (Array.isArray(queryKey) && queryKey.length > 0) {
-      return queryKey.slice(0, 2).join('.');
+      return [...queryKey].slice(0, 2).join('.');
     }
     return 'unknown';
   }
@@ -212,8 +213,8 @@ export class CacheManager {
       
       // Warm list cache with basic filters
       this.queryClient.prefetchQuery({
-        queryKey: queryKeys.doc.list(doctype, { limit: 20 }),
-        queryFn: () => apiClient.getList(doctype, { limit: 20 }),
+        queryKey: queryKeys.doc.list(doctype, { limit_page_length: 20 }),
+        queryFn: () => apiClient.getList(doctype, { limit_page_length: 20 }),
         staleTime: cacheConfig.lists.staleTime,
       });
     });
@@ -320,9 +321,9 @@ export class OfflineCacheManager {
     }
   }
 
-  private getQueryKeyType(queryKey: any[]): string {
+  private getQueryKeyType(queryKey: readonly unknown[]): string {
     if (Array.isArray(queryKey) && queryKey.length > 0) {
-      return queryKey.slice(0, 2).join('.');
+      return [...queryKey].slice(0, 2).join('.');
     }
     return 'unknown';
   }

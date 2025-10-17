@@ -86,7 +86,7 @@ export function ChartReportRenderer({
         borderWidth: 2,
         fill: chartConfig.type === 'area'
       };
-    }).filter(Boolean);
+    }).filter((dataset): dataset is NonNullable<typeof dataset> => dataset !== null);
 
     return {
       labels,

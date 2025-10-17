@@ -34,9 +34,9 @@ const defaultSettings: POSSettings = {
   hide_unavailable_items: true,
 };
 
-export const usePOSStore = create<POSState>()(
+export const usePOSStore = create(
   persist(
-    (set, get) => {
+    (set: any, get: any) => {
       // Initialize offline managers
       const offlineManager = OfflinePOSManager.getInstance();
       const networkManager = NetworkStatusManager.getInstance();
@@ -134,7 +134,7 @@ export const usePOSStore = create<POSState>()(
           get().loadPaymentMethods(profile);
 
           // Save to offline storage
-          get().saveOfflineData();
+          await get().saveOfflineData();
         } catch (error) {
           console.error('Failed to load POS profile:', error);
           throw error;
@@ -160,7 +160,7 @@ export const usePOSStore = create<POSState>()(
           };
 
           // Filter by item groups if specified in profile
-          if (currentProfile.item_groups?.length > 0) {
+          if (currentProfile.item_groups && currentProfile.item_groups.length > 0) {
             filters.item_group = ['in', currentProfile.item_groups];
           }
 
@@ -202,8 +202,8 @@ export const usePOSStore = create<POSState>()(
 
 
 
-      // Load Payment Methods
-      loadPaymentMethods: async (profile: POSProfile) => {
+      // Load Payment Methods (async version)
+      loadPaymentMethodsAsync: async (profile: POSProfile) => {
         set({ paymentMethods: profile.payments || [] });
       },
 
@@ -214,7 +214,7 @@ export const usePOSStore = create<POSState>()(
         if (!term.trim()) return items;
 
         // Client-side search for now (can be enhanced with server-side search)
-        const filtered = items.filter(item => {
+        const filtered = items.filter((item: any) => {
           const searchFields = [item.item_name, item.item_code];
           
           if (options.searchBy === 'barcode' && item.barcode) {
@@ -300,7 +300,7 @@ export const usePOSStore = create<POSState>()(
         
         // Check if item already exists in cart
         const existingItemIndex = cartItems.findIndex(
-          cartItem => cartItem.item_code === item.item_code
+          (cartItem: any) => cartItem.item_code === item.item_code
         );
 
         if (existingItemIndex >= 0) {
@@ -315,7 +315,7 @@ export const usePOSStore = create<POSState>()(
             item_name: item.item_name,
             rate: item.standard_rate || 0,
             qty: quantity,
-            uom: item.stock_uom || item.uom,
+            uom: item.stock_uom || item.uom || 'Nos',
             stock_qty: item.stock_qty,
             price_list_rate: item.standard_rate,
             description: item.description,
@@ -331,7 +331,7 @@ export const usePOSStore = create<POSState>()(
 
       updateCartItemQuantity: (itemCode: string, quantity: number) => {
         const { cartItems } = get();
-        const updatedItems = cartItems.map(item =>
+        const updatedItems = cartItems.map((item: any) =>
           item.item_code === itemCode ? { ...item, qty: quantity } : item
         );
         set({ cartItems: updatedItems });
@@ -340,7 +340,7 @@ export const usePOSStore = create<POSState>()(
 
       removeCartItem: (itemCode: string) => {
         const { cartItems } = get();
-        const updatedItems = cartItems.filter(item => item.item_code !== itemCode);
+        const updatedItems = cartItems.filter((item: any) => item.item_code !== itemCode);
         set({ cartItems: updatedItems });
         get().recalculateCart();
       },
@@ -357,7 +357,7 @@ export const usePOSStore = create<POSState>()(
 
       applyDiscount: (value: number, type: 'percentage' | 'amount') => {
         const { cartItems } = get();
-        const subtotal = cartItems.reduce((sum, item) => sum + (item.rate * item.qty), 0);
+        const subtotal = cartItems.reduce((sum: number, item: any) => sum + (item.rate * item.qty), 0);
         
         let discountAmount = 0;
         if (type === 'percentage') {
@@ -382,17 +382,17 @@ export const usePOSStore = create<POSState>()(
           throw new Error('Customer and POS Profile are required');
         }
 
-        const subtotal = cartItems.reduce((sum, item) => sum + (item.rate * item.qty), 0);
+        const subtotal = cartItems.reduce((sum: number, item: any) => sum + (item.rate * item.qty), 0);
         const grandTotal = subtotal - cartDiscount + cartTax;
-        const paidAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+        const paidAmount = payments.reduce((sum: number, payment: any) => sum + payment.amount, 0);
 
         const transaction: POSTransaction = {
-          customer: selectedCustomer.name!,
+          customer: selectedCustomer.name || selectedCustomer.customer_name || '',
           customer_name: selectedCustomer.customer_name,
           posting_date: new Date().toISOString().split('T')[0],
           posting_time: new Date().toTimeString().split(' ')[0],
           items: cartItems,
-          total_qty: cartItems.reduce((sum, item) => sum + item.qty, 0),
+          total_qty: cartItems.reduce((sum: number, item: any) => sum + item.qty, 0),
           net_total: subtotal,
           total_taxes_and_charges: cartTax,
           discount_amount: cartDiscount,
@@ -511,22 +511,7 @@ export const usePOSStore = create<POSState>()(
         set({ isOffline: false });
       },
 
-      saveOfflineData: () => {
-        const { currentProfile, items, itemGroups, customers } = get();
-        
-        if (currentProfile) {
-          const offlineData: OfflinePOSData = {
-            profile: currentProfile,
-            items,
-            itemGroups,
-            customers,
-            transactions: [], // TODO: Add offline transactions
-            lastSync: new Date().toISOString(),
-          };
-
-          localStorage.setItem('pos-offline-data', JSON.stringify(offlineData));
-        }
-      },
+      // Remove duplicate sync version
 
       // POS Closing
       openPOSClosing: () => {
@@ -587,6 +572,7 @@ export const usePOSStore = create<POSState>()(
         }
       },
 
+      // Sync version of loadPaymentMethods
       loadPaymentMethods: (profile: POSProfile) => {
         set({ paymentMethods: profile.payments || [] });
       },
@@ -594,7 +580,7 @@ export const usePOSStore = create<POSState>()(
       recalculateCart: () => {
         const { cartItems, cartDiscount } = get();
         
-        const subtotal = cartItems.reduce((sum, item) => sum + (item.rate * item.qty), 0);
+        const subtotal = cartItems.reduce((sum: number, item: any) => sum + (item.rate * item.qty), 0);
         const taxAmount = 0; // TODO: Implement tax calculation
         const total = subtotal - cartDiscount + taxAmount;
 
@@ -604,6 +590,7 @@ export const usePOSStore = create<POSState>()(
         });
       },
 
+      // Async version of saveOfflineData
       saveOfflineData: async () => {
         const { currentProfile, items, customers } = get();
         

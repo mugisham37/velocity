@@ -58,7 +58,7 @@ class PWAManager {
         });
 
         // Setup background sync
-        if ('sync' in window.ServiceWorkerRegistration.prototype) {
+        if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
           console.log('PWA: Background sync is supported');
         }
 
@@ -191,8 +191,10 @@ class PWAManager {
     if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
       try {
         const registration = await navigator.serviceWorker.ready;
-        await registration.sync.register(tag);
-        console.log('PWA: Background sync registered', tag);
+        if ('sync' in registration) {
+          await (registration as any).sync.register(tag);
+          console.log('PWA: Background sync registered', tag);
+        }
       } catch (error) {
         console.error('PWA: Background sync registration failed', error);
       }

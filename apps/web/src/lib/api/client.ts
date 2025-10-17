@@ -78,7 +78,8 @@ export class FrappeAPIClient {
         }
 
         // Add security headers
-        config.headers = SecurityMiddleware.addSecurityHeaders(config.headers || {});
+        const securityHeaders = SecurityMiddleware.addSecurityHeaders(config.headers || {});
+        Object.assign(config.headers, securityHeaders);
 
         // Validate request data for security issues
         if (config.data && typeof config.data === 'object') {
@@ -121,8 +122,13 @@ export class FrappeAPIClient {
           this.csrfToken = csrfToken;
         }
 
-        // Validate response security
-        SecurityMiddleware.validateResponse(response);
+        // Validate response security (convert AxiosResponse to Response-like object)
+        const responseForValidation = {
+          headers: {
+            get: (name: string) => response.headers[name.toLowerCase()] || null
+          }
+        } as Response;
+        SecurityMiddleware.validateResponse(responseForValidation);
 
         // Sanitize response data
         if (response.data) {
@@ -154,9 +160,14 @@ export class FrappeAPIClient {
           }
         }
 
-        // Validate response security
+        // Validate response security (convert AxiosResponse to Response-like object)
         if (error.response) {
-          SecurityMiddleware.validateResponse(error.response);
+          const responseForValidation = {
+            headers: {
+              get: (name: string) => error.response?.headers[name.toLowerCase()] || null
+            }
+          } as Response;
+          SecurityMiddleware.validateResponse(responseForValidation);
         }
 
         // Transform Frappe errors to user-friendly messages
@@ -379,11 +390,11 @@ export class FrappeAPIClient {
 
   // DocType metadata methods
   async getDocMeta(doctype: string): Promise<Record<string, unknown>> {
-    return this.call('frappe.desk.form.load.getdoctype', { doctype });
+    return this.call('frappe.desk.form.load.get_doctype', { doctype });
   }
 
   async getDocInfo(doctype: string, name: string): Promise<Record<string, unknown>> {
-    return this.call('frappe.desk.form.load.getdocinfo', { doctype, name });
+    return this.call('frappe.desk.form.load.get_docinfo', { doctype, name });
   }
 
   // Search and autocomplete

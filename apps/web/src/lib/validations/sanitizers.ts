@@ -241,7 +241,7 @@ export function sanitizeCss(input: string): string {
   return input
     .replace(/javascript:/gi, '')
     .replace(/expression\s*\(/gi, '')
-    .replace/@import/gi, '')
+    .replace(/@import/gi, '')
     .replace(/behavior\s*:/gi, '')
     .replace(/binding\s*:/gi, '')
     .replace(/url\s*\(/gi, '')

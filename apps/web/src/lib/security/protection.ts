@@ -199,7 +199,7 @@ export class PathTraversalProtection {
     // Remove dangerous patterns
     let normalized = path
       .replace(/\.\.\//g, '')
-      .replace(/\.\.\\\\g, '')
+      .replace(/\.\.\\/g, '')
       .replace(/%2e%2e%2f/gi, '')
       .replace(/%2e%2e%5c/gi, '')
       .replace(/\.\.%2f/gi, '')
@@ -226,7 +226,7 @@ export class PathTraversalProtection {
 
     const dangerousPatterns = [
       /\.\.\//,
-      /\.\.\\\\,
+      /\.\.\\/,
       /%2e%2e%2f/i,
       /%2e%2e%5c/i,
       /\.\.%2f/i,
@@ -438,12 +438,4 @@ export class SessionSecurity {
   }
 }
 
-// Export all protection classes
-export {
-  XSSProtection,
-  SQLInjectionProtection,
-  PathTraversalProtection,
-  CommandInjectionProtection,
-  FileUploadSecurity,
-  SessionSecurity,
-};
+// All protection classes are already exported above

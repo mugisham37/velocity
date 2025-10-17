@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useWebSocketStatus } from '@/lib/websocket/hooks';
-import { Wifi, WifiOff, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { WifiOff, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
@@ -23,7 +23,7 @@ export function RealtimeStatusIndicator({
   size = 'md',
   position = 'relative',
 }: RealtimeStatusIndicatorProps) {
-  const { status, isConnected, isConnecting, isReconnecting, hasError, connect, disconnect } = useWebSocketStatus();
+  const { status, isConnected, hasError, connect } = useWebSocketStatus();
 
   const getStatusConfig = () => {
     switch (status) {
