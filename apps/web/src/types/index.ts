@@ -193,13 +193,140 @@ export interface AuthState {
   sessionId?: string;
 }
 
-// Re-export module-specific types
+// Re-export module-specific types with explicit exports to avoid conflicts
 export * from './accounts';
-export * from './crm';
-export * from './dashboard';
 export * from './pos';
-export * from './reports';
 export * from './stock';
-export * from './sales';
-export * from './buying';
 export * from './manufacturing';
+
+// Export CRM types
+export type {
+  Lead,
+  LeadFormData,
+  LeadListResponse,
+  Opportunity,
+  OpportunityFormData,
+  OpportunityListResponse,
+  OpportunityItem,
+  Customer as CRMCustomer,
+  CustomerFormData as CRMCustomerFormData,
+  CustomerListResponse as CRMCustomerListResponse,
+  Contact,
+  ContactFormData,
+  ContactListResponse,
+  ContactLink,
+  Project,
+  ProjectFormData,
+  ProjectListResponse,
+  Task,
+  TaskFormData,
+  TaskListResponse,
+  TaskDependency,
+  CRMAnalytics,
+  ProjectAnalytics
+} from './crm';
+
+// Export Sales types
+export type {
+  Customer as SalesCustomer,
+  SalesOrder,
+  SalesOrderItem,
+  SalesOrderTax,
+  SalesOrderFormData,
+  SalesCustomerFormData,
+  SalesOrderListResponse,
+  SalesCustomerListResponse,
+  PricingRule,
+  SalesInvoice,
+  SalesInvoiceItem,
+  DeliveryNote,
+  DeliveryNoteItem,
+  SalesAnalytics,
+  SalesFunnel,
+  PaymentSchedule as SalesPaymentSchedule
+} from './sales';
+
+// Export Buying types
+export type {
+  Supplier,
+  SupplierFormData,
+  SupplierListResponse,
+  PurchaseOrder,
+  PurchaseOrderItem,
+  PurchaseOrderTax,
+  PurchaseOrderFormData,
+  PurchaseOrderListResponse,
+  SupplierQuotation,
+  SupplierQuotationItem,
+  SupplierQuotationListResponse,
+  PurchaseInvoice,
+  PurchaseInvoiceItem,
+  PurchaseReceipt,
+  PurchaseReceiptItem,
+  RequestForQuotation,
+  RFQSupplier,
+  RFQItem,
+  PurchaseAnalytics,
+  SupplierPerformance,
+  PaymentSchedule as BuyingPaymentSchedule
+} from './buying';
+
+// Export Dashboard types
+export type {
+  DashboardConfig,
+  DashboardType,
+  DashboardLayout,
+  DashboardPermissions,
+  WidgetConfig,
+  WidgetType,
+  WidgetPosition,
+  WidgetSize,
+  WidgetPermissions,
+  ChartWidgetConfig,
+  ChartType,
+  ChartDataSource,
+  DateRange,
+  AggregateFunction as DashboardAggregateFunction,
+  ChartStyling,
+  ChartInteractions,
+  NumberCardConfig,
+  NumberCardDataSource,
+  NumberCardDisplay,
+  NumberCardTrend,
+  ShortcutWidgetConfig,
+  ShortcutItem,
+  ShortcutAction,
+  ShortcutLayout,
+  ReportWidgetConfig,
+  CustomWidgetConfig,
+  WidgetSpecificConfig,
+  WidgetData,
+  ChartData as DashboardChartData,
+  ChartDataset,
+  NumberCardData,
+  DashboardState,
+  DashboardActions
+} from './dashboard';
+
+// Export Reports types
+export type {
+  ReportField,
+  ReportFilter,
+  FilterOperator as ReportsFilterOperator,
+  ReportGroupBy,
+  ReportColumn,
+  ReportQuery,
+  ReportDefinition,
+  ReportType as ReportsReportType,
+  SummaryConfig,
+  AggregateFunction as ReportsAggregateFunction,
+  ScriptConfig,
+  FormattingOptions,
+  ChartConfig,
+  ReportResult,
+  ChartData as ReportsChartData,
+  DocTypeRelation,
+  ReportBuilderState,
+  ReportSchedule,
+  ExportOptions
+} from './reports';

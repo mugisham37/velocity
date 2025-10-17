@@ -308,45 +308,212 @@ export interface TaskDependency {
 }
 
 // Form Data Types
-export interface LeadFormData extends Omit<Lead, 'name' | 'creation' | 'modified' | 'owner' | 'modified_by' | 'docstatus'> {
+export interface LeadFormData {
+  // Optional fields for form
   lead_name?: string;
-  status?: Lead['status'];
+  organization_lead?: boolean;
+  company_name?: string;
+  
+  // Contact Information
+  email_id?: string;
+  phone?: string;
+  mobile_no?: string;
+  website?: string;
+  
+  // Address Information
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  pincode?: string;
+  
+  // Lead Details
+  status?: 'Open' | 'Replied' | 'Opportunity' | 'Quotation' | 'Lost Quotation' | 'Interested' | 'Converted' | 'Do Not Contact';
   source?: string;
-  lead_type?: Lead['lead_type'];
-}
-
-export interface OpportunityFormData extends Omit<Opportunity, 'name' | 'creation' | 'modified' | 'owner' | 'modified_by' | 'docstatus'> {
-  title?: string;
-  opportunity_from?: Opportunity['opportunity_from'];
-  party_name?: string;
-  opportunity_type?: Opportunity['opportunity_type'];
-  status?: Opportunity['status'];
-  transaction_date?: string;
-}
-
-export interface CustomerFormData extends Omit<Customer, 'name' | 'creation' | 'modified' | 'owner' | 'modified_by' | 'docstatus'> {
-  customer_name?: string;
-  customer_type?: Customer['customer_type'];
-  customer_group?: string;
+  lead_type?: 'Client' | 'Channel Partner' | 'Consultant';
+  market_segment?: string;
+  industry?: string;
+  
+  // Additional Information
+  annual_revenue?: number;
+  no_of_employees?: number;
+  request_type?: string;
+  notes?: string;
+  
+  // Assignment
+  lead_owner?: string;
   territory?: string;
 }
 
-export interface ContactFormData extends Omit<Contact, 'name' | 'creation' | 'modified' | 'owner' | 'modified_by' | 'docstatus'> {
+export interface OpportunityFormData {
+  // Optional fields for form
+  title?: string;
+  opportunity_from?: 'Lead' | 'Customer' | 'Prospect';
+  party_name?: string;
+  customer_name?: string;
+  
+  // Opportunity Details
+  opportunity_type?: 'Sales' | 'Support' | 'Maintenance';
+  source?: string;
+  status?: 'Open' | 'Quotation' | 'Reply' | 'Closed' | 'Lost' | 'Converted';
+  sales_stage?: string;
+  
+  // Financial Information
+  opportunity_amount?: number;
+  probability?: number;
+  currency?: string;
+  exchange_rate?: number;
+  
+  // Dates
+  transaction_date?: string;
+  expected_closing?: string;
+  
+  // Assignment
+  contact_person?: string;
+  contact_email?: string;
+  contact_mobile?: string;
+  territory?: string;
+  
+  // Company Information
+  company?: string;
+  
+  // Additional Information
+  notes?: string;
+  next_contact_by?: string;
+  next_contact_date?: string;
+  
+  // Items
+  items?: OpportunityItem[];
+}
+
+export interface CustomerFormData {
+  // Optional fields for form
+  customer_name?: string;
+  customer_type?: 'Company' | 'Individual';
+  customer_group?: string;
+  territory?: string;
+  
+  // Contact Information
+  email_id?: string;
+  phone_no?: string;
+  mobile_no?: string;
+  website?: string;
+  
+  // Financial Information
+  default_currency?: string;
+  default_price_list?: string;
+  credit_limit?: number;
+  payment_terms?: string;
+  
+  // Tax Information
+  tax_id?: string;
+  tax_category?: string;
+  tax_withholding_category?: string;
+  
+  // Settings
+  so_required?: boolean;
+  dn_required?: boolean;
+  is_internal_customer?: boolean;
+  represents_company?: string;
+  
+  // Additional Information
+  market_segment?: string;
+  industry?: string;
+  annual_revenue?: number;
+  disabled?: boolean;
+}
+
+export interface ContactFormData {
+  // Optional fields for form
   first_name?: string;
   last_name?: string;
-  status?: Contact['status'];
+  full_name?: string;
+  
+  // Contact Information
+  email_id?: string;
+  phone?: string;
+  mobile_no?: string;
+  
+  // Address Information
+  address?: string;
+  
+  // Links
+  links?: ContactLink[];
+  
+  // Additional Information
+  designation?: string;
+  department?: string;
+  company_name?: string;
+  
+  // Status
+  status?: 'Passive' | 'Open' | 'Replied';
+  unsubscribed?: boolean;
 }
 
-export interface ProjectFormData extends Omit<Project, 'name' | 'creation' | 'modified' | 'owner' | 'modified_by' | 'docstatus'> {
+export interface ProjectFormData {
+  // Optional fields for form
   project_name?: string;
-  status?: Project['status'];
-  priority?: Project['priority'];
+  project_type?: string;
+  
+  // Dates
+  expected_start_date?: string;
+  expected_end_date?: string;
+  actual_start_date?: string;
+  actual_end_date?: string;
+  
+  // Status
+  status?: 'Open' | 'Completed' | 'Cancelled' | 'On Hold';
+  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
+  percent_complete?: number;
+  
+  // Financial
+  estimated_costing?: number;
+  
+  // Assignment
+  project_manager?: string;
+  
+  // Company Information
+  company?: string;
+  cost_center?: string;
+  department?: string;
+  
+  // Customer Information
+  customer?: string;
+  sales_order?: string;
+  
+  // Additional Information
+  notes?: string;
 }
 
-export interface TaskFormData extends Omit<Task, 'name' | 'creation' | 'modified' | 'owner' | 'modified_by' | 'docstatus'> {
+export interface TaskFormData {
+  // Optional fields for form
   subject?: string;
-  status?: Task['status'];
-  priority?: Task['priority'];
+  project?: string;
+  
+  // Dates
+  exp_start_date?: string;
+  exp_end_date?: string;
+  act_start_date?: string;
+  act_end_date?: string;
+  
+  // Status and Priority
+  status?: 'Open' | 'Working' | 'Pending Review' | 'Overdue' | 'Template' | 'Completed' | 'Cancelled';
+  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
+  progress?: number;
+  
+  // Assignment
+  assigned_to?: string;
+  
+  // Time Tracking
+  expected_time?: number;
+  actual_time?: number;
+  
+  // Dependencies
+  depends_on?: TaskDependency[];
+  
+  // Additional Information
+  description?: string;
 }
 
 // API Response Types

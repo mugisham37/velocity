@@ -481,22 +481,83 @@ export interface DeliveryNoteItem {
 }
 
 // Form State Types
-export interface SalesOrderFormData extends Omit<SalesOrder, 'name' | 'docstatus' | 'status'> {
-  // Make optional fields that are auto-generated
+export interface SalesOrderFormData {
+  // Required fields
+  customer: string;
+  customer_name: string;
+  company: string;
+  
+  // Optional fields that can be auto-generated or user-provided
   naming_series?: string;
   transaction_date?: string;
+  delivery_date?: string;
+  order_type?: 'Sales' | 'Maintenance' | 'Shopping Cart';
   currency?: string;
   conversion_rate?: number;
   price_list_currency?: string;
   plc_conversion_rate?: number;
+  selling_price_list?: string;
+  cost_center?: string;
+  project?: string;
+  
+  // Items and other complex fields
+  items?: SalesOrderItem[];
+  taxes?: SalesOrderTax[];
+  payment_schedule?: PaymentSchedule[];
+  
+  // Additional optional fields
+  customer_po?: string;
+  po_date?: string;
+  source?: string;
+  campaign?: string;
+  sales_partner?: string;
+  commission_rate?: number;
+  tc_name?: string;
+  terms?: string;
+  letter_head?: string;
+  group_same_items?: boolean;
+  language?: string;
 }
 
-export interface CustomerFormData extends Omit<Customer, 'name'> {
+export interface SalesCustomerFormData {
+  // Optional fields for form
   customer_name?: string;
   customer_type?: 'Company' | 'Individual';
   customer_group?: string;
   territory?: string;
   default_currency?: string;
+  default_price_list?: string;
+  payment_terms?: string;
+  credit_limit?: number;
+  credit_days?: number;
+  is_frozen?: boolean;
+  disabled?: boolean;
+  
+  // Contact Information
+  email_id?: string;
+  mobile_no?: string;
+  phone?: string;
+  website?: string;
+  
+  // Address Information
+  customer_primary_address?: string;
+  primary_address?: string;
+  customer_primary_contact?: string;
+  
+  // Tax Information
+  tax_id?: string;
+  tax_category?: string;
+  tax_withholding_category?: string;
+  
+  // Sales Settings
+  so_required?: boolean;
+  dn_required?: boolean;
+  is_internal_customer?: boolean;
+  represents_company?: string;
+  
+  // Defaults
+  default_sales_partner?: string;
+  default_commission_rate?: number;
 }
 
 // API Response Types
@@ -505,7 +566,7 @@ export interface SalesOrderListResponse {
   total_count: number;
 }
 
-export interface CustomerListResponse {
+export interface SalesCustomerListResponse {
   data: Customer[];
   total_count: number;
 }

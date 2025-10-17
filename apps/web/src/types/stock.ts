@@ -533,8 +533,7 @@ export interface StockEntryValidation {
   validateBatchNo: (batchNo: string, itemCode: string) => boolean;
   calculateValuation: (items: StockEntryDetail[]) => number;
 }
-// Item Gr
-oup
+// Item Group
 export interface ItemGroup {
   name: string;
   item_group_name: string;

@@ -240,7 +240,16 @@
     "multilines",
     "activedescendant",
     "proptypes",
-    "sonarjs"
+    "sonarjs",
+    "docstatus",
+    "prevdoc",
+    "docname",
+    "dont",
+    "pincode",
+    "fieldtype",
+    "reqd",
+    "timespan",
+    "weightage"
   ],
   "ignorePaths": [
     "node_modules/**",

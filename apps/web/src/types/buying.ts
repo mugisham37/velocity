@@ -545,22 +545,77 @@ export interface PurchaseReceiptItem {
 }
 
 // Form State Types
-export interface PurchaseOrderFormData extends Omit<PurchaseOrder, 'name' | 'docstatus' | 'status'> {
-  // Make optional fields that are auto-generated
+export interface PurchaseOrderFormData {
+  // Required fields
+  supplier: string;
+  supplier_name: string;
+  company: string;
+  
+  // Optional fields that can be auto-generated or user-provided
   naming_series?: string;
   transaction_date?: string;
+  schedule_date?: string;
   currency?: string;
   conversion_rate?: number;
   price_list_currency?: string;
   plc_conversion_rate?: number;
+  buying_price_list?: string;
+  cost_center?: string;
+  project?: string;
+  
+  // Items and other complex fields
+  items?: PurchaseOrderItem[];
+  taxes?: PurchaseOrderTax[];
+  payment_schedule?: PaymentSchedule[];
+  
+  // Additional optional fields
+  supplier_quotation?: string;
+  is_subcontracted?: boolean;
+  tc_name?: string;
+  terms?: string;
+  letter_head?: string;
+  group_same_items?: boolean;
+  language?: string;
+  drop_ship?: boolean;
+  customer?: string;
+  sales_order?: string;
 }
 
-export interface SupplierFormData extends Omit<Supplier, 'name'> {
+export interface SupplierFormData {
+  // Optional fields for form
   supplier_name?: string;
   supplier_type?: 'Company' | 'Individual';
   supplier_group?: string;
   country?: string;
   default_currency?: string;
+  default_price_list?: string;
+  payment_terms?: string;
+  is_frozen?: boolean;
+  disabled?: boolean;
+  
+  // Contact Information
+  email_id?: string;
+  mobile_no?: string;
+  phone?: string;
+  website?: string;
+  
+  // Address Information
+  supplier_primary_address?: string;
+  primary_address?: string;
+  supplier_primary_contact?: string;
+  
+  // Tax Information
+  tax_id?: string;
+  tax_category?: string;
+  tax_withholding_category?: string;
+  
+  // Additional settings
+  is_internal_supplier?: boolean;
+  represents_company?: string;
+  default_buying_cost_center?: string;
+  prevent_pos?: boolean;
+  hold_type?: 'None' | 'All' | 'Invoices' | 'Payments';
+  release_date?: string;
 }
 
 // API Response Types
