@@ -53,10 +53,7 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
       actual_time: 30,
       description: 'Create detailed UI mockups for the customer portal',
       creation: '2024-01-10T10:00:00Z',
-      modified: '2024-01-15T14:30:00Z',
-      owner: 'admin',
-      modified_by: 'john.doe@example.com',
-      docstatus: 0
+      modified: '2024-01-15T14:30:00Z'
     },
     {
       name: 'TASK-002',
@@ -65,17 +62,14 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
       exp_start_date: '2024-01-18',
       exp_end_date: '2024-01-25',
       status: 'Open',
-      priority: 'Critical',
+      priority: 'Urgent',
       progress: 0,
       assigned_to: 'jane.smith@example.com',
       expected_time: 60,
       actual_time: 0,
       description: 'Set up user authentication and authorization',
       creation: '2024-01-10T10:00:00Z',
-      modified: '2024-01-10T10:00:00Z',
-      owner: 'admin',
-      modified_by: 'admin',
-      docstatus: 0
+      modified: '2024-01-10T10:00:00Z'
     },
     {
       name: 'TASK-003',
@@ -93,10 +87,7 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
       actual_time: 28,
       description: 'Design and implement database schema',
       creation: '2024-01-08T09:00:00Z',
-      modified: '2024-01-16T16:00:00Z',
-      owner: 'admin',
-      modified_by: 'mike.wilson@example.com',
-      docstatus: 0
+      modified: '2024-01-16T16:00:00Z'
     },
     {
       name: 'TASK-004',
@@ -112,10 +103,7 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
       actual_time: 14,
       description: 'Test all API endpoints and integration points',
       creation: '2024-01-12T11:00:00Z',
-      modified: '2024-01-20T15:00:00Z',
-      owner: 'admin',
-      modified_by: 'sarah.johnson@example.com',
-      docstatus: 0
+      modified: '2024-01-20T15:00:00Z'
     }
   ];
 
@@ -140,7 +128,7 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
 
   const getPriorityBadgeVariant = (priority: Task['priority']) => {
     switch (priority) {
-      case 'Critical':
+      case 'Urgent':
         return 'destructive';
       case 'High':
         return 'destructive';

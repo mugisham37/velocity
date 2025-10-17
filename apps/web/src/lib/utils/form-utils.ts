@@ -12,7 +12,7 @@ export function getErrorMessage(
     return error;
   }
   
-  if (typeof error === 'object' && 'message' in error) {
+  if (typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
     return error.message;
   }
   

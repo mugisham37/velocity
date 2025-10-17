@@ -204,7 +204,6 @@ export function StockReports({ onReportSelect }: StockReportsProps) {
         item_name: 'Sample Item 1',
         item_group: 'Raw Material',
         warehouse: 'Main Store',
-        warehouse_type: 'Stock',
         company: 'Sample Company',
         bal_qty: 100,
         bal_val: 10000,
@@ -215,7 +214,6 @@ export function StockReports({ onReportSelect }: StockReportsProps) {
         out_qty: 30,
         out_val: 3000,
         val_rate: 100,
-        uom: 'Nos',
         brand: 'Sample Brand',
         description: 'Sample item description',
       },
@@ -243,8 +241,6 @@ export function StockReports({ onReportSelect }: StockReportsProps) {
         stock_value_difference: 5000,
         valuation_rate: 100,
         company: 'Sample Company',
-        creation: '2024-01-15T10:30:00',
-        modified: '2024-01-15T10:30:00',
       },
     ];
   };
@@ -272,7 +268,6 @@ export function StockReports({ onReportSelect }: StockReportsProps) {
         item_name: 'Sample Item 1',
         item_group: 'Raw Material',
         warehouse: 'Main Store',
-        uom: 'Nos',
         range1: 20,
         range2: 30,
         range3: 25,
@@ -295,7 +290,6 @@ export function StockReports({ onReportSelect }: StockReportsProps) {
         item_code: 'ITEM-001',
         item_name: 'Sample Item 1',
         item_group: 'Raw Material',
-        consumption_qty: 1000,
         consumption_value: 100000,
         abc_classification: 'A',
         qty_percentage: 20,
@@ -307,7 +301,6 @@ export function StockReports({ onReportSelect }: StockReportsProps) {
         item_code: 'ITEM-002',
         item_name: 'Sample Item 2',
         item_group: 'Raw Material',
-        consumption_qty: 800,
         consumption_value: 40000,
         abc_classification: 'B',
         qty_percentage: 16,
@@ -403,7 +396,7 @@ export function StockReports({ onReportSelect }: StockReportsProps) {
             </div>
           ) : (
             <ListView
-              data={reportData}
+              data={reportData as any}
               columns={currentConfig.columns}
               isLoading={false}
               onRowClick={(row) => console.log('Row clicked:', row)}

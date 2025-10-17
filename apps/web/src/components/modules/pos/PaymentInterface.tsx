@@ -115,7 +115,7 @@ export function PaymentInterface() {
           </div>
           <div className="text-right">
             <div className="text-sm text-gray-600">Customer</div>
-            <div className="font-medium">{selectedCustomer?.customer_name || 'Walk-In Customer'}</div>
+            <div className="font-medium">{(selectedCustomer as any)?.customer_name || 'Walk-In Customer'}</div>
           </div>
         </div>
       </div>
@@ -154,9 +154,9 @@ export function PaymentInterface() {
             <div className="grid grid-cols-2 gap-3">
               {paymentMethods.map((method) => (
                 <PaymentMethodCard
-                  key={method.mode_of_payment}
+                  key={(method as any).mode_of_payment}
                   method={method}
-                  isSelected={selectedMethod?.mode_of_payment === method.mode_of_payment}
+                  isSelected={(selectedMethod as any)?.mode_of_payment === (method as any).mode_of_payment}
                   onSelect={() => setSelectedMethod(method)}
                 />
               ))}

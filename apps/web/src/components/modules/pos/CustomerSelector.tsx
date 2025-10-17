@@ -91,9 +91,9 @@ export function CustomerSelector() {
               <User className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h4 className="font-medium text-gray-900">{selectedCustomer.customer_name}</h4>
-              {selectedCustomer.mobile_no && (
-                <p className="text-sm text-gray-600">{selectedCustomer.mobile_no}</p>
+              <h4 className="font-medium text-gray-900">{(selectedCustomer as any)?.customer_name}</h4>
+              {(selectedCustomer as any)?.mobile_no && (
+                <p className="text-sm text-gray-600">{(selectedCustomer as any)?.mobile_no}</p>
               )}
             </div>
           </div>

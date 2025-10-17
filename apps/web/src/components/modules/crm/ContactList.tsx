@@ -35,7 +35,8 @@ const ContactList: React.FC<ContactListProps> = ({
 
   const columns = [
     {
-      key: 'full_name',
+      fieldname: 'full_name',
+      fieldtype: 'Data',
       label: 'Name',
       sortable: true,
       render: (value: string, contact: Contact) => (
@@ -55,7 +56,8 @@ const ContactList: React.FC<ContactListProps> = ({
       )
     },
     {
-      key: 'company_name',
+      fieldname: 'company_name',
+      fieldtype: 'Data',
       label: 'Company',
       sortable: true,
       render: (value: string) => (
@@ -68,7 +70,8 @@ const ContactList: React.FC<ContactListProps> = ({
       )
     },
     {
-      key: 'email_id',
+      fieldname: 'email_id',
+      fieldtype: 'Data',
       label: 'Email',
       render: (value: string) => (
         value ? (
@@ -80,7 +83,8 @@ const ContactList: React.FC<ContactListProps> = ({
       )
     },
     {
-      key: 'mobile_no',
+      fieldname: 'mobile_no',
+      fieldtype: 'Data',
       label: 'Mobile',
       render: (value: string) => (
         value ? (
@@ -92,7 +96,8 @@ const ContactList: React.FC<ContactListProps> = ({
       )
     },
     {
-      key: 'phone',
+      fieldname: 'phone',
+      fieldtype: 'Data',
       label: 'Phone',
       render: (value: string) => (
         value ? (
@@ -104,13 +109,15 @@ const ContactList: React.FC<ContactListProps> = ({
       )
     },
     {
-      key: 'department',
+      fieldname: 'department',
+      fieldtype: 'Data',
       label: 'Department',
       sortable: true,
       render: (value: string) => value || '-'
     },
     {
-      key: 'status',
+      fieldname: 'status',
+      fieldtype: 'Select',
       label: 'Status',
       sortable: true,
       render: (value: Contact['status']) => (
@@ -120,7 +127,8 @@ const ContactList: React.FC<ContactListProps> = ({
       )
     },
     {
-      key: 'unsubscribed',
+      fieldname: 'unsubscribed',
+      fieldtype: 'Check',
       label: 'Subscription',
       sortable: true,
       render: (value: boolean) => (
@@ -130,13 +138,15 @@ const ContactList: React.FC<ContactListProps> = ({
       )
     },
     {
-      key: 'creation',
+      fieldname: 'creation',
+      fieldtype: 'Datetime',
       label: 'Created',
       sortable: true,
       render: (value: string) => new Date(value).toLocaleDateString()
     },
     {
-      key: 'actions',
+      fieldname: 'actions',
+      fieldtype: 'Data',
       label: 'Actions',
       render: (_: any, contact: Contact) => (
         <div className="flex items-center gap-1">
@@ -178,6 +188,8 @@ const ContactList: React.FC<ContactListProps> = ({
   const filters = [
     {
       fieldname: 'status',
+      operator: '=' as const,
+      value: '',
       label: 'Status',
       fieldtype: 'Select',
       options: [
@@ -189,6 +201,8 @@ const ContactList: React.FC<ContactListProps> = ({
     },
     {
       fieldname: 'unsubscribed',
+      operator: '=' as const,
+      value: '',
       label: 'Subscription Status',
       fieldtype: 'Select',
       options: [
@@ -199,21 +213,29 @@ const ContactList: React.FC<ContactListProps> = ({
     },
     {
       fieldname: 'company_name',
+      operator: 'like' as const,
+      value: '',
       label: 'Company',
       fieldtype: 'Data'
     },
     {
       fieldname: 'designation',
+      operator: 'like' as const,
+      value: '',
       label: 'Designation',
       fieldtype: 'Data'
     },
     {
       fieldname: 'department',
+      operator: 'like' as const,
+      value: '',
       label: 'Department',
       fieldtype: 'Data'
     },
     {
       fieldname: 'creation',
+      operator: '>=' as const,
+      value: '',
       label: 'Created Date',
       fieldtype: 'DateRange'
     }
@@ -263,14 +285,16 @@ const ContactList: React.FC<ContactListProps> = ({
 
       <ListView
         doctype="Contact"
+        data={[]}
+        totalCount={0}
         columns={columns}
         filters={filters}
-        bulkActions={bulkActions}
-        selectedItems={selectedContacts}
-        onSelectionChange={setSelectedContacts}
-        searchFields={['first_name', 'last_name', 'full_name', 'email_id', 'mobile_no', 'company_name']}
-        defaultSort={{ field: 'creation', direction: 'desc' }}
-        pageSize={20}
+        onBulkAction={(action, selection) => {
+          const actionItem = bulkActions.find(a => a.label === action);
+          if (actionItem) actionItem.action(selection);
+        }}
+        selection={selectedContacts}
+        onSelect={setSelectedContacts}
       />
     </div>
   );

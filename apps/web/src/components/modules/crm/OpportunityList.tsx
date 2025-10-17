@@ -51,7 +51,8 @@ const OpportunityList: React.FC<OpportunityListProps> = ({
 
   const columns = [
     {
-      key: 'title',
+      fieldname: 'name',
+      fieldtype: 'Data',
       label: 'Title',
       sortable: true,
       render: (value: string, opportunity: Opportunity) => (
@@ -66,7 +67,8 @@ const OpportunityList: React.FC<OpportunityListProps> = ({
       )
     },
     {
-      key: 'status',
+      fieldname: 'status',
+      fieldtype: 'Select',
       label: 'Status',
       sortable: true,
       render: (value: Opportunity['status']) => (
@@ -76,12 +78,14 @@ const OpportunityList: React.FC<OpportunityListProps> = ({
       )
     },
     {
-      key: 'opportunity_type',
+      fieldname: 'opportunity_type',
+      fieldtype: 'Data',
       label: 'Type',
       sortable: true
     },
     {
-      key: 'opportunity_amount',
+      fieldname: 'opportunity_amount',
+      fieldtype: 'Currency',
       label: 'Amount',
       sortable: true,
       render: (value: number, opportunity: Opportunity) => (
@@ -91,7 +95,8 @@ const OpportunityList: React.FC<OpportunityListProps> = ({
       )
     },
     {
-      key: 'probability',
+      fieldname: 'probability',
+      fieldtype: 'Percent',
       label: 'Probability',
       sortable: true,
       render: (value: number) => (
@@ -107,31 +112,36 @@ const OpportunityList: React.FC<OpportunityListProps> = ({
       )
     },
     {
-      key: 'sales_stage',
+      fieldname: 'sales_stage',
+      fieldtype: 'Data',
       label: 'Sales Stage',
       sortable: true,
       render: (value: string) => value || '-'
     },
     {
-      key: 'expected_closing',
+      fieldname: 'expected_closing',
+      fieldtype: 'Date',
       label: 'Expected Closing',
       sortable: true,
       render: (value: string) => value ? new Date(value).toLocaleDateString() : '-'
     },
     {
-      key: 'territory',
+      fieldname: 'territory',
+      fieldtype: 'Link',
       label: 'Territory',
       sortable: true,
       render: (value: string) => value || '-'
     },
     {
-      key: 'transaction_date',
+      fieldname: 'creation',
+      fieldtype: 'Datetime',
       label: 'Created',
       sortable: true,
       render: (value: string) => new Date(value).toLocaleDateString()
     },
     {
-      key: 'actions',
+      fieldname: 'actions',
+      fieldtype: 'Data',
       label: 'Actions',
       render: (_: any, opportunity: Opportunity) => (
         <div className="flex items-center gap-1">
@@ -173,6 +183,8 @@ const OpportunityList: React.FC<OpportunityListProps> = ({
   const filters = [
     {
       fieldname: 'status',
+      operator: '=' as const,
+      value: '',
       label: 'Status',
       fieldtype: 'Select',
       options: [
@@ -187,6 +199,8 @@ const OpportunityList: React.FC<OpportunityListProps> = ({
     },
     {
       fieldname: 'opportunity_type',
+      operator: '=' as const,
+      value: '',
       label: 'Type',
       fieldtype: 'Select',
       options: [
@@ -198,33 +212,45 @@ const OpportunityList: React.FC<OpportunityListProps> = ({
     },
     {
       fieldname: 'sales_stage',
+      operator: '=' as const,
+      value: '',
       label: 'Sales Stage',
       fieldtype: 'Link',
       options: 'Sales Stage'
     },
     {
       fieldname: 'territory',
+      operator: '=' as const,
+      value: '',
       label: 'Territory',
       fieldtype: 'Link',
       options: 'Territory'
     },
     {
       fieldname: 'opportunity_amount',
+      operator: '>=' as const,
+      value: '',
       label: 'Amount Range',
       fieldtype: 'NumberRange'
     },
     {
       fieldname: 'probability',
+      operator: '>=' as const,
+      value: '',
       label: 'Probability Range',
       fieldtype: 'NumberRange'
     },
     {
       fieldname: 'expected_closing',
+      operator: '>=' as const,
+      value: '',
       label: 'Expected Closing',
       fieldtype: 'DateRange'
     },
     {
-      fieldname: 'transaction_date',
+      fieldname: 'creation',
+      operator: '>=' as const,
+      value: '',
       label: 'Created Date',
       fieldtype: 'DateRange'
     }
@@ -270,12 +296,15 @@ const OpportunityList: React.FC<OpportunityListProps> = ({
         doctype="Opportunity"
         columns={columns}
         filters={filters}
-        bulkActions={bulkActions}
-        selectedItems={selectedOpportunities}
-        onSelectionChange={setSelectedOpportunities}
-        searchFields={['title', 'customer_name', 'party_name']}
-        defaultSort={{ field: 'transaction_date', direction: 'desc' }}
-        pageSize={20}
+        onBulkAction={(action, selection) => {
+          const actionItem = bulkActions.find(a => a.label === action);
+          if (actionItem) actionItem.action(selection);
+        }}
+        selection={selectedOpportunities}
+        onSelect={setSelectedOpportunities}
+
+
+
       />
     </div>
   );

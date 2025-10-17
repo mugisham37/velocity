@@ -32,16 +32,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       priority: project.priority,
       percent_complete: project.percent_complete,
       estimated_costing: project.estimated_costing,
-      total_costing_amount: project.total_costing_amount,
-      total_billable_amount: project.total_billable_amount,
-      total_billed_amount: project.total_billed_amount,
-      total_consumed_material_cost: project.total_consumed_material_cost,
-      project_manager: project.project_manager,
-      company: project.company,
-      cost_center: project.cost_center,
       department: project.department,
       customer: project.customer,
-      sales_order: project.sales_order,
       notes: project.notes
     } : {
       status: 'Open',

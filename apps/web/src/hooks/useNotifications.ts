@@ -69,8 +69,8 @@ export function useNotifications() {
     showSuccess('Success', message);
   }, [showSuccess]);
 
-  // Legacy method for backward compatibility
-  const showNotification = useCallback((type: 'success' | 'error' | 'warning' | 'info', title: string, message?: string) => {
+  // Legacy method for backward compatibility - accepts any string for title
+  const showNotification = useCallback((title: string, type: 'success' | 'error' | 'warning' | 'info' = 'info', message?: string) => {
     switch (type) {
       case 'success':
         showSuccess(title, message);

@@ -112,9 +112,15 @@ function DraggableState({
     }),
   });
 
+  const dragRef = useCallback((node: HTMLDivElement | null) => {
+    if (drag) {
+      drag(node);
+    }
+  }, [drag]);
+
   return (
     <div
-      ref={drag}
+      ref={dragRef}
       className={`absolute cursor-move ${isDragging ? 'opacity-50' : ''}`}
       style={{
         left: state.position.x,

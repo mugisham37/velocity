@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { SalesOrder } from '@/types/sales';
+import { FilterCondition } from '@/types';
 import { ListView, ListFilters, ListPagination } from '@/components/lists';
 import { useListView } from '@/hooks/useListView';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -10,14 +11,14 @@ interface SalesOrderListProps {
   onEdit?: (salesOrder: SalesOrder) => void;
   onView?: (salesOrder: SalesOrder) => void;
   onDelete?: (salesOrder: SalesOrder) => void;
-  filters?: Record<string, any>;
+  filters?: FilterCondition[];
 }
 
 export default function SalesOrderList({
   onEdit,
   onView,
   onDelete,
-  filters: externalFilters = {}
+  filters: externalFilters = []
 }: SalesOrderListProps) {
   const { showNotification } = useNotifications();
   
@@ -34,7 +35,7 @@ export default function SalesOrderList({
     updateSorting,
     updatePagination,
     updateSelection,
-  } = useListView<SalesOrder>({
+  } = useListView({
     doctype: 'Sales Order',
     fields: [
       'name',
@@ -54,7 +55,7 @@ export default function SalesOrderList({
       'territory'
     ],
     initialFilters: externalFilters,
-    initialSorting: [{ field: 'transaction_date', direction: 'desc' }],
+    initialSort: [{ fieldname: 'transaction_date', direction: 'desc' }],
     pageSize: 20,
   });
 
@@ -108,10 +109,11 @@ export default function SalesOrderList({
         `${record.currency} ${value?.toLocaleString() || '0.00'}`,
     },
     {
-      key: 'status',
+      fieldname: 'status',
+      fieldtype: 'Select',
       label: 'Status',
       sortable: true,
-      width: '150px',
+      width: 150,
       render: (value: string, record: SalesOrder) => (
         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(value, record.docstatus)}`}>
           {value}
@@ -119,10 +121,11 @@ export default function SalesOrderList({
       ),
     },
     {
-      key: 'per_delivered',
+      fieldname: 'per_delivered',
+      fieldtype: 'Percent',
       label: '% Delivered',
       sortable: true,
-      width: '100px',
+      width: 100,
       align: 'center' as const,
       render: (value: number) => (
         <div className="flex items-center">
@@ -137,10 +140,11 @@ export default function SalesOrderList({
       ),
     },
     {
-      key: 'per_billed',
+      fieldname: 'per_billed',
+      fieldtype: 'Percent',
       label: '% Billed',
       sortable: true,
-      width: '100px',
+      width: 100,
       align: 'center' as const,
       render: (value: number) => (
         <div className="flex items-center">
@@ -155,9 +159,10 @@ export default function SalesOrderList({
       ),
     },
     {
-      key: 'actions',
+      fieldname: 'actions',
+      fieldtype: 'Data',
       label: 'Actions',
-      width: '120px',
+      width: 120,
       render: (value: any, record: SalesOrder) => (
         <div className="flex space-x-2">
           <button
@@ -193,49 +198,49 @@ export default function SalesOrderList({
   const filterFields = [
     {
       fieldname: 'customer',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       label: 'Customer',
       options: 'Customer',
     },
     {
       fieldname: 'status',
-      fieldtype: 'Select',
+      fieldtype: 'Select' as const,
       label: 'Status',
       options: 'Draft\nTo Deliver and Bill\nTo Bill\nTo Deliver\nCompleted\nCancelled\nClosed',
     },
     {
       fieldname: 'order_type',
-      fieldtype: 'Select',
+      fieldtype: 'Select' as const,
       label: 'Order Type',
       options: 'Sales\nMaintenance\nShopping Cart',
     },
     {
       fieldname: 'company',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       label: 'Company',
       options: 'Company',
     },
     {
       fieldname: 'transaction_date',
-      fieldtype: 'Date',
+      fieldtype: 'Date' as const,
       label: 'Date Range',
     },
     {
       fieldname: 'grand_total',
-      fieldtype: 'Currency',
+      fieldtype: 'Currency' as const,
       label: 'Amount Range',
     },
     {
-      key: 'sales_partner',
+      fieldname: 'sales_partner',
+      fieldtype: 'Link' as const,
       label: 'Sales Partner',
-      type: 'link' as const,
-      doctype: 'Sales Partner',
+      options: 'Sales Partner',
     },
     {
-      key: 'territory',
+      fieldname: 'territory',
+      fieldtype: 'Link' as const,
       label: 'Territory',
-      type: 'link' as const,
-      doctype: 'Territory',
+      options: 'Territory',
     },
   ];
 
@@ -313,16 +318,19 @@ export default function SalesOrderList({
       </div>
 
       <ListView
+        doctype="Sales Order"
         data={data}
         columns={columns}
-        loading={loading}
+        totalCount={pagination.totalCount}
+        isLoading={loading}
         selection={selection}
-        onSelectionChange={updateSelection}
-        sorting={sorting}
-        onSortingChange={updateSorting}
-        bulkActions={bulkActions}
-        emptyMessage="No sales orders found"
-        emptyDescription="Create your first sales order to get started"
+        onSelect={updateSelection}
+        sort={sorting}
+        onSort={updateSorting}
+        onBulkAction={(action, selection) => {
+          const actionItem = bulkActions.find(a => a.label === action);
+          if (actionItem) actionItem.action(selection);
+        }}
       />
 
       <div className="mt-6">

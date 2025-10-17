@@ -46,14 +46,12 @@ const LeadConversionModal: React.FC<LeadConversionModalProps> = ({
 
   const opportunityForm = useForm<OpportunityFormData>({
     defaultValues: {
-      title: `Opportunity from ${lead.lead_name}`,
       opportunity_from: 'Lead',
       party_name: lead.name,
       customer_name: lead.lead_name,
       opportunity_type: 'Sales',
       source: lead.source,
       status: 'Open',
-      transaction_date: new Date().toISOString().split('T')[0],
       territory: lead.territory,
       currency: 'USD',
       probability: 50
@@ -265,10 +263,10 @@ const LeadConversionModal: React.FC<LeadConversionModalProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Title
+                        Opportunity Type
                       </label>
                       <input
-                        {...opportunityForm.register('title')}
+                        {...opportunityForm.register('opportunity_type')}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>

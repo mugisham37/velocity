@@ -38,7 +38,8 @@ const CustomerList: React.FC<CustomerListProps> = ({
 
   const columns = [
     {
-      key: 'customer_name',
+      fieldname: 'customer_name',
+      fieldtype: 'Data',
       label: 'Customer Name',
       sortable: true,
       render: (value: string, customer: Customer) => (
@@ -52,17 +53,20 @@ const CustomerList: React.FC<CustomerListProps> = ({
       )
     },
     {
-      key: 'customer_group',
+      fieldname: 'customer_group',
+      fieldtype: 'Link',
       label: 'Customer Group',
       sortable: true
     },
     {
-      key: 'territory',
+      fieldname: 'territory',
+      fieldtype: 'Link',
       label: 'Territory',
       sortable: true
     },
     {
-      key: 'email_id',
+      fieldname: 'email_id',
+      fieldtype: 'Data',
       label: 'Email',
       render: (value: string) => (
         value ? (
@@ -74,7 +78,8 @@ const CustomerList: React.FC<CustomerListProps> = ({
       )
     },
     {
-      key: 'mobile_no',
+      fieldname: 'mobile_no',
+      fieldtype: 'Data',
       label: 'Mobile',
       render: (value: string) => (
         value ? (
@@ -86,7 +91,8 @@ const CustomerList: React.FC<CustomerListProps> = ({
       )
     },
     {
-      key: 'website',
+      fieldname: 'website',
+      fieldtype: 'Data',
       label: 'Website',
       render: (value: string) => (
         value ? (
@@ -105,12 +111,14 @@ const CustomerList: React.FC<CustomerListProps> = ({
       )
     },
     {
-      key: 'default_currency',
+      fieldname: 'default_currency',
+      fieldtype: 'Link',
       label: 'Currency',
       sortable: true
     },
     {
-      key: 'credit_limit',
+      fieldname: 'credit_limit',
+      fieldtype: 'Currency',
       label: 'Credit Limit',
       sortable: true,
       render: (value: number, customer: Customer) => (
@@ -120,7 +128,8 @@ const CustomerList: React.FC<CustomerListProps> = ({
       )
     },
     {
-      key: 'disabled',
+      fieldname: 'disabled',
+      fieldtype: 'Check',
       label: 'Status',
       sortable: true,
       render: (value: boolean) => (
@@ -130,13 +139,15 @@ const CustomerList: React.FC<CustomerListProps> = ({
       )
     },
     {
-      key: 'creation',
+      fieldname: 'creation',
+      fieldtype: 'Datetime',
       label: 'Created',
       sortable: true,
       render: (value: string) => new Date(value).toLocaleDateString()
     },
     {
-      key: 'actions',
+      fieldname: 'actions',
+      fieldtype: 'Data',
       label: 'Actions',
       render: (_: any, customer: Customer) => (
         <div className="flex items-center gap-1">
@@ -168,6 +179,8 @@ const CustomerList: React.FC<CustomerListProps> = ({
   const filters = [
     {
       fieldname: 'customer_type',
+      operator: '=' as const,
+      value: '',
       label: 'Customer Type',
       fieldtype: 'Select',
       options: [
@@ -178,36 +191,48 @@ const CustomerList: React.FC<CustomerListProps> = ({
     },
     {
       fieldname: 'customer_group',
+      operator: '=' as const,
+      value: '',
       label: 'Customer Group',
       fieldtype: 'Link',
       options: 'Customer Group'
     },
     {
       fieldname: 'territory',
+      operator: '=' as const,
+      value: '',
       label: 'Territory',
       fieldtype: 'Link',
       options: 'Territory'
     },
     {
       fieldname: 'default_currency',
+      operator: '=' as const,
+      value: '',
       label: 'Currency',
       fieldtype: 'Link',
       options: 'Currency'
     },
     {
       fieldname: 'market_segment',
+      operator: '=' as const,
+      value: '',
       label: 'Market Segment',
       fieldtype: 'Link',
       options: 'Market Segment'
     },
     {
       fieldname: 'industry',
+      operator: '=' as const,
+      value: '',
       label: 'Industry',
       fieldtype: 'Link',
       options: 'Industry Type'
     },
     {
       fieldname: 'disabled',
+      operator: '=' as const,
+      value: '',
       label: 'Status',
       fieldtype: 'Select',
       options: [
@@ -218,11 +243,15 @@ const CustomerList: React.FC<CustomerListProps> = ({
     },
     {
       fieldname: 'credit_limit',
+      operator: '>=' as const,
+      value: '',
       label: 'Credit Limit Range',
       fieldtype: 'NumberRange'
     },
     {
       fieldname: 'creation',
+      operator: '>=' as const,
+      value: '',
       label: 'Created Date',
       fieldtype: 'DateRange'
     }
@@ -272,14 +301,16 @@ const CustomerList: React.FC<CustomerListProps> = ({
 
       <ListView
         doctype="Customer"
+        data={[]}
+        totalCount={0}
         columns={columns}
         filters={filters}
-        bulkActions={bulkActions}
-        selectedItems={selectedCustomers}
-        onSelectionChange={setSelectedCustomers}
-        searchFields={['customer_name', 'email_id', 'mobile_no', 'phone_no']}
-        defaultSort={{ field: 'creation', direction: 'desc' }}
-        pageSize={20}
+        onBulkAction={(action, selection) => {
+          const actionItem = bulkActions.find(a => a.label === action);
+          if (actionItem) actionItem.action(selection);
+        }}
+        selection={selectedCustomers}
+        onSelect={setSelectedCustomers}
       />
     </div>
   );

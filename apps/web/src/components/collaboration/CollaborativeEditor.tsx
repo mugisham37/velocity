@@ -46,11 +46,25 @@ export interface EditOperation {
   userId: string;
 }
 
+export type ResolutionType = 'accept_local' | 'accept_remote' | 'merge' | 'manual';
+
 export interface ConflictResolution {
   conflictId: string;
+  resolution: ResolutionType;
   operations: EditOperation[];
-  resolution: 'accept_local' | 'accept_remote' | 'merge' | 'manual';
-  resolvedValue?: any;
+  resolvedValue?: unknown;
+}
+
+export interface Conflict {
+  id: string;
+  field: string;
+  localOperations: EditOperation[];
+  remoteOperation: EditOperation[];
+  timestamp: Date;
+  resolved: boolean;
+  resolution: ResolutionType;
+  operations: EditOperation[];
+  resolvedValue?: unknown;
 }
 
 interface CollaborativeEditorProps {
@@ -435,6 +449,8 @@ function ConflictResolutionDialog({
 }: ConflictResolutionDialogProps) {
   if (!isOpen || !conflict) return null;
 
+  const currentConflict = conflict as Conflict;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <motion.div
@@ -454,23 +470,29 @@ function ConflictResolutionDialog({
 
         <div className="space-y-3">
           <button
-            onClick={() => onResolve({
-              conflictId: conflict.id,
-              operations: conflict.localOperations,
-              resolution: 'accept_local',
-            })}
+            type="button"
+            onClick={() => {
+              onResolve({
+                conflictId: currentConflict.id,
+                operations: currentConflict.localOperations,
+                resolution: 'accept_local',
+              });
+            }}
             className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50"
           >
             <div className="font-medium">Keep my changes</div>
-            <div className="text-sm text-gray-500">Discard the other user's changes</div>
+            <div className="text-sm text-gray-500">Discard the other user&apos;s changes</div>
           </button>
 
           <button
-            onClick={() => onResolve({
-              conflictId: conflict.id,
-              operations: conflict.remoteOperation,
-              resolution: 'accept_remote',
-            })}
+            type="button"
+            onClick={() => {
+              onResolve({
+                conflictId: currentConflict.id,
+                operations: currentConflict.remoteOperation,
+                resolution: 'accept_remote',
+              });
+            }}
             className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50"
           >
             <div className="font-medium">Accept their changes</div>
@@ -480,6 +502,7 @@ function ConflictResolutionDialog({
 
         <div className="flex justify-end space-x-2 mt-6">
           <button
+            type="button"
             onClick={onClose}
             className="px-4 py-2 text-gray-600 hover:text-gray-800"
           >

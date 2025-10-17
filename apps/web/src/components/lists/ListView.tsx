@@ -11,6 +11,9 @@ export interface ListViewColumn {
   width?: number;
   sortable?: boolean;
   hidden?: boolean;
+  key?: string;
+  render?: (value: any, record?: any) => React.ReactNode;
+  align?: 'left' | 'center' | 'right';
 }
 
 export interface ListViewProps {

@@ -28,7 +28,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
         return 'default';
       case 'Cancelled':
         return 'destructive';
-      case 'On Hold':
+      case 'Open':
         return 'secondary';
       default:
         return 'outline';
@@ -37,7 +37,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
 
   const getPriorityBadgeVariant = (priority: Project['priority']) => {
     switch (priority) {
-      case 'Critical':
+      case 'High':
         return 'destructive';
       case 'High':
         return 'destructive';
@@ -60,7 +60,8 @@ const ProjectList: React.FC<ProjectListProps> = ({
 
   const columns = [
     {
-      key: 'project_name',
+      fieldname: 'project_name',
+      fieldtype: 'Data',
       label: 'Project Name',
       sortable: true,
       render: (value: string, project: Project) => (
@@ -78,7 +79,8 @@ const ProjectList: React.FC<ProjectListProps> = ({
       )
     },
     {
-      key: 'status',
+      fieldname: 'status',
+      fieldtype: 'Select',
       label: 'Status',
       sortable: true,
       render: (value: Project['status']) => (
@@ -88,7 +90,8 @@ const ProjectList: React.FC<ProjectListProps> = ({
       )
     },
     {
-      key: 'priority',
+      fieldname: 'priority',
+      fieldtype: 'Select',
       label: 'Priority',
       sortable: true,
       render: (value: Project['priority']) => (
@@ -98,7 +101,8 @@ const ProjectList: React.FC<ProjectListProps> = ({
       )
     },
     {
-      key: 'percent_complete',
+      fieldname: 'percent_complete',
+      fieldtype: 'Percent',
       label: 'Progress',
       sortable: true,
       render: (value: number) => (
@@ -114,7 +118,8 @@ const ProjectList: React.FC<ProjectListProps> = ({
       )
     },
     {
-      key: 'project_manager',
+      fieldname: 'customer',
+      fieldtype: 'Link',
       label: 'Manager',
       sortable: true,
       render: (value: string) => (
@@ -127,13 +132,15 @@ const ProjectList: React.FC<ProjectListProps> = ({
       )
     },
     {
-      key: 'customer',
+      fieldname: 'customer',
+      fieldtype: 'Link',
       label: 'Customer',
       sortable: true,
       render: (value: string) => value || '-'
     },
     {
-      key: 'estimated_costing',
+      fieldname: 'estimated_costing',
+      fieldtype: 'Currency',
       label: 'Estimated Cost',
       sortable: true,
       render: (value: number) => (
@@ -144,7 +151,8 @@ const ProjectList: React.FC<ProjectListProps> = ({
       )
     },
     {
-      key: 'expected_start_date',
+      fieldname: 'expected_start_date',
+      fieldtype: 'Date',
       label: 'Start Date',
       sortable: true,
       render: (value: string) => (
@@ -157,7 +165,8 @@ const ProjectList: React.FC<ProjectListProps> = ({
       )
     },
     {
-      key: 'expected_end_date',
+      fieldname: 'expected_end_date',
+      fieldtype: 'Date',
       label: 'End Date',
       sortable: true,
       render: (value: string) => (
@@ -170,7 +179,8 @@ const ProjectList: React.FC<ProjectListProps> = ({
       )
     },
     {
-      key: 'actions',
+      fieldname: 'actions',
+      fieldtype: 'Data',
       label: 'Actions',
       render: (_: any, project: Project) => (
         <div className="flex items-center gap-1">
@@ -202,6 +212,8 @@ const ProjectList: React.FC<ProjectListProps> = ({
   const filters = [
     {
       fieldname: 'status',
+      operator: '=' as const,
+      value: '',
       label: 'Status',
       fieldtype: 'Select',
       options: [
@@ -209,57 +221,73 @@ const ProjectList: React.FC<ProjectListProps> = ({
         { label: 'Open', value: 'Open' },
         { label: 'Completed', value: 'Completed' },
         { label: 'Cancelled', value: 'Cancelled' },
-        { label: 'On Hold', value: 'On Hold' }
+        { label: 'Open', value: 'Open' }
       ]
     },
     {
       fieldname: 'priority',
+      operator: '=' as const,
+      value: '',
       label: 'Priority',
       fieldtype: 'Select',
       options: [
         { label: 'All', value: '' },
-        { label: 'Critical', value: 'Critical' },
+        { label: 'High', value: 'High' },
         { label: 'High', value: 'High' },
         { label: 'Medium', value: 'Medium' },
         { label: 'Low', value: 'Low' }
       ]
     },
     {
-      fieldname: 'project_manager',
+      fieldname: 'customer',
+      operator: '=' as const,
+      value: '',
       label: 'Project Manager',
       fieldtype: 'Link',
       options: 'User'
     },
     {
       fieldname: 'customer',
+      operator: '=' as const,
+      value: '',
       label: 'Customer',
       fieldtype: 'Link',
       options: 'Customer'
     },
     {
-      fieldname: 'company',
+      fieldname: 'department',
+      operator: '=' as const,
+      value: '',
       label: 'Company',
       fieldtype: 'Link',
       options: 'Company'
     },
     {
       fieldname: 'department',
+      operator: '=' as const,
+      value: '',
       label: 'Department',
       fieldtype: 'Link',
       options: 'Department'
     },
     {
       fieldname: 'expected_start_date',
+      operator: '>=' as const,
+      value: '',
       label: 'Start Date Range',
       fieldtype: 'DateRange'
     },
     {
       fieldname: 'expected_end_date',
+      operator: '>=' as const,
+      value: '',
       label: 'End Date Range',
       fieldtype: 'DateRange'
     },
     {
       fieldname: 'estimated_costing',
+      operator: '>=' as const,
+      value: '',
       label: 'Cost Range',
       fieldtype: 'NumberRange'
     }
@@ -311,12 +339,15 @@ const ProjectList: React.FC<ProjectListProps> = ({
         doctype="Project"
         columns={columns}
         filters={filters}
-        bulkActions={bulkActions}
-        selectedItems={selectedProjects}
-        onSelectionChange={setSelectedProjects}
-        searchFields={['project_name', 'customer', 'project_manager']}
-        defaultSort={{ field: 'creation', direction: 'desc' }}
-        pageSize={20}
+        onBulkAction={(action, selection) => {
+          const actionItem = bulkActions.find(a => a.label === action);
+          if (actionItem) actionItem.action(selection);
+        }}
+        selection={selectedProjects}
+        onSelect={setSelectedProjects}
+
+
+
       />
     </div>
   );

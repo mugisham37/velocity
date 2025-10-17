@@ -293,13 +293,13 @@ export default function DeliveryNoteForm({
   return (
     <div className="delivery-note-form">
       <FormToolbar
-        title={mode === 'create' ? 'New Delivery Note' : 'Delivery Note'}
         onSave={form.handleSubmit(handleSave)}
         onSubmit={form.handleSubmit(handleSubmit)}
         onCancel={onCancel}
+        onPrint={() => {}}
+        onEmail={() => {}}
+        onShare={() => {}}
         isLoading={isLoading}
-        canSave={mode !== 'view'}
-        canSubmit={mode !== 'view'}
       />
 
       <form className="space-y-6">

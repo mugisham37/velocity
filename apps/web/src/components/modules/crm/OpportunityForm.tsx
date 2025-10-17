@@ -24,7 +24,6 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
 }) => {
   const form = useForm<OpportunityFormData>({
     defaultValues: opportunity ? {
-      title: opportunity.title,
       opportunity_from: opportunity.opportunity_from,
       party_name: opportunity.party_name,
       customer_name: opportunity.customer_name,
@@ -35,13 +34,11 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
       opportunity_amount: opportunity.opportunity_amount,
       probability: opportunity.probability,
       currency: opportunity.currency,
-      transaction_date: opportunity.transaction_date,
       expected_closing: opportunity.expected_closing,
       contact_person: opportunity.contact_person,
       contact_email: opportunity.contact_email,
       contact_mobile: opportunity.contact_mobile,
       territory: opportunity.territory,
-      company: opportunity.company,
       notes: opportunity.notes,
       next_contact_by: opportunity.next_contact_by,
       next_contact_date: opportunity.next_contact_date
@@ -50,7 +47,6 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
       party_name: leadName || '',
       opportunity_type: 'Sales',
       status: 'Open',
-      transaction_date: new Date().toISOString().split('T')[0],
       currency: 'USD',
       probability: 50
     }
@@ -227,7 +223,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-semibold text-gray-900">
-          {opportunity ? `Edit Opportunity: ${opportunity.title || opportunity.name}` : 'New Opportunity'}
+          {opportunity ? `Edit Opportunity: ${opportunity.name}` : 'New Opportunity'}
         </h2>
         <div className="flex gap-2">
           {onCancel && (

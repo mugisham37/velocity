@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { FieldErrors } from 'react-hook-form';
 import { 
   PlayIcon,
   StopIcon,
@@ -23,9 +24,7 @@ import {
 const customScriptSchema = z.object({
   name: z.string().min(1, 'Script name is required'),
   doctype: z.string().min(1, 'DocType is required'),
-  script_type: z.enum(['Client', 'Server'], {
-    required_error: 'Script type is required',
-  }),
+  script_type: z.enum(['Client', 'Server']).describe('Script type is required'),
   event_type: z.string().min(1, 'Event type is required'),
   script: z.string().min(1, 'Script content is required'),
   enabled: z.boolean().default(true),
@@ -172,7 +171,7 @@ export function CustomScriptEditor({
   const availableEvents = watchedScriptType === 'Client' ? CLIENT_EVENTS : SERVER_EVENTS;
 
   // Validate script syntax
-  const validateScript = async (script: string, scriptType: string) => {
+  const validateScript = async (script: string, scriptType: string): Promise<void> => {
     setIsValidating(true);
     setScriptErrors([]);
 
@@ -181,12 +180,12 @@ export function CustomScriptEditor({
       await new Promise(resolve => setTimeout(resolve, 500));
       
       // Mock validation errors for demonstration
-      const errors: ScriptError[] = [];
+      const validationErrors: ScriptError[] = [];
       
       if (scriptType === 'Client') {
         // Basic JavaScript syntax checking (simplified)
         if (script.includes('frappe.throw') && !script.includes('frappe.msgprint')) {
-          errors.push({
+          validationErrors.push({
             line: 5,
             column: 12,
             message: 'frappe.throw should not be used in client scripts. Use frappe.msgprint instead.',
@@ -195,7 +194,7 @@ export function CustomScriptEditor({
         }
         
         if (!script.includes('frappe.ui.form.on') && script.length > 50) {
-          errors.push({
+          validationErrors.push({
             line: 1,
             column: 1,
             message: 'Client scripts should typically use frappe.ui.form.on pattern.',
@@ -204,8 +203,8 @@ export function CustomScriptEditor({
         }
       } else {
         // Python syntax checking (simplified)
-        if (script.includes('def ') && !script.includes('self'):
-          errors.push({
+        if (script.includes('def ') && !script.includes('self')) {
+          validationErrors.push({
             line: 2,
             column: 8,
             message: 'Server methods should typically include self parameter.',
@@ -214,8 +213,9 @@ export function CustomScriptEditor({
         }
       }
       
-      setScriptErrors(errors);
-    } catch (error) {
+      setScriptErrors(validationErrors);
+    } catch (err) {
+      console.error('Script validation error:', err);
       setScriptErrors([{
         line: 1,
         column: 1,
@@ -228,35 +228,36 @@ export function CustomScriptEditor({
   };
 
   // Insert template into script
-  const insertTemplate = (templateKey: string) => {
+  const insertTemplate = (templateKey: string): void => {
     const template = SCRIPT_TEMPLATES[templateKey as keyof typeof SCRIPT_TEMPLATES];
-    if (template && textareaRef.current) {
-      const processedTemplate = template.replace(/\$\{doctype\}/g, doctype);
-      setValue('script', processedTemplate);
-      setShowTemplates(false);
-    }
+    if (!template || !textareaRef.current) return;
+    
+    const processedTemplate = template.replace(/\$\{doctype\}/g, doctype);
+    form.setValue('script', processedTemplate);
+    setShowTemplates(false);
   };
 
   // Insert text at cursor position
-  const insertAtCursor = (text: string) => {
-    if (textareaRef.current) {
-      const start = textareaRef.current.selectionStart;
-      const end = textareaRef.current.selectionEnd;
-      const currentValue = textareaRef.current.value;
-      const newValue = currentValue.substring(0, start) + text + currentValue.substring(end);
-      setValue('script', newValue);
+  const insertAtCursor = (text: string): void => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentValue = textarea.value;
+    const newValue = currentValue.substring(0, start) + text + currentValue.substring(end);
+    form.setValue('script', newValue);
       
-      // Set cursor position after inserted text
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + text.length;
-          textareaRef.current.focus();
-        }
-      }, 0);
-    }
+    // Set cursor position after inserted text
+    setTimeout(() => {
+      if (textarea) {
+        textarea.selectionStart = textarea.selectionEnd = start + text.length;
+        textarea.focus();
+      }
+    }, 0);
   };
 
-  const handleFormSubmit = (data: CustomScriptFormData) => {
+  const handleFormSubmit = (data: CustomScriptFormData): void => {
     onSave(data);
   };
 

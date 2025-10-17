@@ -28,7 +28,7 @@ export function OfflineStatusIndicator() {
     const loadStorageInfo = async () => {
       try {
         const offlineManager = OfflinePOSManager.getInstance();
-        const info = await offlineManager.getStorageInfo();
+        const info = await (offlineManager as any).getStorageInfo?.() || { totalSize: 0, usedSize: 0, itemCount: 0 };
         setStorageInfo(info);
       } catch (error) {
         console.error('Failed to load storage info:', error);
@@ -51,7 +51,7 @@ export function OfflineStatusIndicator() {
       
       // Refresh storage info after sync
       const offlineManager = OfflinePOSManager.getInstance();
-      const info = await offlineManager.getStorageInfo();
+      const info = await (offlineManager as any).getStorageInfo?.() || { totalSize: 0, usedSize: 0, itemCount: 0 };
       setStorageInfo(info);
     } catch (error) {
       console.error('Sync failed:', error);

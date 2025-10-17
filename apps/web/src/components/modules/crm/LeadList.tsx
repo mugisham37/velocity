@@ -47,7 +47,8 @@ const LeadList: React.FC<LeadListProps> = ({
 
   const columns = [
     {
-      key: 'lead_name',
+      fieldname: 'lead_name',
+      fieldtype: 'Data',
       label: 'Lead Name',
       sortable: true,
       render: (value: string, lead: Lead) => (
@@ -60,7 +61,8 @@ const LeadList: React.FC<LeadListProps> = ({
       )
     },
     {
-      key: 'status',
+      fieldname: 'status',
+      fieldtype: 'Select',
       label: 'Status',
       sortable: true,
       render: (value: Lead['status']) => (
@@ -70,47 +72,55 @@ const LeadList: React.FC<LeadListProps> = ({
       )
     },
     {
-      key: 'source',
+      fieldname: 'source',
+      fieldtype: 'Data',
       label: 'Source',
       sortable: true
     },
     {
-      key: 'lead_type',
+      fieldname: 'lead_type',
+      fieldtype: 'Data',
       label: 'Type',
       sortable: true
     },
     {
-      key: 'email_id',
+      fieldname: 'email_id',
+      fieldtype: 'Data',
       label: 'Email',
       render: (value: string) => (
         <span className="text-blue-600">{value}</span>
       )
     },
     {
-      key: 'mobile_no',
+      fieldname: 'mobile_no',
+      fieldtype: 'Data',
       label: 'Mobile',
       render: (value: string) => value || '-'
     },
     {
-      key: 'territory',
+      fieldname: 'territory',
+      fieldtype: 'Link',
       label: 'Territory',
       sortable: true,
       render: (value: string) => value || '-'
     },
     {
-      key: 'lead_owner',
+      fieldname: 'lead_owner',
+      fieldtype: 'Link',
       label: 'Owner',
       sortable: true,
       render: (value: string) => value || 'Unassigned'
     },
     {
-      key: 'creation',
+      fieldname: 'creation',
+      fieldtype: 'Datetime',
       label: 'Created',
       sortable: true,
       render: (value: string) => new Date(value).toLocaleDateString()
     },
     {
-      key: 'actions',
+      fieldname: 'actions',
+      fieldtype: 'Data',
       label: 'Actions',
       render: (_: any, lead: Lead) => (
         <div className="flex items-center gap-1">
@@ -152,6 +162,8 @@ const LeadList: React.FC<LeadListProps> = ({
   const filters = [
     {
       fieldname: 'status',
+      operator: '=' as const,
+      value: '',
       label: 'Status',
       fieldtype: 'Select',
       options: [
@@ -168,12 +180,16 @@ const LeadList: React.FC<LeadListProps> = ({
     },
     {
       fieldname: 'source',
+      operator: '=' as const,
+      value: '',
       label: 'Source',
       fieldtype: 'Link',
       options: 'Lead Source'
     },
     {
       fieldname: 'lead_type',
+      operator: '=' as const,
+      value: '',
       label: 'Lead Type',
       fieldtype: 'Select',
       options: [
@@ -185,18 +201,24 @@ const LeadList: React.FC<LeadListProps> = ({
     },
     {
       fieldname: 'territory',
+      operator: '=' as const,
+      value: '',
       label: 'Territory',
       fieldtype: 'Link',
       options: 'Territory'
     },
     {
       fieldname: 'lead_owner',
+      operator: '=' as const,
+      value: '',
       label: 'Lead Owner',
       fieldtype: 'Link',
       options: 'User'
     },
     {
       fieldname: 'creation',
+      operator: '>=' as const,
+      value: '',
       label: 'Created Date',
       fieldtype: 'DateRange'
     }
@@ -242,12 +264,15 @@ const LeadList: React.FC<LeadListProps> = ({
         doctype="Lead"
         columns={columns}
         filters={filters}
-        bulkActions={bulkActions}
-        selectedItems={selectedLeads}
-        onSelectionChange={setSelectedLeads}
-        searchFields={['lead_name', 'company_name', 'email_id', 'mobile_no']}
-        defaultSort={{ field: 'creation', direction: 'desc' }}
-        pageSize={20}
+        onBulkAction={(action, selection) => {
+          const actionItem = bulkActions.find(a => a.label === action);
+          if (actionItem) actionItem.action(selection);
+        }}
+        selection={selectedLeads}
+        onSelect={setSelectedLeads}
+
+
+
       />
     </div>
   );
