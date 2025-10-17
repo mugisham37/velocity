@@ -20,8 +20,8 @@ export default function DeliveryNoteList({ onEdit, onView }: DeliveryNoteListPro
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Delivery Notes</h2>
       <div className="grid gap-4">
-        {notes.map((note) => (
-          <div key={note.name} className="border rounded-lg p-4">
+        {notes.map((note: any) => (
+          <div key={note.name as string} className="border rounded-lg p-4">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-medium">{note.name}</h3>

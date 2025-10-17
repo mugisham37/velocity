@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { StockEntry, StockEntryDetail, StockEntryPurpose, DocTypeSchema } from '@/types';
+import type { StockEntry as StockEntryDoc, StockEntryDetail, StockEntryPurpose, DocTypeSchema } from '@/types';
 import { FormSection } from '@/components/forms/FormSection';
 import { FormToolbar } from '@/components/forms/FormToolbar';
 import { Timeline } from '@/components/forms/Timeline';
@@ -15,7 +15,7 @@ import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface StockEntryProps {
   entryName?: string;
-  onSave?: (entry: StockEntry) => void;
+  onSave?: (entry: StockEntryDoc) => void;
   onCancel?: () => void;
   readOnly?: boolean;
 }
@@ -86,7 +86,7 @@ export function StockEntry({ entryName, onSave, onCancel, readOnly = false }: St
   const { meta } = useDocumentMeta('Stock Entry');
 
   // Initialize form
-  const methods = useForm({
+  const methods = useForm<z.infer<typeof stockEntryValidationSchema>>({
     resolver: zodResolver(stockEntryValidationSchema),
     defaultValues: entry || {
       naming_series: 'STE-',
@@ -171,7 +171,9 @@ export function StockEntry({ entryName, onSave, onCancel, readOnly = false }: St
   ];
 
   const addItem = () => {
-    const newItem: Partial<StockEntryDetail> = {
+    const purpose = formData.purpose as StockEntryPurpose;
+    
+    const newItem = {
       idx: (fields.length + 1),
       item_code: '',
       item_name: '',
@@ -186,18 +188,11 @@ export function StockEntry({ entryName, onSave, onCancel, readOnly = false }: St
       basic_amount: 0,
       amount: 0,
       additional_cost: 0,
+      s_warehouse: (purpose === 'Material Issue' || purpose === 'Material Transfer') ? formData.from_warehouse || '' : '',
+      t_warehouse: (purpose === 'Material Receipt' || purpose === 'Material Transfer') ? formData.to_warehouse || '' : '',
     };
 
-    // Set default warehouses based on purpose
-    const purpose = formData.purpose as StockEntryPurpose;
-    if (purpose === 'Material Issue' || purpose === 'Material Transfer') {
-      newItem.s_warehouse = formData.from_warehouse;
-    }
-    if (purpose === 'Material Receipt' || purpose === 'Material Transfer') {
-      newItem.t_warehouse = formData.to_warehouse;
-    }
-
-    append(newItem as StockEntryDetail);
+    append(newItem);
   };
 
   const removeItem = (index: number) => {
@@ -210,7 +205,7 @@ export function StockEntry({ entryName, onSave, onCancel, readOnly = false }: St
       showApiSuccess('Stock Entry saved successfully');
       
       if (onSave) {
-        onSave(savedEntry as unknown as StockEntry);
+        onSave(savedEntry as unknown as StockEntryDoc);
       }
     } catch (error) {
       showApiError(error, 'Failed to save stock entry');

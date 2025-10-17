@@ -20,8 +20,8 @@ export default function SalesInvoiceList({ onEdit, onView }: SalesInvoiceListPro
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Sales Invoices</h2>
       <div className="grid gap-4">
-        {invoices.map((invoice) => (
-          <div key={invoice.name} className="border rounded-lg p-4">
+        {invoices.map((invoice: any) => (
+          <div key={invoice.name as string} className="border rounded-lg p-4">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-medium">{invoice.name}</h3>

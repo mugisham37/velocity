@@ -159,7 +159,7 @@ export const bundleConfig = {
     '@headlessui/react',
     '@heroicons/react',
     'lucide-react',
-    '@radix-ui/react-tabs',
+    // '@radix-ui/react-tabs',
   ],
   
   // Utility libraries

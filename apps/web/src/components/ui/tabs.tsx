@@ -1,54 +1,116 @@
 'use client';
 
 import * as React from 'react';
-import * as TabsPrimitive from '@radix-ui/react-tabs';
 import { cn } from '@/lib/utils';
 
-const Tabs = TabsPrimitive.Root;
+// Simple tabs implementation without Radix UI
+interface TabsProps {
+  value?: string;
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
+  children: React.ReactNode;
+  className?: string;
+}
 
-const TabsList = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.List
-    ref={ref}
-    className={cn(
-      'bg-muted text-muted-foreground inline-flex h-10 items-center justify-center rounded-md p-1',
-      className
-    )}
-    {...props}
-  />
-));
-TabsList.displayName = TabsPrimitive.List.displayName;
+const Tabs = ({ value, defaultValue, onValueChange, children, className }: TabsProps) => {
+  const [internalValue, setInternalValue] = React.useState(defaultValue || '');
+  const currentValue = value !== undefined ? value : internalValue;
+  
+  const handleValueChange = (newValue: string) => {
+    if (value === undefined) {
+      setInternalValue(newValue);
+    }
+    onValueChange?.(newValue);
+  };
 
-const TabsTrigger = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      'ring-offset-background focus-visible:ring-ring data-[state=active]:bg-background data-[state=active]:text-foreground inline-flex items-center justify-center rounded-sm px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm',
-      className
-    )}
-    {...props}
-  />
-));
-TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
+  return (
+    <div className={cn('tabs', className)} data-value={currentValue}>
+      {React.Children.map(children, (child) =>
+        React.isValidElement(child)
+          ? React.cloneElement(child, { currentValue, onValueChange: handleValueChange } as any)
+          : child
+      )}
+    </div>
+  );
+};
 
-const TabsContent = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.Content
-    ref={ref}
-    className={cn(
-      'ring-offset-background focus-visible:ring-ring mt-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-      className
-    )}
-    {...props}
-  />
-));
-TabsContent.displayName = TabsPrimitive.Content.displayName;
+interface TabsListProps {
+  children: React.ReactNode;
+  className?: string;
+  currentValue?: string;
+  onValueChange?: (value: string) => void;
+}
+
+const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
+  ({ className, children, currentValue, onValueChange, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(
+        'bg-muted text-muted-foreground inline-flex h-10 items-center justify-center rounded-md p-1',
+        className
+      )}
+      {...props}
+    >
+      {React.Children.map(children, (child) =>
+        React.isValidElement(child)
+          ? React.cloneElement(child, { currentValue, onValueChange } as any)
+          : child
+      )}
+    </div>
+  )
+);
+TabsList.displayName = 'TabsList';
+
+interface TabsTriggerProps {
+  value: string;
+  children: React.ReactNode;
+  className?: string;
+  currentValue?: string;
+  onValueChange?: (value: string) => void;
+  disabled?: boolean;
+}
+
+const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(
+  ({ className, value, children, currentValue, onValueChange, disabled, ...props }, ref) => (
+    <button
+      ref={ref}
+      className={cn(
+        'ring-offset-background focus-visible:ring-ring inline-flex items-center justify-center rounded-sm px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
+        currentValue === value && 'bg-background text-foreground shadow-sm',
+        className
+      )}
+      onClick={() => onValueChange?.(value)}
+      disabled={disabled}
+      {...props}
+    >
+      {children}
+    </button>
+  )
+);
+TabsTrigger.displayName = 'TabsTrigger';
+
+interface TabsContentProps {
+  value: string;
+  children: React.ReactNode;
+  className?: string;
+  currentValue?: string;
+}
+
+const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(
+  ({ className, value, children, currentValue, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(
+        'ring-offset-background focus-visible:ring-ring mt-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+        currentValue !== value && 'hidden',
+        className
+      )}
+      {...props}
+    >
+      {currentValue === value ? children : null}
+    </div>
+  )
+);
+TabsContent.displayName = 'TabsContent';
 
 export { Tabs, TabsList, TabsTrigger, TabsContent };

@@ -43,11 +43,13 @@ export function PWAInstallPrompt() {
   const handleDismiss = () => {
     setIsVisible(false);
     // Don't show again for this session
-    sessionStorage.setItem('pwa-install-dismissed', 'true');
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('pwa-install-dismissed', 'true');
+    }
   };
 
   // Don't show if dismissed in this session
-  if (sessionStorage.getItem('pwa-install-dismissed')) {
+  if (typeof window !== 'undefined' && sessionStorage.getItem('pwa-install-dismissed')) {
     return null;
   }
 

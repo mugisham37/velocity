@@ -20,8 +20,8 @@ export default function PurchaseOrderList({ onEdit, onView }: PurchaseOrderListP
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Purchase Orders</h2>
       <div className="grid gap-4">
-        {orders.map((order) => (
-          <div key={order.name} className="border rounded-lg p-4">
+        {orders.map((order: any) => (
+          <div key={order.name as string} className="border rounded-lg p-4">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-medium">{order.name}</h3>

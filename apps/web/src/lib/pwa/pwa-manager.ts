@@ -75,6 +75,8 @@ class PWAManager {
    * Setup online/offline detection
    */
   private setupOnlineOfflineDetection() {
+    if (typeof window === 'undefined') return;
+    
     this.isOnline = navigator.onLine;
 
     window.addEventListener('online', () => {
@@ -94,6 +96,8 @@ class PWAManager {
    * Setup app installation prompt
    */
   private setupInstallPrompt() {
+    if (typeof window === 'undefined') return;
+    
     window.addEventListener('beforeinstallprompt', (e: Event) => {
       console.log('PWA: Install prompt available');
       e.preventDefault();
@@ -139,6 +143,7 @@ class PWAManager {
    * Check if the app is running in standalone mode
    */
   public isStandalone(): boolean {
+    if (typeof window === 'undefined') return false;
     return window.matchMedia('(display-mode: standalone)').matches ||
            (window.navigator as any).standalone === true;
   }
@@ -260,7 +265,7 @@ class PWAManager {
     console.log('PWA: New version available');
     
     // Example: Show a toast notification
-    if (window.confirm('A new version is available. Reload to update?')) {
+    if (typeof window !== 'undefined' && window.confirm('A new version is available. Reload to update?')) {
       window.location.reload();
     }
   }
@@ -268,7 +273,11 @@ class PWAManager {
   /**
    * Convert VAPID key to Uint8Array
    */
-  private urlBase64ToUint8Array(base64String: string): Uint8Array {
+  private urlBase64ToUint8Array(base64String: string): ArrayBuffer {
+    if (typeof window === 'undefined') {
+      return new ArrayBuffer(0);
+    }
+    
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding)
       .replace(/-/g, '+')
@@ -280,7 +289,7 @@ class PWAManager {
     for (let i = 0; i < rawData.length; ++i) {
       outputArray[i] = rawData.charCodeAt(i);
     }
-    return outputArray;
+    return outputArray.buffer;
   }
 }
 

@@ -20,8 +20,8 @@ export default function CustomerList({ onEdit, onView }: CustomerListProps) {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Customers</h2>
       <div className="grid gap-4">
-        {customers.map((customer) => (
-          <div key={customer.name} className="border rounded-lg p-4">
+        {customers.map((customer: any) => (
+          <div key={customer.name as string} className="border rounded-lg p-4">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-medium">{(customer as any).customer_name}</h3>

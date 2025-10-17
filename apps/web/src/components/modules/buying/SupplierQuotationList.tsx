@@ -20,8 +20,8 @@ export default function SupplierQuotationList({ onEdit, onView }: SupplierQuotat
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Supplier Quotations</h2>
       <div className="grid gap-4">
-        {quotations.map((quotation) => (
-          <div key={quotation.name} className="border rounded-lg p-4">
+        {quotations.map((quotation: any) => (
+          <div key={quotation.name as string} className="border rounded-lg p-4">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-medium">{quotation.name}</h3>

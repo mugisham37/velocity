@@ -20,8 +20,8 @@ export default function PurchaseReceiptList({ onEdit, onView }: PurchaseReceiptL
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Purchase Receipts</h2>
       <div className="grid gap-4">
-        {receipts.map((receipt) => (
-          <div key={receipt.name} className="border rounded-lg p-4">
+        {receipts.map((receipt: any) => (
+          <div key={receipt.name as string} className="border rounded-lg p-4">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-medium">{receipt.name}</h3>

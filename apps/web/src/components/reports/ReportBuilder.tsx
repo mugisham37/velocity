@@ -242,7 +242,7 @@ export function ReportBuilder({ reportName, onSave, onCancel }: ReportBuilderPro
 
       {/* Tabs */}
       <div className="bg-white border-b border-gray-200">
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'builder' | 'config' | 'preview')}>
+        <Tabs value={activeTab} onValueChange={(value: string) => setActiveTab(value as 'builder' | 'config' | 'preview')}>
           <TabsList className="ml-6">
             <TabsTrigger value="builder" className="flex items-center space-x-2">
               <Cog6ToothIcon className="h-4 w-4" />
@@ -267,7 +267,7 @@ export function ReportBuilder({ reportName, onSave, onCancel }: ReportBuilderPro
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
-        <Tabs value={activeTab}>
+        <Tabs value={activeTab} onValueChange={(value: string) => setActiveTab(value as 'builder' | 'config' | 'preview')}>
           <TabsContent value="builder" className="h-full m-0">
             <QueryBuilder
               onQueryChange={handleQueryChange}

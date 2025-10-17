@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { MaterialRequest, MaterialRequestItem, MaterialRequestType, MaterialRequestStatus, DocTypeSchema } from '@/types';
+import type { MaterialRequest as MaterialRequestDoc, MaterialRequestItem, MaterialRequestType, MaterialRequestStatus, DocTypeSchema } from '@/types';
 import { FormSection } from '@/components/forms/FormSection';
 import { FormToolbar } from '@/components/forms/FormToolbar';
 import { Timeline } from '@/components/forms/Timeline';
@@ -15,7 +15,7 @@ import { PlusIcon, TrashIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/o
 
 interface MaterialRequestProps {
   requestName?: string;
-  onSave?: (request: MaterialRequest) => void;
+  onSave?: (request: MaterialRequestDoc) => void;
   onCancel?: () => void;
   readOnly?: boolean;
 }
@@ -74,7 +74,7 @@ export function MaterialRequest({ requestName, onSave, onCancel, readOnly = fals
   const { meta } = useDocumentMeta('Material Request');
 
   // Initialize form
-  const methods = useForm({
+  const methods = useForm<z.infer<typeof materialRequestValidationSchema>>({
     resolver: zodResolver(materialRequestValidationSchema),
     defaultValues: request || {
       naming_series: 'MR-',
@@ -106,7 +106,7 @@ export function MaterialRequest({ requestName, onSave, onCancel, readOnly = fals
 
   // Handle material request type changes
   useEffect(() => {
-    const requestType = formData.material_request_type as MaterialRequestType;
+    const requestType = formData.material_request_type as string;
     
     // Set default warehouses and fields based on type
     switch (requestType) {
@@ -158,7 +158,7 @@ export function MaterialRequest({ requestName, onSave, onCancel, readOnly = fals
   ];
 
   const addItem = () => {
-    const newItem: Partial<MaterialRequestItem> = {
+    const newItem = {
       idx: (fields.length + 1),
       item_code: '',
       item_name: '',
@@ -168,20 +168,14 @@ export function MaterialRequest({ requestName, onSave, onCancel, readOnly = fals
       uom: '',
       stock_uom: '',
       conversion_factor: 1,
-      schedule_date: formData.schedule_date,
+      schedule_date: formData.schedule_date || new Date().toISOString().split('T')[0],
       ordered_qty: 0,
       received_qty: 0,
+      warehouse: formData.set_warehouse || '',
+      from_warehouse: formData.set_from_warehouse || '',
     };
 
-    // Set default warehouse based on request type
-    if (formData.set_warehouse) {
-      newItem.warehouse = formData.set_warehouse;
-    }
-    if (formData.set_from_warehouse) {
-      newItem.from_warehouse = formData.set_from_warehouse;
-    }
-
-    append(newItem as MaterialRequestItem);
+    append(newItem);
   };
 
   const removeItem = (index: number) => {
@@ -194,7 +188,7 @@ export function MaterialRequest({ requestName, onSave, onCancel, readOnly = fals
       showApiSuccess('Material Request saved successfully');
       
       if (onSave) {
-        onSave(savedRequest as unknown as MaterialRequest);
+        onSave(savedRequest as unknown as MaterialRequestDoc);
       }
     } catch (error) {
       showApiError(error, 'Failed to save material request');
