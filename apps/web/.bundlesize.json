@@ -1,0 +1,34 @@
+{
+  "files": [
+    {
+      "path": ".next/static/chunks/pages/_app-*.js",
+      "maxSize": "200kb",
+      "compression": "gzip"
+    },
+    {
+      "path": ".next/static/chunks/pages/index-*.js",
+      "maxSize": "50kb",
+      "compression": "gzip"
+    },
+    {
+      "path": ".next/static/chunks/framework-*.js",
+      "maxSize": "150kb",
+      "compression": "gzip"
+    },
+    {
+      "path": ".next/static/chunks/main-*.js",
+      "maxSize": "30kb",
+      "compression": "gzip"
+    },
+    {
+      "path": ".next/static/chunks/webpack-*.js",
+      "maxSize": "10kb",
+      "compression": "gzip"
+    },
+    {
+      "path": ".next/static/css/*.css",
+      "maxSize": "50kb",
+      "compression": "gzip"
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+/* ERPNext List Pagination Styles - Pixel Perfect Recreation */
+
+.list-pagination {
+  @apply flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white;
+  font-size: 14px;
+}
+
+.pagination-info {
+  @apply flex items-center gap-4;
+}
+
+.record-count {
+  @apply text-sm text-gray-700;
+}
+
+.page-size-selector {
+  @apply flex items-center gap-2 text-sm text-gray-700;
+}
+
+.page-size-selector label {
+  @apply font-medium;
+}
+
+.page-size-select {
+  @apply px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.pagination-controls {
+  @apply flex items-center gap-1;
+}
+
+.pagination-btn {
+  @apply inline-flex items-center justify-center w-8 h-8 text-sm border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  transition: all 0.1s ease;
+}
+
+.pagination-btn:first-child {
+  @apply rounded-l;
+}
+
+.pagination-btn:last-child {
+  @apply rounded-r;
+}
+
+.pagination-btn.active {
+  @apply bg-blue-600 text-white border-blue-600 hover:bg-blue-700;
+}
+
+.pagination-btn.disabled {
+  @apply opacity-50 cursor-not-allowed hover:bg-white;
+}
+
+.pagination-dots {
+  @apply inline-flex items-center justify-center w-8 h-8 text-sm text-gray-500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .list-pagination {
+    @apply flex-col gap-3;
+  }
+  
+  .pagination-info {
+    @apply flex-col items-start gap-2 w-full;
+  }
+  
+  .page-size-selector {
+    @apply w-full justify-between;
+  }
+  
+  .pagination-controls {
+    @apply w-full justify-center;
+  }
+  
+  .record-count {
+    @apply text-xs;
+  }
+  
+  .pagination-btn {
+    @apply w-10 h-10;
+  }
+}
+
+@media (max-width: 480px) {
+  .pagination-controls {
+    @apply flex-wrap;
+  }
+  
+  .pagination-btn {
+    @apply w-8 h-8 text-xs;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .list-pagination {
+    @apply bg-gray-800 border-gray-700;
+  }
+  
+  .record-count {
+    @apply text-gray-300;
+  }
+  
+  .page-size-selector {
+    @apply text-gray-300;
+  }
+  
+  .page-size-select {
+    @apply bg-gray-700 border-gray-600 text-gray-100;
+  }
+  
+  .pagination-btn {
+    @apply bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600;
+  }
+  
+  .pagination-btn.active {
+    @apply bg-blue-600 text-white border-blue-600;
+  }
+  
+  .pagination-dots {
+    @apply text-gray-400;
+  }
+}

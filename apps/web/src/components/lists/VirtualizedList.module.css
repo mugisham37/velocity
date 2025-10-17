@@ -1,0 +1,98 @@
+/* ERPNext Virtualized List Styles */
+
+.virtualized-list {
+  @apply bg-white border border-gray-200 rounded-lg overflow-hidden;
+}
+
+.virtual-header {
+  @apply border-b border-gray-200 bg-gray-50;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.virtual-table {
+  @apply w-full border-collapse;
+  font-size: 13px;
+}
+
+.virtual-table th {
+  @apply px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.virtual-column {
+  @apply border-r border-gray-200 last:border-r-0;
+}
+
+.select-column {
+  @apply w-8 text-center;
+}
+
+.list-checkbox {
+  @apply w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500;
+}
+
+.virtual-container {
+  @apply overflow-auto;
+}
+
+.virtual-row {
+  @apply hover:bg-gray-50 cursor-pointer border-b border-gray-100;
+  transition: background-color 0.1s ease;
+}
+
+.virtual-row.selected {
+  @apply bg-blue-50;
+}
+
+.virtual-cell {
+  @apply px-3 py-2 text-sm text-gray-900 border-r border-gray-100 last:border-r-0;
+  max-width: 200px;
+}
+
+.cell-content {
+  @apply truncate;
+}
+
+/* Performance optimizations */
+.virtual-container {
+  /* Enable hardware acceleration */
+  transform: translateZ(0);
+  will-change: scroll-position;
+}
+
+.virtual-row {
+  /* Optimize repaints */
+  contain: layout style paint;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .virtualized-list {
+    @apply bg-gray-800 border-gray-700;
+  }
+  
+  .virtual-header {
+    @apply bg-gray-700 border-gray-600;
+  }
+  
+  .virtual-table th {
+    @apply text-gray-300;
+  }
+  
+  .virtual-column {
+    @apply border-gray-600;
+  }
+  
+  .virtual-row {
+    @apply hover:bg-gray-700 border-gray-700;
+  }
+  
+  .virtual-row.selected {
+    @apply bg-blue-900;
+  }
+  
+  .virtual-cell {
+    @apply text-gray-200 border-gray-700;
+  }
+}

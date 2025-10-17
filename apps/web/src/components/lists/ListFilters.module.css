@@ -1,0 +1,183 @@
+/* ERPNext List Filters Styles - Pixel Perfect Recreation */
+
+.list-filters {
+  @apply border-b border-gray-200 bg-white;
+}
+
+.filter-bar {
+  @apply flex items-center justify-between px-4 py-3;
+}
+
+.filter-controls {
+  @apply flex items-center gap-2;
+}
+
+.saved-filters {
+  @apply flex items-center gap-2;
+}
+
+.saved-filter-select {
+  @apply px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+/* Active Filters */
+.active-filters {
+  @apply px-4 pb-3;
+}
+
+.filter-chips {
+  @apply flex flex-wrap gap-2;
+}
+
+.filter-chip {
+  @apply inline-flex items-center gap-1 px-3 py-1 bg-blue-100 border border-blue-200 rounded-full text-sm;
+}
+
+.filter-field {
+  @apply font-medium text-blue-800;
+}
+
+.filter-operator {
+  @apply text-blue-600;
+}
+
+.filter-value {
+  @apply text-blue-800 font-medium;
+}
+
+.filter-remove {
+  @apply ml-1 text-blue-600 hover:text-blue-800 font-bold cursor-pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Filter Dialog */
+.filter-dialog {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+}
+
+.filter-dialog-content {
+  @apply bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4;
+}
+
+.filter-dialog h3 {
+  @apply text-lg font-semibold text-gray-900 mb-4;
+}
+
+.filter-form {
+  @apply space-y-4;
+}
+
+.form-group {
+  @apply space-y-1;
+}
+
+.form-group label {
+  @apply block text-sm font-medium text-gray-700;
+}
+
+.filter-input {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  font-size: 14px;
+}
+
+.filter-dialog-actions {
+  @apply flex justify-end gap-2 mt-6;
+}
+
+/* Button Styles */
+.btn {
+  @apply inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2;
+  transition: all 0.1s ease;
+}
+
+.btn-sm {
+  @apply px-2 py-1 text-xs;
+}
+
+.btn-primary {
+  @apply text-white bg-blue-600 border-blue-600 hover:bg-blue-700 focus:ring-blue-500;
+}
+
+.btn-secondary {
+  @apply text-gray-700 bg-white border-gray-300 hover:bg-gray-50 focus:ring-gray-500;
+}
+
+.btn-ghost {
+  @apply text-gray-600 bg-transparent border-transparent hover:bg-gray-100 focus:ring-gray-500;
+}
+
+.btn:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .filter-bar {
+    @apply flex-col items-start gap-3;
+  }
+  
+  .filter-controls {
+    @apply w-full justify-start;
+  }
+  
+  .saved-filters {
+    @apply w-full;
+  }
+  
+  .saved-filter-select {
+    @apply w-full;
+  }
+  
+  .filter-chips {
+    @apply flex-col;
+  }
+  
+  .filter-chip {
+    @apply w-full justify-between;
+  }
+  
+  .filter-dialog-content {
+    @apply mx-2 w-auto;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .list-filters {
+    @apply bg-gray-800 border-gray-700;
+  }
+  
+  .filter-chip {
+    @apply bg-blue-900 border-blue-800;
+  }
+  
+  .filter-field,
+  .filter-value {
+    @apply text-blue-200;
+  }
+  
+  .filter-operator {
+    @apply text-blue-300;
+  }
+  
+  .filter-remove {
+    @apply text-blue-300 hover:text-blue-100;
+  }
+  
+  .filter-dialog-content {
+    @apply bg-gray-800;
+  }
+  
+  .filter-dialog h3 {
+    @apply text-gray-100;
+  }
+  
+  .form-group label {
+    @apply text-gray-300;
+  }
+  
+  .filter-input {
+    @apply bg-gray-700 border-gray-600 text-gray-100;
+  }
+}
