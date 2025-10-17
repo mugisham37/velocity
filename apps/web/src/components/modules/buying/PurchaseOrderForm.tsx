@@ -201,7 +201,7 @@ export default function PurchaseOrderForm({
         setSuppliers(response.data);
       } catch (error) {
         console.error('Failed to load suppliers:', error);
-        showNotification('error', 'Error', 'Failed to load suppliers');
+        showNotification('Error', 'error', 'Failed to load suppliers');
       }
     };
 
@@ -330,14 +330,14 @@ export default function PurchaseOrderForm({
       if (onSave) {
         await onSave(data);
         showNotification(
-          'success',
           'Success',
+          'success',
           'Purchase Order saved successfully'
         );
       }
     } catch (error) {
       console.error('Failed to save purchase order:', error);
-      showNotification('error', 'Error', 'Failed to save purchase order');
+      showNotification('Error', 'error', 'Failed to save purchase order');
     }
   };
 
@@ -346,14 +346,14 @@ export default function PurchaseOrderForm({
       if (onSubmit) {
         await onSubmit(data);
         showNotification(
-          'success',
           'Success',
+          'success',
           'Purchase Order submitted successfully'
         );
       }
     } catch (error) {
       console.error('Failed to submit purchase order:', error);
-      showNotification('error', 'Error', 'Failed to submit purchase order');
+      showNotification('Error', 'error', 'Failed to submit purchase order');
     }
   };
 

@@ -261,7 +261,7 @@ export function ItemMaster({ itemName, onSave, onCancel, readOnly = false }: Ite
       showApiSuccess('Item saved successfully');
       
       if (onSave) {
-        onSave(savedItem as Item);
+        onSave(savedItem as unknown as Item);
       }
     } catch (error) {
       showApiError(error, 'Failed to save item');
@@ -305,7 +305,7 @@ export function ItemMaster({ itemName, onSave, onCancel, readOnly = false }: Ite
             </h1>
             {item && (
               <p className="text-sm text-gray-500 mt-1">
-                {item.item_name}
+                {(item as any).item_name}
               </p>
             )}
           </div>
@@ -313,11 +313,11 @@ export function ItemMaster({ itemName, onSave, onCancel, readOnly = false }: Ite
           <FormToolbar
             document={item ? { 
               doctype: 'Item',
-              name: item.name,
+              name: (item as any).name,
               data: item,
-              meta: meta!,
+              meta: meta as any,
               isDirty: methods.formState.isDirty,
-              isSubmitted: item.docstatus === 1,
+              isSubmitted: (item as any).docstatus === 1,
               permissions: {
                 read: true,
                 write: !readOnly,
@@ -329,7 +329,7 @@ export function ItemMaster({ itemName, onSave, onCancel, readOnly = false }: Ite
               },
               timeline: [],
               attachments: [],
-            } : undefined}
+            } as any : undefined}
             onSave={methods.handleSubmit(handleSave)}
             onSubmit={() => {}}
             onCancel={handleCancel}

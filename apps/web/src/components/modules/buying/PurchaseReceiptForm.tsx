@@ -151,7 +151,7 @@ export default function PurchaseReceiptForm({
         setSuppliers(response.data);
       } catch (error) {
         console.error('Failed to load suppliers:', error);
-        showNotification('error', 'Error', 'Failed to load suppliers');
+        showNotification('Error', 'error', 'Failed to load suppliers');
       }
     };
 
@@ -236,11 +236,11 @@ export default function PurchaseReceiptForm({
     try {
       if (onSave) {
         await onSave(data);
-        showNotification('success', 'Success', 'Purchase Receipt saved successfully');
+        showNotification('Success', 'success', 'Purchase Receipt saved successfully');
       }
     } catch (error) {
       console.error('Failed to save purchase receipt:', error);
-      showNotification('error', 'Error', 'Failed to save purchase receipt');
+      showNotification('Error', 'error', 'Failed to save purchase receipt');
     }
   };
 
@@ -248,11 +248,11 @@ export default function PurchaseReceiptForm({
     try {
       if (onSubmit) {
         await onSubmit(data);
-        showNotification('success', 'Success', 'Purchase Receipt submitted successfully');
+        showNotification('Success', 'success', 'Purchase Receipt submitted successfully');
       }
     } catch (error) {
       console.error('Failed to submit purchase receipt:', error);
-      showNotification('error', 'Error', 'Failed to submit purchase receipt');
+      showNotification('Error', 'error', 'Failed to submit purchase receipt');
     }
   };
 

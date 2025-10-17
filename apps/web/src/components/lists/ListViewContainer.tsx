@@ -168,7 +168,6 @@ export function ListViewContainer({
     <div className={styles.listViewContainer}>
       <div className={styles.listHeaderControls}>
         <ListFilters
-          doctype={doctype}
           fields={(meta?.fields as DocField[]) || []}
           filters={filters}
           onFiltersChange={handleFilter}

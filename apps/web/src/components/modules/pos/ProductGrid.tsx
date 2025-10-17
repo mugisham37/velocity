@@ -12,14 +12,13 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ viewMode = 'grid' }: ProductGridProps) {
-  const { 
-    items, 
-    itemGroups, 
-    loadItems, 
-    addItemToCart, 
-    searchItems,
-    currentProfile 
-  } = usePOSStore();
+  const store = usePOSStore();
+  const items = store.items as Item[];
+  const itemGroups = store.itemGroups as import('@/types/stock').ItemGroup[];
+  const loadItems = store.loadItems;
+  const addItemToCart = store.addItemToCart;
+  const searchItems = store.searchItems;
+  const currentProfile = store.currentProfile as import('@/types/pos').POSProfile | null;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string>('');

@@ -13,6 +13,16 @@ import { motion } from 'framer-motion';
  * including conflict resolution, user presence, and document locking.
  */
 
+export interface RemoteUpdate {
+  type: 'participant_joined' | 'participant_left' | 'participant_status_changed' | 'document_locked' | 'document_unlocked' | 'edit_operation';
+  data: {
+    participant?: SessionParticipant;
+    userId?: string;
+    changes?: Partial<SessionParticipant>;
+    operation?: EditOperation;
+  };
+}
+
 export interface CollaborativeSession {
   sessionId: string;
   doctype: string;
@@ -59,11 +69,11 @@ export interface Conflict {
   id: string;
   field: string;
   localOperations: EditOperation[];
-  remoteOperation: EditOperation[];
+  remoteOperations: EditOperation[];
+  operations?: EditOperation[];
   timestamp: Date;
   resolved: boolean;
   resolution: ResolutionType;
-  operations: EditOperation[];
   resolvedValue?: unknown;
 }
 
@@ -99,7 +109,7 @@ export function CollaborativeEditor({
     lockDocument,
     unlockDocument,
     resolveConflict,
-    hasConflict,
+    hasConflict
   } = useDocumentUpdates(doctype, docname);
 
   // Initialize collaborative session
@@ -146,15 +156,18 @@ export function CollaborativeEditor({
   }, [hasConflict, conflictData, onConflict]);
 
   // Handle remote document updates
-  const handleRemoteUpdate = useCallback((update: any) => {
+  const handleRemoteUpdate = useCallback((update: RemoteUpdate) => {
     const { type, data } = update;
 
     switch (type) {
       case 'participant_joined':
-        setSession(prev => prev ? {
-          ...prev,
-          participants: [...prev.participants, data.participant],
-        } : null);
+        setSession(prev => {
+          if (!prev || !data.participant) return prev;
+          return {
+            ...prev,
+            participants: [...prev.participants, data.participant],
+          };
+        });
         break;
 
       case 'participant_left':
@@ -190,7 +203,9 @@ export function CollaborativeEditor({
         break;
 
       case 'edit_operation':
-        handleRemoteEditOperation(data.operation);
+        if (data.operation) {
+          handleRemoteEditOperation(data.operation);
+        }
         break;
     }
   }, []);
@@ -221,12 +236,16 @@ export function CollaborativeEditor({
     remoteOp: EditOperation,
     localOps: EditOperation[]
   ) => {
-    const conflict = {
+    const conflict: Conflict = {
       id: `conflict_${Date.now()}`,
-      remoteOperation: remoteOp,
+      remoteOperations: [remoteOp],
       localOperations: localOps,
       field: remoteOp.field,
       timestamp: new Date(),
+      resolved: false,
+      resolution: 'accept_remote',
+      operations: [],
+      resolvedValue: undefined
     };
 
     setCurrentConflict(conflict);
@@ -489,7 +508,7 @@ function ConflictResolutionDialog({
             onClick={() => {
               onResolve({
                 conflictId: currentConflict.id,
-                operations: currentConflict.remoteOperation,
+                operations: currentConflict.remoteOperations,
                 resolution: 'accept_remote',
               });
             }}

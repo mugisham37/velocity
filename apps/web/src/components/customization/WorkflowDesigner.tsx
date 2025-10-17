@@ -270,7 +270,11 @@ function WorkflowCanvas({
 
   return (
     <div
-      ref={drop}
+      ref={(node) => {
+        if (typeof drop === 'function') {
+          drop(node);
+        }
+      }}
       className={`workflow-canvas relative w-full h-96 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 overflow-hidden ${
         isOver ? 'border-blue-400 bg-blue-50' : ''
       }`}

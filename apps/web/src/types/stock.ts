@@ -97,8 +97,10 @@ export type StockEntryPurpose =
 
 export interface StockEntryDetail {
   name?: string;
+  idx?: number;
   item_code: string;
   item_name?: string;
+  item_group?: string;
   description?: string;
   qty: number;
   transfer_qty?: number;
@@ -167,6 +169,7 @@ export type MaterialRequestStatus =
 
 export interface MaterialRequestItem {
   name?: string;
+  idx?: number;
   item_code: string;
   item_name?: string;
   description?: string;
@@ -178,6 +181,7 @@ export interface MaterialRequestItem {
   conversion_factor: number;
   schedule_date?: string;
   warehouse?: string;
+  from_warehouse?: string;
   project?: string;
   expense_account?: string;
   cost_center?: string;
@@ -220,6 +224,7 @@ export interface StockBalance {
   item_name?: string;
   item_group?: string;
   warehouse: string;
+  company?: string;
   actual_qty: number;
   reserved_qty: number;
   reserved_qty_for_production: number;
@@ -228,6 +233,14 @@ export interface StockBalance {
   valuation_rate: number;
   stock_value: number;
   stock_uom: string;
+  bal_qty?: number;
+  bal_val?: number;
+  opening_qty?: number;
+  opening_val?: number;
+  in_qty?: number;
+  in_val?: number;
+  out_qty?: number;
+  out_val?: number;
 }
 
 export interface Warehouse {
@@ -294,6 +307,16 @@ export interface StockAgeingItem {
   item_name?: string;
   item_group?: string;
   warehouse: string;
+  range1?: number;
+  range2?: number;
+  range3?: number;
+  range4?: number;
+  range5?: number;
+  total_qty?: number;
+  total_value?: number;
+  average_age?: number;
+  earliest_age?: number;
+  latest_age?: number;
   actual_qty: number;
   valuation_rate: number;
   stock_value: number;
@@ -310,6 +333,7 @@ export interface ABCAnalysisItem {
   item_group?: string;
   total_outgoing: number;
   outgoing_value: number;
+  consumption_value?: number;
   percentage_value: number;
   cumulative_percentage: number;
   classification: 'A' | 'B' | 'C';

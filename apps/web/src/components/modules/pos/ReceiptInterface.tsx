@@ -14,13 +14,12 @@ import { usePOSStore } from '@/stores/pos';
 import { POSTransaction } from '@/types/pos';
 
 export function ReceiptInterface() {
-  const { 
-    currentTransaction, 
-    currentProfile, 
-    selectedCustomer,
-    clearCart,
-    printReceipt 
-  } = usePOSStore();
+  const store = usePOSStore();
+  const currentTransaction = store.currentTransaction as POSTransaction | null;
+  const currentProfile = store.currentProfile as import('@/types/pos').POSProfile | null;
+  const selectedCustomer = store.selectedCustomer;
+  const clearCart = store.clearCart;
+  const printReceipt = store.printReceipt;
 
   const receiptRef = useRef<HTMLDivElement>(null);
 

@@ -80,8 +80,9 @@ const SERVER_EVENTS = [
 ];
 
 // Script templates for common use cases
-const SCRIPT_TEMPLATES = {
-  client_validation: `// Client-side validation example
+const getScriptTemplates = (doctype: string) => {
+  return {
+    client_validation: `// Client-side validation example
 frappe.ui.form.on('${doctype}', {
     validate: function(frm) {
         // Add your validation logic here
@@ -140,6 +141,7 @@ frappe.ui.form.on('${doctype}', {
         }
     }
 });`,
+  };
 };
 
 export function CustomScriptEditor({
@@ -148,7 +150,7 @@ export function CustomScriptEditor({
   onCancel,
   initialData,
   isEditing = false,
-}: CustomScriptEditorProps): React.JSX.Element {
+}: CustomScriptEditorProps) {
   const [scriptErrors, setScriptErrors] = useState<ScriptError[]>([]);
   const [isValidating, setIsValidating] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -229,11 +231,11 @@ export function CustomScriptEditor({
 
   // Insert template into script
   const insertTemplate = (templateKey: string): void => {
-    const template = SCRIPT_TEMPLATES[templateKey as keyof typeof SCRIPT_TEMPLATES];
+    const templates = getScriptTemplates(doctype);
+    const template = templates[templateKey as keyof ReturnType<typeof getScriptTemplates>];
     if (!template || !textareaRef.current) return;
     
-    const processedTemplate = template.replace(/\$\{doctype\}/g, doctype);
-    form.setValue('script', processedTemplate);
+    form.setValue('script', template);
     setShowTemplates(false);
   };
 
@@ -437,8 +439,13 @@ export function CustomScriptEditor({
 
           <div className="relative">
             <textarea
-              ref={textareaRef}
-              {...register('script')}
+              {...register('script', {
+                shouldUnregister: true
+              })}
+              ref={(e) => {
+                textareaRef.current = e;
+                register('script').ref(e);
+              }}
               rows={20}
               className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm ${
                 errors.script ? 'border-red-500' : ''

@@ -6,6 +6,7 @@ import { Lead } from '@/types/crm';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Eye, Edit, ArrowRight } from 'lucide-react';
+import { useListView } from '@/hooks/useListView';
 
 interface LeadListProps {
   onCreateNew?: () => void;
@@ -21,6 +22,19 @@ const LeadList: React.FC<LeadListProps> = ({
   onConvert
 }) => {
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
+  
+  const {
+    data,
+    totalCount,
+    isLoading,
+    filters,
+    setFilters,
+    selection,
+    setSelection
+  } = useListView({
+    doctype: 'Lead',
+    initialSort: [{ fieldname: 'creation', direction: 'desc' }]
+  });
 
   const getStatusBadgeVariant = (status: Lead['status']) => {
     switch (status) {
@@ -159,7 +173,7 @@ const LeadList: React.FC<LeadListProps> = ({
     }
   ];
 
-  const filters = [
+  const filterOptions = [
     {
       fieldname: 'status',
       operator: '=' as const,
@@ -262,17 +276,18 @@ const LeadList: React.FC<LeadListProps> = ({
 
       <ListView
         doctype="Lead"
+        data={data}
+        totalCount={totalCount}
+        isLoading={isLoading}
         columns={columns}
-        filters={filters}
+        filters={filterOptions}
+        onFilter={setFilters}
         onBulkAction={(action, selection) => {
           const actionItem = bulkActions.find(a => a.label === action);
           if (actionItem) actionItem.action(selection);
         }}
-        selection={selectedLeads}
-        onSelect={setSelectedLeads}
-
-
-
+        selection={selection}
+        onSelect={setSelection}
       />
     </div>
   );

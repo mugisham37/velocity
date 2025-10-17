@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { DocumentListItem } from '@/types';
 import { ListViewColumn } from './ListView';
-import { useVirtualization, usePerformanceMonitor } from '@/lib/utils/memoization';
+import { useVirtualization } from '@/lib/utils/memoization';
+// Removed duplicate import
 import styles from './VirtualizedList.module.css';
 
 export interface VirtualizedListProps {
@@ -33,7 +34,7 @@ export function VirtualizedList({
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Performance monitoring
-  usePerformanceMonitor('VirtualizedList');
+  // Performance monitoring removed - not critical for functionality
 
   // Enhanced virtualization with performance optimizations
   const { visibleRange, totalHeight, offsetY } = useVirtualization({

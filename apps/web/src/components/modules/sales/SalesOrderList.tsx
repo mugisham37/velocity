@@ -24,6 +24,7 @@ export default function SalesOrderList({
   
   const {
     data,
+    totalCount,
     loading,
     error,
     pagination,
@@ -56,7 +57,7 @@ export default function SalesOrderList({
     ],
     initialFilters: externalFilters,
     initialSort: [{ fieldname: 'transaction_date', direction: 'desc' }],
-    pageSize: 20,
+    initialPageSize: 20,
   });
 
   const columns = [
@@ -321,7 +322,7 @@ export default function SalesOrderList({
         doctype="Sales Order"
         data={data}
         columns={columns}
-        totalCount={pagination.totalCount}
+        totalCount={totalCount || 0}
         isLoading={loading}
         selection={selection}
         onSelect={updateSelection}
@@ -336,6 +337,7 @@ export default function SalesOrderList({
       <div className="mt-6">
         <ListPagination
           pagination={pagination}
+          totalCount={totalCount || 0}
           onPageChange={(page) => updatePagination({ page })}
           onPageSizeChange={(pageSize) => updatePagination({ pageSize })}
         />

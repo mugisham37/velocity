@@ -3,8 +3,9 @@
 import React from 'react';
 import { PaginationState } from '@/types';
 
-interface ListPaginationProps {
+export interface ListPaginationProps {
   pagination: PaginationState;
+  totalCount: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
 }

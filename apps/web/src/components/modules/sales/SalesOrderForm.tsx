@@ -174,7 +174,7 @@ export default function SalesOrderForm({
         setCustomers(response.data);
       } catch (error) {
         console.error('Failed to load customers:', error);
-        showNotification('error', 'Error', 'Failed to load customers');
+        showNotification('Error', 'error', 'Failed to load customers');
       }
     };
 
@@ -302,11 +302,11 @@ export default function SalesOrderForm({
     try {
       if (onSave) {
         await onSave(data);
-        showNotification('success', 'Success', 'Sales Order saved successfully');
+        showNotification('Success', 'success', 'Sales Order saved successfully');
       }
     } catch (error) {
       console.error('Failed to save sales order:', error);
-      showNotification('error', 'Error', 'Failed to save sales order');
+      showNotification('Error', 'error', 'Failed to save sales order');
     }
   };
 
@@ -314,11 +314,11 @@ export default function SalesOrderForm({
     try {
       if (onSubmit) {
         await onSubmit(data);
-        showNotification('success', 'Success', 'Sales Order submitted successfully');
+        showNotification('Success', 'success', 'Sales Order submitted successfully');
       }
     } catch (error) {
       console.error('Failed to submit sales order:', error);
-      showNotification('error', 'Error', 'Failed to submit sales order');
+      showNotification('Error', 'error', 'Failed to submit sales order');
     }
   };
 

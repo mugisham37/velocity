@@ -28,7 +28,18 @@ export function POSCart() {
     applyDiscount,
     proceedToPayment,
     clearCart 
-  } = usePOSStore();
+  } = usePOSStore() as {
+    cartItems: POSCartItem[];
+    cartTotal: number;
+    cartTax: number;
+    cartDiscount: number;
+    selectedCustomer: any;
+    updateCartItemQuantity: (itemCode: string, quantity: number) => void;
+    removeCartItem: (itemCode: string) => void;
+    applyDiscount: (value: number, type: 'percentage' | 'amount') => void;
+    proceedToPayment: () => void;
+    clearCart: () => void;
+  };
 
   const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('percentage');
   const [discountValue, setDiscountValue] = useState('');

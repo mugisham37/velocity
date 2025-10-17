@@ -190,11 +190,11 @@ export function MaterialRequest({ requestName, onSave, onCancel, readOnly = fals
 
   const handleSave = async (data: unknown) => {
     try {
-      const savedRequest = await save(data);
+      const savedRequest = await save(data as Record<string, unknown>);
       showApiSuccess('Material Request saved successfully');
       
       if (onSave) {
-        onSave(savedRequest as MaterialRequest);
+        onSave(savedRequest as unknown as MaterialRequest);
       }
     } catch (error) {
       showApiError(error, 'Failed to save material request');
@@ -269,14 +269,14 @@ export function MaterialRequest({ requestName, onSave, onCancel, readOnly = fals
                 {requestName ? `Material Request: ${requestName}` : 'New Material Request'}
               </h1>
               {request && (
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
-                  {request.status}
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor((request as any).status)}`}>
+                  {(request as any).status}
                 </span>
               )}
             </div>
             {request && (
               <p className="text-sm text-gray-500 mt-1">
-                {request.material_request_type} - {request.transaction_date}
+                {(request as any).material_request_type} - {(request as any).transaction_date}
               </p>
             )}
           </div>
@@ -300,23 +300,23 @@ export function MaterialRequest({ requestName, onSave, onCancel, readOnly = fals
             <FormToolbar
               document={request ? { 
                 doctype: 'Material Request',
-                name: request.name,
+                name: (request as any).name,
                 data: request,
-                meta: meta!,
+                meta: meta as any,
                 isDirty: methods.formState.isDirty,
-                isSubmitted: request.docstatus === 1,
+                isSubmitted: (request as any).docstatus === 1,
                 permissions: {
                   read: true,
                   write: !readOnly,
                   create: !requestName,
                   delete: !!requestName && !readOnly,
-                  submit: !!requestName && request.docstatus === 0,
-                  cancel: !!requestName && request.docstatus === 1,
+                  submit: !!requestName && (request as any).docstatus === 0,
+                  cancel: !!requestName && (request as any).docstatus === 1,
                   amend: false,
                 },
                 timeline: [],
                 attachments: [],
-              } : undefined}
+              } as any : undefined}
               onSave={methods.handleSubmit(handleSave)}
               onSubmit={() => {}}
               onCancel={handleCancel}

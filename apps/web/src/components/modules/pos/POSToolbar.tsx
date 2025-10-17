@@ -18,7 +18,9 @@ import { useAuth } from '@/hooks/useAuth';
 
 export function POSToolbar() {
   const { user, logout } = useAuth();
-  const { currentProfile, openSettings } = usePOSStore();
+  const store = usePOSStore();
+  const currentProfile = store.currentProfile as import('@/types/pos').POSProfile | null;
+  const openSettings = store.openSettings;
   const [showClosing, setShowClosing] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
 

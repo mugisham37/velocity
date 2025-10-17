@@ -6,6 +6,7 @@ import { Opportunity } from '@/types/crm';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Eye, Edit, TrendingUp } from 'lucide-react';
+import { useListView } from '@/hooks/useListView';
 
 interface OpportunityListProps {
   onCreateNew?: () => void;
@@ -21,6 +22,19 @@ const OpportunityList: React.FC<OpportunityListProps> = ({
   onConvert
 }) => {
   const [selectedOpportunities, setSelectedOpportunities] = useState<string[]>([]);
+  
+  const {
+    data,
+    totalCount,
+    isLoading,
+    filters,
+    setFilters,
+    selection,
+    setSelection
+  } = useListView({
+    doctype: 'Opportunity',
+    initialSort: [{ fieldname: 'creation', direction: 'desc' }]
+  });
 
   const getStatusBadgeVariant = (status: Opportunity['status']) => {
     switch (status) {
@@ -180,7 +194,7 @@ const OpportunityList: React.FC<OpportunityListProps> = ({
     }
   ];
 
-  const filters = [
+  const filterOptions = [
     {
       fieldname: 'status',
       operator: '=' as const,
@@ -294,17 +308,18 @@ const OpportunityList: React.FC<OpportunityListProps> = ({
 
       <ListView
         doctype="Opportunity"
+        data={data}
+        totalCount={totalCount}
+        isLoading={isLoading}
         columns={columns}
-        filters={filters}
+        filters={filterOptions}
+        onFilter={setFilters}
         onBulkAction={(action, selection) => {
           const actionItem = bulkActions.find(a => a.label === action);
           if (actionItem) actionItem.action(selection);
         }}
-        selection={selectedOpportunities}
-        onSelect={setSelectedOpportunities}
-
-
-
+        selection={selection}
+        onSelect={setSelection}
       />
     </div>
   );

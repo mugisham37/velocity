@@ -319,7 +319,9 @@
     "reportview",
     "turbopack",
     "bundlesize",
-    "jspdf"
+    "jspdf",
+    "Roboto",
+    "resequenced"
   ],
   "ignorePaths": [
     "node_modules/**",

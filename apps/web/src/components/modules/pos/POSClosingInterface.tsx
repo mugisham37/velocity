@@ -23,7 +23,10 @@ interface POSClosingInterfaceProps {
 }
 
 export function POSClosingInterface({ isOpen, onClose }: POSClosingInterfaceProps) {
-  const { currentProfile, paymentMethods } = usePOSStore();
+  const { currentProfile, paymentMethods } = usePOSStore() as {
+    currentProfile: import('@/types/pos').POSProfile | null;
+    paymentMethods: import('@/types/pos').POSPaymentMethod[];
+  };
   const [closingData, setClosingData] = useState<Partial<POSClosingEntry>>({});
   const [paymentReconciliation, setPaymentReconciliation] = useState<POSClosingPayment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -6,6 +6,7 @@ import { Project } from '@/types/crm';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Eye, Edit, Calendar, DollarSign, User, Target } from 'lucide-react';
+import { useListView } from '@/hooks/useListView';
 
 interface ProjectListProps {
   onCreateNew?: () => void;
@@ -19,6 +20,19 @@ const ProjectList: React.FC<ProjectListProps> = ({
   onEdit
 }) => {
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  
+  const {
+    data,
+    totalCount,
+    isLoading,
+    filters,
+    setFilters,
+    selection,
+    setSelection
+  } = useListView({
+    doctype: 'Project',
+    initialSort: [{ fieldname: 'creation', direction: 'desc' }]
+  });
 
   const getStatusBadgeVariant = (status: Project['status']) => {
     switch (status) {
@@ -209,7 +223,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
     }
   ];
 
-  const filters = [
+  const filterOptions = [
     {
       fieldname: 'status',
       operator: '=' as const,
@@ -337,17 +351,18 @@ const ProjectList: React.FC<ProjectListProps> = ({
 
       <ListView
         doctype="Project"
+        data={data}
+        totalCount={totalCount}
+        isLoading={isLoading}
         columns={columns}
-        filters={filters}
+        filters={filterOptions}
+        onFilter={setFilters}
         onBulkAction={(action, selection) => {
           const actionItem = bulkActions.find(a => a.label === action);
           if (actionItem) actionItem.action(selection);
         }}
-        selection={selectedProjects}
-        onSelect={setSelectedProjects}
-
-
-
+        selection={selection}
+        onSelect={setSelection}
       />
     </div>
   );

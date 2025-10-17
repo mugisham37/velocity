@@ -205,6 +205,14 @@ export function StockReports({ onReportSelect }: StockReportsProps) {
         item_group: 'Raw Material',
         warehouse: 'Main Store',
         company: 'Sample Company',
+        actual_qty: 100,
+        reserved_qty: 0,
+        reserved_qty_for_production: 0,
+        reserved_qty_for_sub_contract: 0,
+        projected_qty: 100,
+        valuation_rate: 100,
+        stock_value: 10000,
+        stock_uom: 'Nos',
         bal_qty: 100,
         bal_val: 10000,
         opening_qty: 80,
@@ -213,9 +221,6 @@ export function StockReports({ onReportSelect }: StockReportsProps) {
         in_val: 5000,
         out_qty: 30,
         out_val: 3000,
-        val_rate: 100,
-        brand: 'Sample Brand',
-        description: 'Sample item description',
       },
       // Add more mock data as needed
     ];
@@ -268,6 +273,14 @@ export function StockReports({ onReportSelect }: StockReportsProps) {
         item_name: 'Sample Item 1',
         item_group: 'Raw Material',
         warehouse: 'Main Store',
+        actual_qty: 100,
+        valuation_rate: 100,
+        stock_value: 10000,
+        age_0_30: 20,
+        age_30_60: 30,
+        age_60_90: 25,
+        age_90_120: 15,
+        age_120_above: 10,
         range1: 20,
         range2: 30,
         range3: 25,
@@ -290,23 +303,24 @@ export function StockReports({ onReportSelect }: StockReportsProps) {
         item_code: 'ITEM-001',
         item_name: 'Sample Item 1',
         item_group: 'Raw Material',
+        total_outgoing: 1000,
+        outgoing_value: 100000,
+        percentage_value: 60,
+        cumulative_percentage: 60,
         consumption_value: 100000,
-        abc_classification: 'A',
-        qty_percentage: 20,
-        value_percentage: 60,
-        cumulative_qty_percentage: 20,
-        cumulative_value_percentage: 60,
+        classification: 'A',
       },
       {
         item_code: 'ITEM-002',
         item_name: 'Sample Item 2',
         item_group: 'Raw Material',
+        total_outgoing: 400,
+        outgoing_value: 40000,
+        percentage_value: 24,
+        cumulative_percentage: 84,
         consumption_value: 40000,
-        abc_classification: 'B',
-        qty_percentage: 16,
-        value_percentage: 24,
-        cumulative_qty_percentage: 36,
-        cumulative_value_percentage: 84,
+        classification: 'B',
+
       },
     ];
   };
@@ -396,12 +410,12 @@ export function StockReports({ onReportSelect }: StockReportsProps) {
             </div>
           ) : (
             <ListView
+              doctype="Stock Report"
               data={reportData as any}
+              totalCount={reportData.length}
               columns={currentConfig.columns}
               isLoading={false}
               onRowClick={(row) => console.log('Row clicked:', row)}
-              showSelection={false}
-              showPagination={true}
             />
           )}
         </div>

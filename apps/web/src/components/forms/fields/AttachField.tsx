@@ -26,7 +26,7 @@ interface FileInfo {
   size: number;
   type: string;
   url?: string;
-  uploadProgress?: number;
+  uploadProgress?: number | undefined;
 }
 
 export function AttachField({ field, error, required, readOnly }: AttachFieldProps) {
@@ -81,10 +81,13 @@ export function AttachField({ field, error, required, readOnly }: AttachFieldPro
       await new Promise(resolve => setTimeout(resolve, 100));
       setUploadProgress(progress);
       
-      const updatedFileInfo = { ...fileInfo, uploadProgress: progress };
+      let updatedFileInfo: FileInfo = { ...fileInfo, uploadProgress: progress };
       if (progress === 100) {
-        updatedFileInfo.url = `/api/files/${file.name}`;
-        delete updatedFileInfo.uploadProgress;
+        const { uploadProgress, ...rest } = updatedFileInfo;
+        updatedFileInfo = {
+          ...rest,
+          url: `/api/files/${file.name}`
+        };
       }
       setValue(field.fieldname, JSON.stringify(updatedFileInfo), { shouldDirty: true });
     }

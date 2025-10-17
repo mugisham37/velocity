@@ -164,26 +164,49 @@ export function ChartWidget({
   };
 
   const renderChart = () => {
-    const commonProps: unknown = {
+    const commonProps: {
+      ref: React.RefObject<ChartJS>;
+      data: ChartData<'bar' | 'line' | 'pie' | 'doughnut'>;
+      options: ChartOptions<'bar' | 'line' | 'pie' | 'doughnut'>;
+      height?: number;
+    } = {
       ref: chartRef,
-      data: chartData,
+      data: {
+        ...chartData,
+        datasets: chartData.datasets.map(ds => ({
+          ...ds,
+          type: chartType === 'area' ? 'line' : chartType === 'donut' ? 'doughnut' : chartType
+        }))
+      },
       options,
-      height,
+      height
     };
+
+    // Cast the chart type to ensure type safety
+    const chartProps = {
+      data: {
+        ...chartData,
+        datasets: chartData.datasets.map(ds => ({
+          ...ds,
+          type: chartType === 'area' ? 'line' : chartType === 'donut' ? 'doughnut' : chartType
+        }))
+      },
+      options,
+      height
+    } as const;
 
     switch (chartType) {
       case 'bar':
-        return <Bar {...commonProps} />;
+        return <Bar {...chartProps} />;
       case 'line':
-        return <Line {...commonProps} />;
       case 'area':
-        return <Line {...commonProps} />;
+        return <Line {...chartProps} />;
       case 'pie':
-        return <Pie {...commonProps} />;
+        return <Pie {...chartProps} />;
       case 'donut':
-        return <Doughnut {...commonProps} />;
+        return <Doughnut {...chartProps} />;
       default:
-        return <Bar {...commonProps} />;
+        return <Bar {...chartProps} />;
     }
   };
 

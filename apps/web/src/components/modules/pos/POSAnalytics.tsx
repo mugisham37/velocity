@@ -41,7 +41,8 @@ interface PaymentMethodData {
 }
 
 export function POSAnalytics({ isOpen, onClose }: POSAnalyticsProps) {
-  const { currentProfile } = usePOSStore();
+  const store = usePOSStore();
+  const currentProfile = store.currentProfile as import('@/types/pos').POSProfile | null;
   const [dateRange, setDateRange] = useState({
     from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
       .toISOString()

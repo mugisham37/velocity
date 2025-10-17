@@ -4,10 +4,16 @@ export { ListView } from './ListView';
 export type { ListViewProps, ListViewColumn } from './ListView';
 
 export { ListFilters } from './ListFilters';
-export type { ListFiltersProps, FilterOption, SavedFilter } from './ListFilters';
-
 export { ListPagination } from './ListPagination';
-export type { ListPaginationProps } from './ListPagination';
+export type {
+  ListFiltersProps,
+  FilterOption,
+  SavedFilter,
+  ListPaginationProps,
+  FilterCondition,
+  DocField,
+  PaginationState
+} from './types';
 
 export { VirtualizedList } from './VirtualizedList';
 export type { VirtualizedListProps } from './VirtualizedList';

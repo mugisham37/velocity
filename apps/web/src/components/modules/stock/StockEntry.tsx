@@ -210,7 +210,7 @@ export function StockEntry({ entryName, onSave, onCancel, readOnly = false }: St
       showApiSuccess('Stock Entry saved successfully');
       
       if (onSave) {
-        onSave(savedEntry as StockEntry);
+        onSave(savedEntry as unknown as StockEntry);
       }
     } catch (error) {
       showApiError(error, 'Failed to save stock entry');
@@ -254,7 +254,7 @@ export function StockEntry({ entryName, onSave, onCancel, readOnly = false }: St
             </h1>
             {entry && (
               <p className="text-sm text-gray-500 mt-1">
-                {entry.purpose} - {entry.posting_date}
+                {(entry as any).purpose} - {(entry as any).posting_date}
               </p>
             )}
           </div>
@@ -262,9 +262,9 @@ export function StockEntry({ entryName, onSave, onCancel, readOnly = false }: St
           <FormToolbar
             document={entry ? { 
               doctype: 'Stock Entry',
-              name: entry.name,
+              name: (entry as any).name,
               data: entry,
-              meta: meta!,
+              meta: meta as any,
               isDirty: methods.formState.isDirty,
               isSubmitted: entry.docstatus === 1,
               permissions: {
