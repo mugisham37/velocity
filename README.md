@@ -1,13 +1,23 @@
-# KIRO ERP
+# KIRO ERP - Self-Contained Apps Monorepo
 
-> Next-generation Enterprise Resource Planning System built with modern technologies
+> Modern ERP system with fully independent applications that can run standalone or together
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2+-blue.svg)](https://www.typescriptlang.org/)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#)
 
-KIRO ERP is a complete modernization of ERPNext, rebuilt from the ground up using cutting-edge technologies while maintaining all existing functionality and adding advanced features. This project aims to create a next-generation enterprise resource planning system that leverages modern web technologies, microservices architecture, and AI-powered capabilities.
+KIRO ERP is a modern enterprise resource planning system built with a self-contained apps architecture. Each application (Web, API, Mobile) can run independently with its own configuration while sharing infrastructure and orchestration capabilities. This approach provides maximum flexibility for development teams and deployment strategies.
+
+## 🏗️ Architecture Overview
+
+This monorepo contains three fully independent applications:
+
+- **🌐 Web App** (`apps/web/`) - Next.js frontend with modern React
+- **🚀 API App** (`apps/api/`) - NestJS backend with GraphQL and REST
+- **📱 Mobile App** (`apps/mobile/`) - React Native/Expo mobile application
+
+Each app is **completely self-contained** and can be extracted to run as a standalone project.
 
 ## 🚀 Features
 

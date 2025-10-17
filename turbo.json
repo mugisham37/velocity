@@ -3,14 +3,7 @@
   "globalDependencies": ["**/.env.*local", "**/.env"],
   "pipeline": {
     "build": {
-      "dependsOn": ["^build", "typecheck"],
-      "outputs": [
-        ".next/**",
-        "!.next/cache/**",
-        "dist/**",
-        "build/**",
-        ".expo/**"
-      ]
+      "dependsOn": ["^build"]
     },
     "start": {
       "dependsOn": ["build"],
@@ -22,62 +15,41 @@
       "persistent": true
     },
     "lint": {
-      "dependsOn": ["^lint"],
-      "outputs": []
+      "dependsOn": ["^lint"]
     },
     "lint:fix": {
       "dependsOn": ["^lint:fix"],
       "cache": false
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"],
-      "outputs": []
+      "dependsOn": ["^typecheck"]
     },
     "test": {
-      "dependsOn": ["^build", "typecheck"],
-      "outputs": ["coverage/**", "test-results/**"]
+      "dependsOn": ["^test"]
     },
     "test:watch": {
       "cache": false,
       "persistent": true
     },
     "test:coverage": {
-      "dependsOn": ["^build", "typecheck"],
-      "outputs": ["coverage/**"]
+      "dependsOn": ["^test:coverage"]
     },
     "test:e2e": {
-      "dependsOn": ["^build"],
-      "outputs": ["test-results/**", "playwright-report/**", "e2e-results/**"]
+      "dependsOn": ["^test:e2e"]
     },
-    "db:generate": {
-      "cache": false,
-      "inputs": ["src/schema/**", "drizzle.config.ts"]
-    },
-    "db:migrate": {
-      "dependsOn": ["db:generate"],
+    "format": {
+      "dependsOn": ["^format"],
       "cache": false
     },
-    "db:seed": {
-      "dependsOn": ["db:migrate"],
-      "cache": false
-    },
-    "db:reset": {
-      "cache": false
-    },
-    "db:studio": {
-      "cache": false,
-      "persistent": true
+    "format:check": {
+      "dependsOn": ["^format:check"]
     },
     "clean": {
+      "dependsOn": ["^clean"],
       "cache": false
     },
-    "android": {
-      "cache": false,
-      "persistent": true
-    },
-    "ios": {
-      "cache": false,
-      "persistent": true
+    "validate": {
+      "dependsOn": ["typecheck", "lint", "test"]
     }
   }
 }

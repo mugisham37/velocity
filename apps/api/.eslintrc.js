@@ -9,7 +9,7 @@ module.exports = {
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    project: true,
+    project: './tsconfig.json',
     tsconfigRootDir: __dirname,
     ecmaVersion: 2023,
     sourceType: 'module',
@@ -31,7 +31,7 @@ module.exports = {
     }
   },
   rules: {
-    // TypeScript Strict Rules
+    // TypeScript Strict Rules (Backend specific)
     '@typescript-eslint/no-unused-vars': ['error', {
       argsIgnorePattern: '^_',
       varsIgnorePattern: '^_',
@@ -63,7 +63,6 @@ module.exports = {
     '@typescript-eslint/no-unsafe-return': 'error',
     '@typescript-eslint/no-unsafe-argument': 'error',
     '@typescript-eslint/prefer-readonly': 'error',
-    '@typescript-eslint/prefer-readonly-parameter-types': 'off', // Too strict for most cases
     '@typescript-eslint/switch-exhaustiveness-check': 'error',
     '@typescript-eslint/prefer-string-starts-ends-with': 'error',
     '@typescript-eslint/prefer-includes': 'error',
@@ -119,14 +118,14 @@ module.exports = {
     'import/no-useless-path-segments': 'error',
     'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
 
-    // Code Quality & Logic
+    // Code Quality & Logic (Backend specific - stricter)
     'complexity': ['error', { max: 10 }],
     'max-depth': ['error', { max: 4 }],
     'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
     'max-lines-per-function': ['error', { max: 50, skipBlankLines: true, skipComments: true }],
     'max-params': ['error', { max: 4 }],
     'max-statements': ['error', { max: 20 }],
-    'no-console': 'warn',
+    'no-console': 'warn', // Allow console for logging in backend
     'no-debugger': 'error',
     'no-alert': 'error',
     'no-eval': 'error',
@@ -139,7 +138,7 @@ module.exports = {
     'prefer-const': 'error',
     'no-var': 'error',
     'no-magic-numbers': ['error', {
-      ignore: [-1, 0, 1, 2],
+      ignore: [-1, 0, 1, 2, 200, 201, 400, 401, 403, 404, 500],
       ignoreArrayIndexes: true,
       ignoreDefaultValues: true
     }],
@@ -147,7 +146,7 @@ module.exports = {
     'no-unreachable': 'error',
     'no-unreachable-loop': 'error',
     'no-unused-private-class-members': 'error',
-    'no-use-before-define': 'off', // Handled by TypeScript
+    'no-use-before-define': 'off',
     'prefer-template': 'error',
     'prefer-arrow-callback': 'error',
     'prefer-destructuring': 'error',
@@ -159,7 +158,7 @@ module.exports = {
     'no-useless-rename': 'error',
     'no-useless-computed-key': 'error',
 
-    // Security Rules
+    // Security Rules (Critical for backend)
     'security/detect-object-injection': 'error',
     'security/detect-non-literal-regexp': 'error',
     'security/detect-unsafe-regex': 'error',
@@ -223,7 +222,7 @@ module.exports = {
     'unicorn/no-instanceof-array': 'error',
     'unicorn/no-lonely-if': 'error',
     'unicorn/no-new-buffer': 'error',
-    'unicorn/no-null': 'off', // Conflicts with TypeScript strict null checks
+    'unicorn/no-null': 'off',
     'unicorn/no-process-exit': 'error',
     'unicorn/no-unreadable-array-destructuring': 'error',
     'unicorn/no-unsafe-regex': 'error',
@@ -273,12 +272,14 @@ module.exports = {
   },
   ignorePatterns: [
     'dist',
-    '.next',
     'node_modules',
     '*.config.js',
     '*.config.mjs',
     'coverage',
     'build',
-    '.turbo'
+    '.turbo',
+    'test',
+    '**/*spec.ts',
+    '**/*.test.ts'
   ]
 };

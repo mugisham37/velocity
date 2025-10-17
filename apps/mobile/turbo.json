@@ -1,0 +1,73 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "pipeline": {
+    "start": {
+      "cache": false,
+      "persistent": true
+    },
+    "android": {
+      "cache": false,
+      "persistent": true
+    },
+    "ios": {
+      "cache": false,
+      "persistent": true
+    },
+    "web": {
+      "cache": false,
+      "persistent": true
+    },
+    "build:android": {
+      "dependsOn": ["typecheck"],
+      "outputs": []
+    },
+    "build:ios": {
+      "dependsOn": ["typecheck"],
+      "outputs": []
+    },
+    "build:all": {
+      "dependsOn": ["typecheck"],
+      "outputs": []
+    },
+    "submit:android": {
+      "dependsOn": ["build:android"],
+      "cache": false
+    },
+    "submit:ios": {
+      "dependsOn": ["build:ios"],
+      "cache": false
+    },
+    "update": {
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "outputs": []
+    },
+    "lint:fix": {
+      "cache": false
+    },
+    "typecheck": {
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["typecheck"],
+      "outputs": ["coverage/**", "test-results/**"]
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    },
+    "test:coverage": {
+      "dependsOn": ["typecheck"],
+      "outputs": ["coverage/**"]
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}

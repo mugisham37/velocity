@@ -1,26 +1,41 @@
 # ===================================================================
-# WEB APP SPECIFIC .gitignore
+# MOBILE APP SPECIFIC .gitignore
 # ===================================================================
 
 # ===================================================================
-# NEXT.JS SPECIFIC
+# EXPO & REACT NATIVE SPECIFIC
 # ===================================================================
-.next/
-.next/**
-!.next/cache/
-out/
-build/
-dist/
+# Expo
+.expo/
+.expo-shared/
+expo-env.d.ts
+web-build/
 
-# Next.js build info
-.next/trace
-.next/cache/
-.next/server/
-.next/static/
-.next/standalone/
+# React Native
+# Metro
+.metro-health-check*
 
-# Vercel
-.vercel
+# ===================================================================
+# MOBILE PLATFORM BUILDS
+# ===================================================================
+# Android
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/release/
+android/app/debug/
+android/gradle.properties
+android/keystore.properties
+
+# iOS
+ios/build/
+ios/Pods/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+ios/Podfile.lock
+ios/.xcode.env.local
 
 # ===================================================================
 # DEPENDENCIES
@@ -69,23 +84,32 @@ test-results/
 # CACHING & TEMPORARY FILES
 # ===================================================================
 .cache/
-.parcel-cache/
 *.tmp
 *.temp
 .temp/
 
 # ===================================================================
-# PERFORMANCE & ANALYSIS
+# MOBILE DEVELOPMENT SPECIFIC
 # ===================================================================
-# Bundle analysis
-bundle-analyzer-report.html
-stats.json
-performance-audit.html
+# EAS Build
+eas-build-local-logs/
+.eas/
 
-# Performance profiling
-*.cpuprofile
-*.heapprofile
-*.heapsnapshot
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Bundle artifacts
+*.jsbundle
+
+# CocoaPods
+ios/Pods/
+ios/Podfile.lock
+
+# Flipper
+ios/Flipper/
 
 # ===================================================================
 # IDE & EDITOR
@@ -94,11 +118,21 @@ performance-audit.html
 .vscode/settings.json
 .vscode/launch.json
 
-# ===================================================================
-# LOGS
-# ===================================================================
-logs/
-*.log
+# Android Studio
+.idea/
+*.iml
+*.iws
+*.ipr
+.gradle/
+local.properties
+
+# Xcode
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcworkspace/contents.xcworkspacedata
+*.xcuserstate
+project.xcworkspace/
 
 # ===================================================================
 # OPERATING SYSTEM
@@ -122,10 +156,16 @@ $RECYCLE.BIN/
 .Trash-*
 
 # ===================================================================
+# LOGS
+# ===================================================================
+logs/
+*.log
+
+# ===================================================================
 # MISCELLANEOUS
 # ===================================================================
-# Storybook
-storybook-static/
-
 # Turbo (local cache)
 .turbo/
+
+# Watchman
+.watchmanconfig
