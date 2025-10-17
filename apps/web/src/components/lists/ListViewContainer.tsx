@@ -14,6 +14,18 @@ import styles from './ListViewContainer.module.css';
 
 export interface ListViewContainerProps {
   doctype: string;
+  title?: string;
+  columns?: any[];
+  filters?: any[];
+  defaultSort?: SortCondition[];
+  onSelectionChange?: (selection: string[]) => void;
+  bulkActions?: any[];
+  onBulkAction?: (action: string, selection: string[]) => void;
+  searchFields?: string[];
+  enableGrouping?: boolean;
+  groupByOptions?: any[];
+  customViews?: any[];
+  customRowRenderer?: (doc: any) => any;
   fields?: string[];
   initialFilters?: FilterCondition[];
   initialSort?: SortCondition[];
@@ -21,11 +33,21 @@ export interface ListViewContainerProps {
   useVirtualization?: boolean;
   virtualizationThreshold?: number;
   onRowClick?: (doc: DocumentListItem) => void;
-  onBulkAction?: (action: string, selection: string[]) => void;
 }
 
 export function ListViewContainer({
   doctype,
+  title,
+  filters,
+  defaultSort,
+  onSelectionChange,
+  bulkActions,
+  onBulkAction,
+  searchFields,
+  enableGrouping,
+  groupByOptions,
+  customViews,
+  customRowRenderer,
   fields,
   initialFilters,
   initialSort,
@@ -33,7 +55,6 @@ export function ListViewContainer({
   useVirtualization = false,
   virtualizationThreshold = 100,
   onRowClick,
-  onBulkAction,
 }: ListViewContainerProps) {
   // Get document metadata to build columns
   const { meta, isLoading: isMetaLoading } = useDocumentMeta(doctype);
@@ -57,7 +78,7 @@ export function ListViewContainer({
     data,
     totalCount,
     isLoading,
-    filters,
+    filters: currentFilters,
     sort,
     pagination,
     selection,
@@ -68,8 +89,8 @@ export function ListViewContainer({
     setSelection,
   } = useListView({
     doctype,
-    initialFilters,
-    initialSort,
+    initialFilters: initialFilters || defaultSort?.map(s => ({ fieldname: s.fieldname, operator: '=', value: '' })) || [],
+    initialSort: initialSort || defaultSort || [],
     initialPageSize: pageSize,
     fields: customizationSettings.visibleColumns,
   });
@@ -120,6 +141,13 @@ export function ListViewContainer({
     setFilters(newFilters);
   }, [setFilters]);
 
+  // Handle selection change
+  React.useEffect(() => {
+    if (onSelectionChange) {
+      onSelectionChange(selection);
+    }
+  }, [selection, onSelectionChange]);
+
   // Handle selection
   const handleSelect = useCallback((newSelection: string[]) => {
     setSelection(newSelection);
@@ -169,7 +197,7 @@ export function ListViewContainer({
       <div className={styles.listHeaderControls}>
         <ListFilters
           fields={(meta?.fields as DocField[]) || []}
-          filters={filters}
+          filters={currentFilters}
           onFiltersChange={handleFilter}
         />
         
@@ -199,7 +227,7 @@ export function ListViewContainer({
           columns={columns}
           totalCount={totalCount}
           isLoading={isLoading}
-          filters={filters}
+          filters={currentFilters}
           sort={sort}
           selection={selection}
           onSort={handleSort}

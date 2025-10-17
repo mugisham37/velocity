@@ -14,11 +14,7 @@ export default function ReportsPage() {
     // In a real implementation, this would save to the backend
     console.log('Saving report:', report);
     
-    showNotification({
-      type: 'success',
-      title: 'Report Saved',
-      message: `Report "${report.title}" has been saved successfully`
-    });
+    showNotification(`Report "${report.title}" has been saved successfully`, 'success');
 
     // Navigate back to reports list (when implemented)
     // router.push('/reports/list');

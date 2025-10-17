@@ -5,7 +5,7 @@ import { AppLayout } from '@/components/layout';
 import { ListViewContainer } from '@/components/lists';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Play, Pause, Square, Clock, Download } from 'lucide-react';
+import { Plus, Play, Pause, Square, Download } from 'lucide-react';
 import Link from 'next/link';
 import { JobCard, JobCardStatus } from '@/types/manufacturing';
 

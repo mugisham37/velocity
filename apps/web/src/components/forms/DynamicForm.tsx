@@ -8,6 +8,18 @@ import { DocTypeSchema, DocField, DocumentState } from '@/types';
 import { FormSection } from './FormSection';
 import { evaluateDependsOn } from '@/lib/utils/form-utils';
 
+interface FormSectionConfig {
+  label?: string;
+  fields: string[];
+  collapsible?: boolean;
+}
+
+interface ProcessedFormSection {
+  label?: string;
+  fields: DocField[];
+  collapsible?: boolean;
+}
+
 interface DynamicFormProps {
   id?: string;
   doctype?: string;
@@ -15,7 +27,8 @@ interface DynamicFormProps {
   schema?: any;
   form?: any;
   document?: DocumentState;
-  onSubmit: (data: Record<string, unknown>) => void;
+  data?: Record<string, unknown>;
+  onSubmit?: (data: Record<string, unknown>) => void;
   onChange?: (data: Record<string, unknown>) => void;
   readOnly?: boolean;
   className?: string;
@@ -28,18 +41,21 @@ export function DynamicForm({
   schema,
   form,
   document,
+  data,
   onSubmit,
   onChange,
   readOnly = false,
   className,
 }: DynamicFormProps) {
+  // doctype is kept for potential future use and API compatibility
   // Create dynamic validation schema based on DocType fields
   const validationSchema = useMemo(() => {
-    if (!meta) return z.object({});
-    
+    const fieldsToUse = meta?.fields || schema?.fields || [];
+    if (fieldsToUse.length === 0) return z.object({});
+
     const schemaFields: Record<string, z.ZodTypeAny> = {};
 
-    meta.fields.forEach((field) => {
+    fieldsToUse.forEach((field: DocField) => {
       let fieldSchema: z.ZodTypeAny;
 
       switch (field.fieldtype) {
@@ -92,24 +108,27 @@ export function DynamicForm({
     });
 
     return z.object(schemaFields);
-  }, [meta?.fields]);
+  }, [meta?.fields, schema?.fields]);
 
   // Initialize form with React Hook Form
-  const methods = form || useForm({
-    resolver: zodResolver(validationSchema),
-    defaultValues: document?.data || {},
-    mode: 'onChange',
-  });
+  const methods =
+    form ||
+    useForm({
+      resolver: zodResolver(validationSchema),
+      defaultValues: data || document?.data || {},
+      mode: 'onChange',
+    });
 
   const { watch, reset } = methods;
   const formData = watch();
 
-  // Reset form when document changes
+  // Reset form when document or data changes
   useEffect(() => {
-    if (document?.data) {
-      reset(document.data);
+    const formData = data || document?.data;
+    if (formData) {
+      reset(formData);
     }
-  }, [document?.data, reset]);
+  }, [data, document?.data, reset]);
 
   // Call onChange when form data changes
   useEffect(() => {
@@ -120,26 +139,33 @@ export function DynamicForm({
 
   // Group fields by sections
   const sections = useMemo(() => {
-    if (!meta) return [];
-    
-    if (meta.formSettings?.sections?.length) {
-      return meta.formSettings.sections.map((section) => ({
-        ...section,
-        fields: section.fields
-          .map((fieldname) => meta.fields.find((f) => f.fieldname === fieldname))
-          .filter(Boolean) as DocField[],
-      }));
+    const fieldsToUse = meta?.fields || schema?.fields || [];
+    const formSettings = meta?.formSettings || schema?.formSettings;
+
+    if (fieldsToUse.length === 0) return [];
+
+    if (formSettings?.sections?.length) {
+      return formSettings.sections.map(
+        (section: FormSectionConfig): ProcessedFormSection => ({
+          ...section,
+          fields: section.fields
+            .map((fieldname: string) =>
+              fieldsToUse.find((f: DocField) => f.fieldname === fieldname)
+            )
+            .filter(Boolean) as DocField[],
+        })
+      );
     }
 
     // Default single section with all fields
     return [
       {
         label: 'Details',
-        fields: meta.fields,
+        fields: fieldsToUse as DocField[],
         collapsible: false,
       },
-    ];
-  }, [meta?.fields, meta?.formSettings]);
+    ] as ProcessedFormSection[];
+  }, [meta?.fields, meta?.formSettings, schema?.fields, schema?.formSettings]);
 
   // Filter visible fields based on depends_on conditions
   const getVisibleFields = (fields: DocField[]) => {
@@ -150,7 +176,9 @@ export function DynamicForm({
   };
 
   const handleFormSubmit = (data: Record<string, unknown>) => {
-    onSubmit(data);
+    if (onSubmit) {
+      onSubmit(data);
+    }
   };
 
   return (
@@ -158,21 +186,24 @@ export function DynamicForm({
       <form
         id={id}
         onSubmit={methods.handleSubmit(handleFormSubmit)}
-        className={className || "space-y-6"}
+        className={className || 'space-y-6'}
       >
-        <div className="bg-white rounded-lg border border-gray-200">
-          {sections.map((section, index) => {
+        <div className='rounded-lg border border-gray-200 bg-white'>
+          {sections.map((section: ProcessedFormSection, index: number) => {
             const visibleFields = getVisibleFields(section.fields);
-            
+
             if (visibleFields.length === 0) return null;
 
             return (
               <FormSection
                 key={section.label || index}
-                title={section.label}
+                title={section.label || 'Details'}
                 fields={visibleFields}
                 collapsible={section.collapsible}
-                columns={meta?.formSettings?.layout?.columns || 2}
+                columns={
+                  (meta?.formSettings || schema?.formSettings)?.layout
+                    ?.columns || 2
+                }
                 readOnly={readOnly}
               />
             );

@@ -30,94 +30,94 @@ const jobCardSchema = {
   fields: [
     {
       fieldname: 'work_order',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       label: 'Work Order',
       options: 'Work Order',
       reqd: true
     },
     {
       fieldname: 'production_item',
-      fieldtype: 'Data',
+      fieldtype: 'Data' as const,
       label: 'Production Item',
       readonly: true
     },
     {
       fieldname: 'item_name',
-      fieldtype: 'Data',
+      fieldtype: 'Data' as const,
       label: 'Item Name',
       readonly: true
     },
     {
       fieldname: 'bom_no',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       label: 'BOM No',
       options: 'BOM',
       readonly: true
     },
     {
       fieldname: 'operation',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       label: 'Operation',
       options: 'Operation',
       reqd: true
     },
     {
       fieldname: 'workstation',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       label: 'Workstation',
       options: 'Workstation',
       reqd: true
     },
     {
       fieldname: 'for_quantity',
-      fieldtype: 'Float',
+      fieldtype: 'Float' as const,
       label: 'For Quantity',
       reqd: true
     },
     {
       fieldname: 'employee',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       label: 'Employee',
       options: 'Employee'
     },
     {
       fieldname: 'employee_name',
-      fieldtype: 'Data',
+      fieldtype: 'Data' as const,
       label: 'Employee Name',
       readonly: true
     },
     {
       fieldname: 'posting_date',
-      fieldtype: 'Date',
+      fieldtype: 'Date' as const,
       label: 'Posting Date',
       reqd: true,
       default: new Date().toISOString().split('T')[0]
     },
     {
       fieldname: 'expected_start_date',
-      fieldtype: 'Datetime',
+      fieldtype: 'Datetime' as const,
       label: 'Expected Start Date'
     },
     {
       fieldname: 'expected_end_date',
-      fieldtype: 'Datetime',
+      fieldtype: 'Datetime' as const,
       label: 'Expected End Date'
     },
     {
       fieldname: 'wip_warehouse',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       label: 'WIP Warehouse',
       options: 'Warehouse'
     },
     {
       fieldname: 'hour_rate',
-      fieldtype: 'Currency',
+      fieldtype: 'Currency' as const,
       label: 'Hour Rate',
       readonly: true
     },
     {
       fieldname: 'quality_inspection_template',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       label: 'Quality Inspection Template',
       options: 'Quality Inspection Template'
     }
@@ -445,8 +445,8 @@ export default function NewJobCardPage() {
               <CardContent>
                 <DynamicForm
                   doctype="Job Card"
-                  meta={jobCardSchema}
-                  document={{ doctype: 'Job Card', name: '', data: jobCardData } as any}
+                  schema={jobCardSchema}
+                  data={jobCardData}
                   onSubmit={handleFormChange}
                   onChange={handleFormChange}
                 />

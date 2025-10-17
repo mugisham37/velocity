@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ListView } from '@/components/lists/ListView';
 import { ListFilters } from '@/components/lists/ListFilters';
 import { useListView } from '@/hooks/useListView';
-import { StockEntry } from '@/types/stock';
+import { DocumentListItem } from '@/types';
 import { PlusIcon } from '@heroicons/react/24/outline';
 
 export default function StockEntryListPage() {
@@ -23,7 +23,7 @@ export default function StockEntryListPage() {
     updateSorting,
     updatePagination,
     refetch,
-  } = useListView<StockEntry>({
+  } = useListView({
     doctype: 'Stock Entry',
     fields: [
       'name',
@@ -40,7 +40,7 @@ export default function StockEntryListPage() {
       'creation',
       'modified',
     ],
-    pageSize: 20,
+    initialPageSize: 20,
   });
 
   const columns = [
@@ -110,48 +110,48 @@ export default function StockEntryListPage() {
     {
       fieldname: 'purpose',
       label: 'Purpose',
-      fieldtype: 'Select',
+      fieldtype: 'Select' as const,
       options: '\nMaterial Issue\nMaterial Receipt\nMaterial Transfer\nMaterial Transfer for Manufacture\nMaterial Consumption for Manufacture\nManufacture\nRepack\nSend to Subcontractor',
     },
     {
       fieldname: 'stock_entry_type',
       label: 'Stock Entry Type',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       options: 'Stock Entry Type',
     },
     {
       fieldname: 'company',
       label: 'Company',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       options: 'Company',
     },
     {
       fieldname: 'from_warehouse',
       label: 'From Warehouse',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       options: 'Warehouse',
     },
     {
       fieldname: 'to_warehouse',
       label: 'To Warehouse',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       options: 'Warehouse',
     },
     {
       fieldname: 'posting_date',
       label: 'Posting Date',
-      fieldtype: 'DateRange',
+      fieldtype: 'Date' as const,
     },
     {
       fieldname: 'docstatus',
       label: 'Status',
-      fieldtype: 'Select',
+      fieldtype: 'Select' as const,
       options: '\nDraft\nSubmitted\nCancelled',
     },
   ];
 
-  const handleRowClick = (entry: StockEntry) => {
-    router.push(`/stock/stock-entry/${entry.name}`);
+  const handleRowClick = (doc: DocumentListItem) => {
+    router.push(`/stock/stock-entry/${doc.name}`);
   };
 
   const handleNewEntry = () => {
@@ -231,25 +231,15 @@ export default function StockEntryListPage() {
         {/* List View */}
         <div className="bg-white rounded-lg shadow">
           <ListView
+            doctype="Stock Entry"
             data={entries}
             columns={columns}
+            totalCount={entries.length}
             isLoading={isLoading}
-            pagination={pagination}
-            sorting={sorting}
             selection={selectedEntries}
             onRowClick={handleRowClick}
-            onSelectionChange={setSelectedEntries}
-            onSortChange={updateSorting}
-            onPageChange={updatePagination}
-            bulkActions={[
-              { label: 'Submit', action: 'submit' },
-              { label: 'Cancel', action: 'cancel', variant: 'danger' },
-              { label: 'Delete', action: 'delete', variant: 'danger' },
-            ]}
+            onSelect={setSelectedEntries}
             onBulkAction={handleBulkAction}
-            customRenderers={{
-              docstatus: (value: number) => getStatusBadge(value),
-            }}
           />
         </div>
       </div>

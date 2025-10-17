@@ -6,7 +6,7 @@ import { ListViewContainer } from '@/components/lists';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText, Download, Upload } from 'lucide-react';
 import Link from 'next/link';
-import { BOM } from '@/types/manufacturing';
+
 
 const bomColumns = [
   { key: 'name', label: 'BOM ID', sortable: true },

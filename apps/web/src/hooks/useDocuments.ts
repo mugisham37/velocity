@@ -212,8 +212,54 @@ export function useDocuments() {
     return response.json();
   }, []);
 
+  const createDocument = useCallback(async (doctype: string, data: Record<string, unknown>) => {
+    // This is a simplified implementation
+    // In a real implementation, this would use the API client
+    const response = await fetch(`/api/method/frappe.client.insert`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        doc: {
+          doctype,
+          ...data,
+        },
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to create document');
+    }
+    
+    return response.json();
+  }, []);
+
+  const submitDocument = useCallback(async (doctype: string, name: string) => {
+    // This is a simplified implementation
+    // In a real implementation, this would use the API client
+    const response = await fetch(`/api/method/frappe.client.submit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        doctype,
+        name,
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to submit document');
+    }
+    
+    return response.json();
+  }, []);
+
   return {
     getList,
     getDocument,
+    createDocument,
+    submitDocument,
   };
 }

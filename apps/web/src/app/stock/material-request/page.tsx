@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ListView } from '@/components/lists/ListView';
 import { ListFilters } from '@/components/lists/ListFilters';
 import { useListView } from '@/hooks/useListView';
-import { MaterialRequest } from '@/types/stock';
+import { DocumentListItem } from '@/types';
 import { PlusIcon } from '@heroicons/react/24/outline';
 
 export default function MaterialRequestListPage() {
@@ -23,7 +23,7 @@ export default function MaterialRequestListPage() {
     updateSorting,
     updatePagination,
     refetch,
-  } = useListView<MaterialRequest>({
+  } = useListView({
     doctype: 'Material Request',
     fields: [
       'name',
@@ -39,7 +39,7 @@ export default function MaterialRequestListPage() {
       'creation',
       'modified',
     ],
-    pageSize: 20,
+    initialPageSize: 20,
   });
 
   const columns = [
@@ -109,41 +109,41 @@ export default function MaterialRequestListPage() {
     {
       fieldname: 'material_request_type',
       label: 'Material Request Type',
-      fieldtype: 'Select',
+      fieldtype: 'Select' as const,
       options: '\nPurchase\nMaterial Transfer\nMaterial Issue\nManufacture\nCustomer Provided',
     },
     {
       fieldname: 'company',
       label: 'Company',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       options: 'Company',
     },
     {
       fieldname: 'status',
       label: 'Status',
-      fieldtype: 'Select',
+      fieldtype: 'Select' as const,
       options: '\nDraft\nSubmitted\nStopped\nCancelled\nPending\nPartially Ordered\nOrdered\nIssued\nTransferred\nReceived',
     },
     {
       fieldname: 'transaction_date',
       label: 'Transaction Date',
-      fieldtype: 'DateRange',
+      fieldtype: 'Date' as const,
     },
     {
       fieldname: 'schedule_date',
       label: 'Required By',
-      fieldtype: 'DateRange',
+      fieldtype: 'Date' as const,
     },
     {
       fieldname: 'docstatus',
       label: 'Document Status',
-      fieldtype: 'Select',
+      fieldtype: 'Select' as const,
       options: '\nDraft\nSubmitted\nCancelled',
     },
   ];
 
-  const handleRowClick = (request: MaterialRequest) => {
-    router.push(`/stock/material-request/${request.name}`);
+  const handleRowClick = (doc: DocumentListItem) => {
+    router.push(`/stock/material-request/${doc.name}`);
   };
 
   const handleNewRequest = () => {
@@ -246,29 +246,15 @@ export default function MaterialRequestListPage() {
         {/* List View */}
         <div className="bg-white rounded-lg shadow">
           <ListView
+            doctype="Material Request"
             data={requests}
             columns={columns}
+            totalCount={requests.length}
             isLoading={isLoading}
-            pagination={pagination}
-            sorting={sorting}
             selection={selectedRequests}
             onRowClick={handleRowClick}
-            onSelectionChange={setSelectedRequests}
-            onSortChange={updateSorting}
-            onPageChange={updatePagination}
-            bulkActions={[
-              { label: 'Submit', action: 'submit' },
-              { label: 'Stop', action: 'stop', variant: 'warning' },
-              { label: 'Cancel', action: 'cancel', variant: 'danger' },
-              { label: 'Delete', action: 'delete', variant: 'danger' },
-            ]}
+            onSelect={setSelectedRequests}
             onBulkAction={handleBulkAction}
-            customRenderers={{
-              status: (value: string) => getStatusBadge(value),
-              docstatus: (value: number) => getDocStatusBadge(value),
-              per_ordered: (value: number) => `${value.toFixed(1)}%`,
-              per_received: (value: number) => `${value.toFixed(1)}%`,
-            }}
           />
         </div>
       </div>

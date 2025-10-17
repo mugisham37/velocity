@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ListView } from '@/components/lists/ListView';
 import { ListFilters } from '@/components/lists/ListFilters';
 import { useListView } from '@/hooks/useListView';
-import { Item } from '@/types/stock';
+import { DocumentListItem } from '@/types';
 import { PlusIcon } from '@heroicons/react/24/outline';
 
 export default function ItemListPage() {
@@ -23,7 +23,7 @@ export default function ItemListPage() {
     updateSorting,
     updatePagination,
     refetch,
-  } = useListView<Item>({
+  } = useListView({
     doctype: 'Item',
     fields: [
       'name',
@@ -38,7 +38,7 @@ export default function ItemListPage() {
       'creation',
       'modified',
     ],
-    pageSize: 20,
+    initialPageSize: 20,
   });
 
   const columns = [
@@ -102,41 +102,41 @@ export default function ItemListPage() {
     {
       fieldname: 'item_code',
       label: 'Item Code',
-      fieldtype: 'Data',
+      fieldtype: 'Data' as const,
     },
     {
       fieldname: 'item_name',
       label: 'Item Name',
-      fieldtype: 'Data',
+      fieldtype: 'Data' as const,
     },
     {
       fieldname: 'item_group',
       label: 'Item Group',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       options: 'Item Group',
     },
     {
       fieldname: 'brand',
       label: 'Brand',
-      fieldtype: 'Link',
+      fieldtype: 'Link' as const,
       options: 'Brand',
     },
     {
       fieldname: 'is_stock_item',
       label: 'Is Stock Item',
-      fieldtype: 'Select',
+      fieldtype: 'Select' as const,
       options: '\nYes\nNo',
     },
     {
       fieldname: 'disabled',
       label: 'Disabled',
-      fieldtype: 'Select',
+      fieldtype: 'Select' as const,
       options: '\nYes\nNo',
     },
   ];
 
-  const handleRowClick = (item: Item) => {
-    router.push(`/stock/item/${item.name}`);
+  const handleRowClick = (doc: DocumentListItem) => {
+    router.push(`/stock/item/${doc.name}`);
   };
 
   const handleNewItem = () => {
@@ -203,21 +203,14 @@ export default function ItemListPage() {
         {/* List View */}
         <div className="bg-white rounded-lg shadow">
           <ListView
+            doctype="Item"
             data={items}
             columns={columns}
+            totalCount={items.length}
             isLoading={isLoading}
-            pagination={pagination}
-            sorting={sorting}
             selection={selectedItems}
             onRowClick={handleRowClick}
-            onSelectionChange={setSelectedItems}
-            onSortChange={updateSorting}
-            onPageChange={updatePagination}
-            bulkActions={[
-              { label: 'Enable', action: 'enable' },
-              { label: 'Disable', action: 'disable' },
-              { label: 'Delete', action: 'delete', variant: 'danger' },
-            ]}
+            onSelect={setSelectedItems}
             onBulkAction={handleBulkAction}
           />
         </div>
